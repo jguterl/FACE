@@ -589,7 +589,7 @@ end subroutine func
 
             do j=0,ngrd
                 if (dens(ndt,j,k) .lt. 0.d0) then
-                    write(myfmt,*) "(' *** error: negative density of species ',i2, ' in cell number ', i6,"&
+                    write(myfmt,*) "(' *** error: negative density of species ',i2, ' in cell number ', i6,",&
                         "'  the density at previous step was ', 1pe19.9e4, ' m^-3')"
                     write (iout, myfmt) k, j, dens(ndt-1,j,k)
                     stop

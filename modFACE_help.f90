@@ -7,10 +7,10 @@ module modFACE_help
     integer,save:: ihelp=1,Nhelp
 
     type helper
-        character(:),allocatable:: keyword
-        character(:),allocatable::def
-        character(:),allocatable::units
-        character(:),allocatable::status
+        character(100),allocatable:: keyword
+        character(200),allocatable::def
+        character(100),allocatable::units
+        character(100),allocatable::status
         character(80),allocatable::default
         logical::comment
         logical:: species
@@ -210,7 +210,7 @@ contains
     subroutine write_default_inputfile(filename,mode)
         character(*)::mode
         integer,parameter::l=15
-        character(50)::str_keyword
+        character(150)::str_keyword
         character(100)::strdef
         character(14)::strtype
         character(3*l):: strvalue

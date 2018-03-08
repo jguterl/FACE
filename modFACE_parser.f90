@@ -16,7 +16,7 @@ module modFACE_parser
     type input_val
         real(DP):: r
         integer :: i
-        character(len=:),allocatable::s
+        character(150),allocatable::s
         character(len=20)::status
     end type input_val
 
@@ -26,9 +26,9 @@ module modFACE_parser
     character::delimdata=' '
     integer,parameter::maxlength_input=2000
     type string
-        character(len=:), allocatable :: keyword
-        character(len=:), allocatable :: data
-        character(len=:), allocatable :: comment
+        character(100), allocatable :: keyword
+        character(100), allocatable :: data
+        character(100), allocatable :: comment
     end type string
     type(string), allocatable :: input_lines(:)
 

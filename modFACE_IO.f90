@@ -121,7 +121,7 @@ do k=1,nspc
         if (ios.eq.0) then
             write (ifile_heatdata, myfmt1) 'time=', time, ' s'
 
-            write (ifile_heatdata, myfmt2)'('&
+            write (ifile_heatdata, myfmt2)'(',&
                 '       #',&
                 '                  x',&
                 '               temp',&
