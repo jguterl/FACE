@@ -11,7 +11,7 @@
 !     * for modeling of particle transport in the first wall           *
 !     * of fusion devices                                              *
 !     *                                                                *
-!     * Author: Roman D. Smirnov                                       *
+!     * Authors: Roman D. Smirnov and Jerome Guterl                                      *
 !     * E-mail: rsmirnov@ucsd.edu; rosmirnov@yahoo.com                 *
 !     *                                                                *
 !     ******************************************************************
