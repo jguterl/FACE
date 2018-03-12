@@ -1,4 +1,4 @@
-!###define ERRORMSG(msg) write(iout,'("Error at ",I4," in file ",/,A,/,"Error message: ",A)') __LINE__,__FILE__,msg
+#define ERRORMSG(msg) write(iout,'("Error at ",I4," in file ",/,A,/,"Error message: ",A)') __LINE__,__FILE__,msg
       program FACE
       use modFACE_main
       use modFACE_interface

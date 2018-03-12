@@ -6,9 +6,9 @@ module modFACE_interface
     logical :: verbose_interface=.true.
     character(Lfn) :: default_inputfile="default_inputfile.face"
     type fluidcode_inputs
-        integer                  :: wall_idx            ! Index of the wall stratum
+    integer                  :: wall_idx            ! Index of the wall stratum
         integer                  :: iter                ! Fluid code iteration
-        real(DP)                 :: time                ! Fluid code time
+     real(DP)                 :: time                ! Fluid code time
         real(DP)                 :: dt                  ! Time step of the fluid
         integer                 :: nspc                ! Number of incoming species from fluid code
         character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
