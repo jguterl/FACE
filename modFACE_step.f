@@ -36,9 +36,9 @@ c     ------------------------------------------------------------------
 c      implicit step
 c     ------------------------------------------------------------------
       told=time
-      time=told+dt
+      time=told+dt_face
 c
-      delta=1.d0/(1.d0+2.d0*pi*nucut*dt)
+      delta=1.d0/(1.d0+2.d0*pi*nucut*dt_face)
 
       call source_modification
       call coeff_modification

@@ -152,13 +152,13 @@ subroutine save
     real(DP)::tmp
     !     --- saving time file ---
     tmp=2.d0*abs(time-ttm*nint(time/ttm))
-    if (tmp .lt. dt.or.time.eq.0.0d0) then
+    if (tmp .lt. dt_face.or.time.eq.0.0d0) then
         call save_timedata
 
     endif
 
     tmp=2.d0*abs(time-tspc*nint(time/tspc))
-    if (tmp .lt. dt.or.time.eq.0.0d0) then
+    if (tmp .lt. dt_face.or.time.eq.0.0d0) then
         call save_voldata
         call save_srfdata
         call save_heatdata
@@ -166,7 +166,7 @@ subroutine save
 
     !     --- saving restart file ---
     tmp=2.d0*abs(time-tstr*nint(time/tstr))
-    if ((tmp .lt. dt) .and. (time .ne. 0.d0)) call store()
+    if ((tmp .lt. dt_face) .and. (time .ne. 0.d0)) call store()
 
 end subroutine
 
@@ -178,7 +178,7 @@ subroutine save_timedata
     write(myfmt1,*) &
         "('+', ' time=', 1pe13.4e2, ' s; T_l=', 1pe13.4e2,' K; dt=', 1pe13.4e2, ' s; number of iterations ', i3)"
     write(myfmt2,*) "(14(1pe13.4e2))"
-    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt, cnt
+    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, cnt
 
     do k=1,nspc
         qnty=0.d0
@@ -418,7 +418,7 @@ subroutine restore_history(history_filename)
 end subroutine restore_history
 
 subroutine output_final_state
-    call store_history(store_history_filename)
+    call store_history(store_history_file)
     call FACE2fluidcode()
 
     call print_milestone('dumping file state completed')

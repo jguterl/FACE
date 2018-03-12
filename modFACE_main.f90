@@ -71,7 +71,7 @@ call finalize
 !     +        '   T_l=', 1pe19.9e4, ' K;'
 !     +        '   T_r=', 1pe19.9e4, ' K;'
 !     +        '    dt=', 1pe19.9e4, ' s')
-!1010  if (time .le. toff) then
+!1010  if (time .le. end_time) then
 !       call save()
 !       call step()
 !       goto 1010
@@ -88,7 +88,7 @@ call finalize
         subroutine time_loop
       call print_milestone('starting time iteration')
       iteration=0
-      do while (time .le. toff)
+      do while (time .le. end_time)
       call print_timestep_info()
       call save()
       call step()

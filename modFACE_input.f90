@@ -94,10 +94,10 @@ contains
         call get_keyword_value('restart_mode',restart_mode)
         call get_keyword_value('wall_thickness',length)
         call get_keyword_value('steady_state', stdst)
-        call get_keyword_value('start_time', time0)
+        call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
-        call get_keyword_value('simulation_end_time', toff)
+        call get_keyword_value('simulation_end_time', end_time)
         call get_keyword_value('min_dt', dtmin)
         call get_keyword_value('timestep_factor', cdt)
         call get_keyword_value('filter_freq', nucut)
@@ -177,10 +177,11 @@ contains
         call write_input_log_keyword('restart_mode',restart_mode)
         call write_input_log_keyword('wall_thickness',length)
         call write_input_log_keyword('steady_state', stdst)
-        call write_input_log_keyword('start_time', time0)
+        call write_input_log_keyword('start_time', start_time)
+        call write_input_log_keyword('simulation_end_time', end_time)
         call write_input_log_keyword('temp_ramp_start_time', tramp0)
         call write_input_log_keyword('temp_ramp_stop_time', tramp1)
-        call write_input_log_keyword('simulation_end_time', toff)
+
         call write_input_log_keyword('min_dt', dtmin)
         call write_input_log_keyword('timestep_factor', cdt)
         call write_input_log_keyword('filter_freq', nucut)
@@ -367,10 +368,10 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
         call init_zero(stdst)
         call init_zero(length)
-        call init_zero(time0)
+        call init_zero(start_time)
         call init_zero(tramp0)
         call init_zero(tramp1)
-        call init_zero(toff)
+        call init_zero(end_time)
         call init_zero(dtmin)
         call init_zero(cdt)
         call init_zero(nucut)
@@ -423,7 +424,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
     !      write (6, 1230) t3
     !      write (6, 1240) tp
     !
-    !                write (6, 1010) length, time0, tramp0, tramp1, toff, dtmin
+    !                write (6, 1010) length, start_time, tramp0, tramp1, end_time, dtmin
     !1010  format (' length of the simulation region: ', 1pe12.5, ' m'/
     !     + ' start time: ', 1pe12.5, ' s'/
     !     + ' temperature ramp start: ', 1pe12.5, ' s'/

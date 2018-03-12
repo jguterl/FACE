@@ -24,19 +24,19 @@ contains
                 !     --- 1st order BDF ---
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
-                    f(i)=f(i)-a12*rtsl (ndt  ,k)*dt
+                    f(i)=f(i)-a12*rtsl (ndt  ,k)*dt_face
                 !     --- 2nd order BDF ---
                 elseif (order_solver.eq.2) then
                     f(i)=u(i)-a21*dsrfl(ndt-1,k) &
                         -a22*dsrfl(ndt-2,k)
-                    f(i)=f(i)-a23*rtsl (ndt  ,k)*dt
+                    f(i)=f(i)-a23*rtsl (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfl(ndt-1,k)&
                         -a52*dsrfl(ndt-2,k)&
                         -a53*dsrfl(ndt-3,k)&
                         -a54*dsrfl(ndt-4,k)
-                    f(i)=f(i)-a55*rtsl (ndt  ,k)*dt
+                    f(i)=f(i)-a55*rtsl (ndt  ,k)*dt_face
                 else
                     write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
                 endif
@@ -55,19 +55,19 @@ contains
                     !     --- 1st order BDF ---
                     if (order_solver.eq.1) then
                         f(i)=u(i)-a11*dens(ndt-1,j,k)
-                        f(i)=f(i)-a12*rtd (ndt  ,j,k)*dt
+                        f(i)=f(i)-a12*rtd (ndt  ,j,k)*dt_face
                     !     --- 2nd order BDF ---
                     elseif (order_solver.eq.2) then
                         f(i)=u(i)-a21*dens(ndt-1,j,k)&
                             -a22*dens(ndt-2,j,k)
-                        f(i)=f(i)-a23*rtd (ndt  ,j,k)*dt
+                        f(i)=f(i)-a23*rtd (ndt  ,j,k)*dt_face
                     !     --- 5th order BDF ---
                     elseif (order_solver.eq.5) then
                         f(i)=u(i)-a51*dens(ndt-1,j,k)&
                             -a52*dens(ndt-2,j,k)&
                             -a53*dens(ndt-3,j,k)&
                             -a54*dens(ndt-4,j,k)
-                        f(i)=f(i)-a55*rtd (ndt  ,j,k)*dt
+                        f(i)=f(i)-a55*rtd (ndt  ,j,k)*dt_face
                     else
                         write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
                     endif
@@ -85,19 +85,19 @@ contains
             !     --- 1st order BDF ---
             if (order_solver.eq.1) then
                 f(i)=u(i)-a11*dsrfr(ndt-1,k)
-                f(i)=f(i)-a12*rtsr (ndt  ,k)*dt
+                f(i)=f(i)-a12*rtsr (ndt  ,k)*dt_face
             !     --- 2nd order BDF ---
             elseif (order_solver.eq.2) then
                 f(i)=u(i)-a21*dsrfr(ndt-1,k)&
                     -a22*dsrfr(ndt-2,k)
-                f(i)=f(i)-a23*rtsr (ndt  ,k)*dt
+                f(i)=f(i)-a23*rtsr (ndt  ,k)*dt_face
             !     --- 5th order BDF ---
             elseif (order_solver.eq.5) then
                 f(i)=u(i)-a51*dsrfr(ndt-1,k)&
                     -a52*dsrfr(ndt-2,k)&
                     -a53*dsrfr(ndt-3,k)&
                     -a54*dsrfr(ndt-4,k)
-                f(i)=f(i)-a55*rtsr (ndt  ,k)*dt
+                f(i)=f(i)-a55*rtsr (ndt  ,k)*dt_face
             else
                 write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
             endif
@@ -119,12 +119,12 @@ if (solve_heat_eq .eq. "yes") then
             !     --- 1st order BDF ---
         if (order_solver.eq.1) then
             f(i)=u(i)-a11*temp(ndt-1,j)
-            f(i)=f(i)-a12*rtt (ndt  ,j)*dt
+            f(i)=f(i)-a12*rtt (ndt  ,j)*dt_face
         !     --- 2nd order BDF ---
         elseif (order_solver.eq.2) then
             f(i)=u(i)-a21*temp(ndt-1,j)&
                 -a22*temp(ndt-2,j)
-            f(i)=f(i)-a23*rtt (ndt  ,j)*dt
+            f(i)=f(i)-a23*rtt (ndt  ,j)*dt_face
 
         !     --- 5th order BDF ---
         elseif (order_solver.eq.5) then
@@ -132,7 +132,7 @@ if (solve_heat_eq .eq. "yes") then
                 -a52*temp(ndt-2,j)  &
                 -a53*temp(ndt-3,j)  &
                 -a54*temp(ndt-4,j)
-            f(i)=f(i)-a55*rtt (ndt  ,j)*dt
+            f(i)=f(i)-a55*rtt (ndt  ,j)*dt_face
         else
             write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
         endif

@@ -1,4 +1,5 @@
 module modFACE_coupling
+use modFACE_header
 use modFACE_interface
 contains
 
@@ -36,5 +37,43 @@ contains
 !endif
 
  end subroutine FACE2fluidcode
+
+subroutine fluidcode2FACE_input(fluidcode_input)
+! overwrite some input parameters from the input file read by FACE with input from the fluid code:
+type(fluidcode_inputs), intent(in) :: fluidcode_input
+! - casename
+casename=fluidcode_input%casename
+! temperature solver
+solve_heat_eq=fluidcode_input%solve_heat_eq
+! start time
+start_time=fluidcode_input%time
+! end time
+end_time=start_time+fluidcode_input%dt
+!
+! temperature input mode
+if (solve_heat_eq.eq."yes") then
+elseif  (solve_heat_eq.eq."no") then
+else
+write(iout,*) 'ERROR: unknown mode for solve_heat_eq fron fluide code'
+stop 'Exiting Face'
+endif
+
+! history_file
+restore_history_file=fluidcode_input%history_file
+
+!fluidcode_input%namespc(1:fluidcode_input%nspc)
+! -
+if (verbose_couple) then
+write(iout,*) '---- fluid code input:'
+write(iout,*) '- casename overwritten :', casename
+write(iout,*) '- solve_heat_eq overwritten :', solve_heat_eq
+write(iout,*) '- history_file overwritten :', restore_history_file
+write(iout,*) '- start time overwritten : ', start_time
+write(iout,*) '- end time overwritten   : ', end_time
+write(iout,*) '- dt_face overwritten    : ', dt_face
+write(iout,*) '- checking if impinging species from fluide codes are the same than the ones set in FACE :'
+
+endif
+end subroutine
 
     end module modFACE_coupling

@@ -33,6 +33,7 @@
     logical::verbose_init=.false.
     logical :: verbose_step=.false.
     logical :: verbose_debug=.false.
+    logical :: verbose_couple=.false.
 !      integer ngrdm, nspcm, ndt, nrampm
       integer::ngrd
       integer::nspc
@@ -86,11 +87,11 @@
       real(DP),allocatable:: dx(:)
       real(DP) ::alpha
       ! time
-      real(DP):: dt    !>@var current solver time step
+      real(DP):: dt_face    !>@var current solver time step
       real(DP):: dtmin ! minimun dt
-      real(DP):: toff  ! end time of simulations
+      real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
-      real(DP):: time0 ! start time  of simulation
+      real(DP):: start_time ! start time  of simulation
       real(DP):: cdt   ! factor for solver time step (dt)
       ! temp
       real(DP):: cero
@@ -133,7 +134,8 @@
       character(Linput):: stdst
       character(Linput):: framp
       character(Linput):: solve_heat_eq
-      character(Linput):: store_history_filename
+      character(Linput):: store_history_file
+      character(Linput):: restore_history_file
       character(Linput):: casename
 !
 !     ------------------------------------------------------------------

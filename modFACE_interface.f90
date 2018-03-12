@@ -8,9 +8,11 @@ module modFACE_interface
     type fluidcode_inputs
     integer                  :: wall_idx            ! Index of the wall stratum
         integer                  :: iter                ! Fluid code iteration
-     real(DP)                 :: time                ! Fluid code time
+        real(DP)                 :: time                ! Fluid code time
         real(DP)                 :: dt                  ! Time step of the fluid
-        integer                 :: nspc                ! Number of incoming species from fluid code
+        real(DP)                 :: dt_face             ! Time step of FACE
+        integer                 :: nspc                 ! Number of incoming species from fluid code
+        integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
         character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
         real(DP),allocatable         :: Gammain(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
@@ -19,6 +21,7 @@ module modFACE_interface
         real(DP)                 :: tempwall            ! temperature of the wall from fluid code
         character(15)            :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         character(Lfn)            ::casename            ! casename
+
     end type fluidcode_inputs
 
     type fluidcode_out
@@ -263,6 +266,8 @@ contains
         fluidcode_input%nspc=1
         allocate(fluidcode_input%namespc(fluidcode_input%nspc))
         fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
+        allocate(fluidcode_input%indexspc(fluidcode_input%nspc))
+        fluidcode_input%indexspc(1:fluidcode_input%nspc)=1
         allocate(fluidcode_input%Gammain(fluidcode_input%nspc))
         fluidcode_input%Gammain(1:fluidcode_input%nspc)=1e20
         allocate(fluidcode_input%Emean(fluidcode_input%nspc))
@@ -276,4 +281,6 @@ contains
         fluidcode_input%casename=trim(str)
     !    end type fluidcode_input
     end subroutine set_fluidcode_input
+
+
 end module modFACE_interface

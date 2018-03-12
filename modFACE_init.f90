@@ -121,9 +121,9 @@
 !     ------------------------------------------------------------------
 !      time step initialization
 !     ------------------------------------------------------------------
-      dt=dtmin
+      dt_face=dtmin
 !      dt=cdt*ttm
-      time=time0
+      time=start_time
       if (verbose_init) write(iout,*) "Initialization time parameters: DONE"
       end subroutine init_time
 

@@ -237,7 +237,12 @@ contains
             call SplitString(trim(str0), str1, str2," ")
 
             call SplitString(str2, str3, str4,"!")
-            input_lines(i)=string(trim(str1),trim(str3),trim(str4))
+            ! BUG REPORTED WITH CLANG compiler on MACOS for this following line
+            !input_lines(i)=string(trim(str1),trim(str3),trim(str4))
+            input_lines(i)%keyword=trim(str1)
+            input_lines(i)%data=trim(str3)
+            input_lines(i)%comment=trim(str4)
+
             if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',input_lines(i)%keyword, '" data="',input_lines(i)%data,&
                 '" comment="',input_lines(i)%comment,'"'
         enddo

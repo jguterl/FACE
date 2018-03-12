@@ -220,9 +220,9 @@ end subroutine open_timedata_file
 
 subroutine print_timestep_info
 character(200)::myfmt
-write(myfmt,*) "('iter=', 1I6,' time=', 1pe12.4e2, ' s;   T_l=', 1pe12.4e2, ' K;   T_r=', 1pe12.4e2, ' K;   &
- dt=', 1pe12.4e2, ' s, |f|=',1pe12.4e2)"
-      write (iout, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt,normf
+write(myfmt,*) "('iter=', 1I6,' time=', 1pe12.4e2, ' s;   T_l=', 1pe12.4e2, ' K;   T_r=', 1pe12.4e2, ' K;"&
+ ,"dt=', 1pe12.4e2, ' s, |f|=',1pe12.4e2)"
+ write (iout, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf
 
 end subroutine print_timestep_info
 
