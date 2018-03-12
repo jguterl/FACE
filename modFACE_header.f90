@@ -134,7 +134,7 @@
       character(Linput):: stdst
       character(Linput):: framp
       character(Linput):: solve_heat_eq
-      character(Linput):: store_history_file
+      character(Linput):: store_history_filee
       character(Linput):: restore_history_file
       character(Linput):: casename
 !
