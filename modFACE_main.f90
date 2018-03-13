@@ -41,7 +41,7 @@ else ! all other mode request reading of input
 
       ! initialize variables
       call initialize()
-      ! restore from previous state (restart or history)
+      ! restore from state or restart file
       call restore()
       ! execute time loop
       call time_loop()
@@ -56,33 +56,7 @@ call cpu_time(tcpufinish)
 
 call print_summary
 call finalize
-
-!      integer k, unt
-!
-!cc      open (unit=6, form='formatted', carriagecontrol='fortran')
-!      open (unit=6, form='formatted')
-!mnt      call getenv('FACE_PATH', path)
-!      path='./'
-!      call input()
-!      call init()
-!      call restore()
-!      write (6, 1005) time, temp(ndt,0), temp(ndt,ngrd), dt
-!1005  format ('  time=', 1pe19.9e4, ' s;'
-!     +        '   T_l=', 1pe19.9e4, ' K;'
-!     +        '   T_r=', 1pe19.9e4, ' K;'
-!     +        '    dt=', 1pe19.9e4, ' s')
-!1010  if (time .le. end_time) then
-!       call save()
-!       call step()
-!       goto 1010
-!      endif
-!      call store()
-!      do 1020, k=1,nspc
-!       unt=100+k
-!       close (unt)
-!1020  continue
-!      close (6)
-      stop
+stop
   end    subroutine FACE_main
 
         subroutine time_loop
@@ -92,7 +66,7 @@ call finalize
       call print_timestep_info()
       call save()
       call step()
-      call store()
+      call store_restart(trim(restart_filename))
       iteration=iteration+1
       enddo
       call print_milestone('time iteration completed')

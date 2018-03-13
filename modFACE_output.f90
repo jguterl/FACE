@@ -3,11 +3,9 @@
      implicit none
      save
     integer:: iout=6
-    integer::ifile_restart
     integer:: ifile_heatdata
     integer :: ifile_voldata
     integer:: ifile_surfdata
-    integer::ifile_store
     integer::ifile_log
     integer:: ifile_inputlog
     integer::current_ifile=10
@@ -42,17 +40,11 @@
         ! set unit numbers for various files opened by FACE
         subroutine init_ifile()
 
-            call set_ifile(ifile_restart)
-            if(verbose_init) write(iout,*) "ifile_restart=",ifile_restart
-
             call set_ifile(ifile_heatdata)
             if(verbose_init) write(iout,*) "ifile_heatdata=",ifile_heatdata
 
             call set_ifile(ifile_voldata)
             if(verbose_init) write(iout,*) "ifile_voldata=",ifile_voldata
-
-            call set_ifile(ifile_store)
-            if(verbose_init) write(iout,*) "ifile_istore=",ifile_store
 
             call set_ifile(ifile_inputlog)
             if(verbose_init) write(iout,*) "ifile_inputlog=",ifile_inputlog
@@ -66,7 +58,8 @@ subroutine set_ifile(ifile)
       integer ifile
       logical unit_open
       unit_open = .true.
-      Do While (Unit_open.and.current_ifile.le.max_ifile)
+      current_ifile=10
+      Do While (unit_open.and.current_ifile.le.max_ifile)
          current_ifile=current_ifile + 1
          Inquire (Unit = current_ifile, Opened = Unit_open)
       End Do

@@ -60,7 +60,10 @@ contains
 
     subroutine init_help()
         call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"2")
-        call set_help('restart_mode','Restart mode: yes|no|filename','none','non-mandatory',"no")
+        call set_help('read_restart_file','read Restart file: yes|no|filename (yes:default "dsave.rst")',&
+        'none','non-mandatory',"no")
+        call set_help('read_state_file','read state file: yes|no|filename (yes:"face.state").~=read restart file',&
+        'none','non-mandatory',"no")
         call set_help('wall_thickness','Wall thickness','[m]','mandatory',"0.01")
         call set_help('start_time','Start time ','[s]','mandatory',"0")
         call set_help('temp_ramp_start_time','Temperature ramp start time','[s]','non-mandatory',"0")
@@ -166,8 +169,6 @@ contains
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
         call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
         call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")
-        call set_help('read_restart','yes|no|filename','none','non-mandatory',"no")
-        call set_help('logfile','yes|no|filename','none','non-mandatory',"no")
         call set_help('fluid-interface','yes|no','none','non-mandatory',"no")
         if (verbose_init) call print_milestone('initialization help completed')
     end subroutine init_help

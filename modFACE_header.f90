@@ -39,6 +39,7 @@
       integer::nspc
       integer::neq
       integer:: nramp
+      integer,parameter::string_length=256
       real :: tcpustart, tcpufinish
 
       ! coefficients for BDF
@@ -122,6 +123,7 @@
       integer:: sfln_srfdata=0
       integer:: sfln_heatdata=0
       real(DP):: normf=0d0
+      character(string_length)::restart_filename
 !
 !     ------------------------------------------------------------------
 !       Flags
@@ -130,12 +132,13 @@
       integer::avr
       character(Linput):: input_filename
       character(Linput):: logfile
-      character(Linput):: restart_mode
+      character(Linput):: read_restart_file
+      character(Linput):: read_state_file
       character(Linput):: stdst
       character(Linput):: framp
       character(Linput):: solve_heat_eq
-      character(Linput):: store_history_filee
-      character(Linput):: restore_history_file
+      character(string_length):: store_state_file
+      character(Linput):: restore_state_file
       character(Linput):: casename
 !
 !     ------------------------------------------------------------------

@@ -17,7 +17,8 @@ module modFACE_interface
         real(DP),allocatable         :: Gammain(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
         real(DP)                 :: Qin                 ! Heat flux from fluid code
-        character(Lfn)           :: history_file        ! restart from file history
+        character(Lfn)           :: restore_state_file  ! restart from this staste file
+        character(Lfn)           :: store_state_file    ! store final state in this state file
         real(DP)                 :: tempwall            ! temperature of the wall from fluid code
         character(15)            :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         character(Lfn)            ::casename            ! casename
@@ -232,11 +233,12 @@ contains
     subroutine wrapper_FACE(face_input,fluidcode_input)
         type(FACE_inputs),intent(out)::face_input
         type(fluidcode_inputs), intent(in) :: fluidcode_input
-        face_input%logfile="no"
+        face_input%casename='solps_iter_test'
+        face_input%logfile=face_input%casename//".log"
         face_input%input_filename=default_inputfile
         face_input%run_mode='default'
-        face_input%path='run_FACE'
-        face_input%casename='casename'
+        face_input%path='solps_iter_'
+
         face_input%fluidcode_input=fluidcode_input
     end subroutine wrapper_FACE
 
@@ -254,7 +256,7 @@ contains
         !        real(DP),allocatable     :: Gammain(:)      ! Particle flux'
         !        real(DP),allocatable     :: Emean(:)        ! Average energy of incoming particle enrg'
         !        real(DP)                 :: Qin_            ! Heat flux from fluid code
-        !        character(Lfn)           :: history_file    ! restart from file history
+        !        character(Lfn)           :: state_file    ! restart from file history
         !        real(DP)                 :: tempwall        ! temperature of the wall from fluid code
         !        character(15)            :: solve_heat_eq   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         !    end type fluidcode_input
@@ -273,7 +275,8 @@ contains
         allocate(fluidcode_input%Emean(fluidcode_input%nspc))
         fluidcode_input%Emean(1:fluidcode_input%nspc)=100
         fluidcode_input%Qin=0           ! Heat flux from fluid code
-        fluidcode_input%history_file="no"    ! restart from file history
+        fluidcode_input%restore_state_file="no"    ! restart from this state file
+        fluidcode_input%store_state_file="no"    ! save from state file history
         fluidcode_input%tempwall=700        ! temperature of the wall from fluid code
         fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%casename='solps'

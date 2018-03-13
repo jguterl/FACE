@@ -49,18 +49,21 @@ contains
 
 
     subroutine check_value_input(keyword)
-
+        integer ::k,kk
         character(*) :: keyword
 
-        if (keyword.eq.'n_species') then
+
+        select case(keyword)
+
+        case('n_species')
             if (nspc<1) then
                 write(iout,*) "ERROR: n_species must be at least equal to 1"
                 stop
             endif
             call alloc_input_species()
-        endif
 
-        if (keyword.eq.'order_solver') then
+        !check order of the numerical solver
+        case('order_solver')
             if (order_solver.ne.1.and.order_solver.ne.2.and.order_solver.ne.5) then
                 write(iout,*) "ERROR: order of the solver must be 1 2 or 5. current order : ", order_solver
                 stop 'Exiting FACE...'
@@ -69,21 +72,37 @@ contains
             write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
             endif
 
-        endif
 
-        if (keyword.eq.'solve_heat_equation') then
+        ! solve heat equation
+        case('solve_heat_equation')
             if (solve_heat_eq.ne."no".AND.solve_heat_eq.ne."yes") then
                 write(iout,*) "ERROR: solve_heat_equation must be yes or no"
                 stop
             endif
-        endif
 
-        if (keyword.eq.'steady_state') then
+
+        ! check steady-state value
+        case('steady_state')
             if (stdst.ne."no".AND.stdst.ne."yes") then
                 write(iout,*) "ERROR: steady_state must be yes or no"
                 stop
             endif
-        endif
+
+
+        ! check that name of species are unique
+        case('species_name')
+           do k=1,nspc
+             do kk=1,nspc
+                 if (k.ne.kk.and.namespc(k).eq.namespc(kk)) then
+                write(iout,*) "ERROR: two species have the same name: k=",k," and k=",kk
+                write(iout,*) "ERROR:  namespc=",namespc(k)," and namespc=",namespc(kk)
+                stop 'Exiting FACE'
+            endif
+       enddo
+       enddo
+       end select
+
+
 
     end subroutine check_value_input
 
@@ -91,7 +110,7 @@ contains
     subroutine parse_keywords()
         if (verbose_input) write(iout,*) "Parsing keyword"
         call get_keyword_value('order_solver',order_solver)
-        call get_keyword_value('restart_mode',restart_mode)
+        call get_keyword_value('read_restart_file',read_restart_file)
         call get_keyword_value('wall_thickness',length)
         call get_keyword_value('steady_state', stdst)
         call get_keyword_value('start_time', start_time)
@@ -174,7 +193,7 @@ contains
         stop 'Exiting FACE...'
         else
         call write_input_log_keyword('order_solver',order_solver)
-        call write_input_log_keyword('restart_mode',restart_mode)
+        call write_input_log_keyword('read_restart_file',read_restart_file)
         call write_input_log_keyword('wall_thickness',length)
         call write_input_log_keyword('steady_state', stdst)
         call write_input_log_keyword('start_time', start_time)

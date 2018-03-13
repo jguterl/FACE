@@ -166,9 +166,10 @@ subroutine save
 
     !     --- saving restart file ---
     tmp=2.d0*abs(time-tstr*nint(time/tstr))
-    if ((tmp .lt. dt_face) .and. (time .ne. 0.d0)) call store()
-
-end subroutine
+    if ((tmp .lt. dt_face) .and. (time .ne. 0.d0)) then
+    call store_restart(trim(restart_filename))
+endif
+end subroutine save
 
 subroutine save_timedata
     integer::j,k
@@ -260,48 +261,15 @@ subroutine save_srfdata
 
 end subroutine save_srfdata
 
-subroutine store()
-    character(256):: name
-    integer i, j, k,ios
-    name=trim(path_folder)//'dsave.rst'
-    open (unit=ifile_store, file=name,status='replace', form='unformatted', iostat=ios)
-    if (ios.eq.0) then
-        do k=1,nspc
-            do j=0,ngrd
-                do i=1,ndt
-                    write (ifile_store) dens(i,j,k), flx (i,j,k), ero (i,j,k),cdif(i,j,k), rct (i,j,k), rtd (i,j,k)
-                enddo
-            enddo
-        enddo
-        do j=0,ngrd
-            write (ifile_store) x(j)
-        enddo
-        do k=1,nspc
-            do i=1,ndt
-                write (ifile_store) dsrfl(i,k), rtsl(i,k)
-                write (ifile_store) dsrfr(i,k), rtsr(i,k)
-                write (ifile_store) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
-                write (ifile_store) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
-                write (ifile_store) jout(i,k)
-            enddo
-        enddo
-        do j=0,ngrd
-            do i=1,ndt
-                write (ifile_store) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
-            enddo
-        enddo
-        write (ifile_store) time
-        write (ifile_store) sfln_voldata,sfln_srfdata,sfln_heatdata
-        close (ifile_store)
-    else
-        write (iout, '(a)') ' *** error occured opening : ', name
-    endif
-end subroutine store
 
-subroutine store_history(filename)
+! store and restore state files
+subroutine store_state(filename)
     character(*):: filename
-    integer  j, k,ios
-    open (unit=ifile_store, file=trim(path_folder)//filename,status='replace', form='unformatted', iostat=ios)
+    integer  ifile_store,j, k,ios
+
+    call set_ifile(ifile_store)
+    open (unit=ifile_store, file=filename,status='replace', form='formatted', iostat=ios)
+
     if (ios.eq.0) then
         do k=1,nspc
             do j=0,ngrd
@@ -312,113 +280,181 @@ subroutine store_history(filename)
             write (ifile_store) dsrfl(ndt,k)
             write (ifile_store) dsrfr(ndt,k)
         enddo
+
         do j=0,ngrd
 
             write (ifile_store) temp(ndt,j)
 
         enddo
         close (ifile_store)
-        call print_milestone('history stored in '//filename)
+
+        write(iout,*) 'simulation state stored in '//filename
     else
-        write (iout, '(a)') ' *** error occured opening history file: ', filename
+        write (iout, '(a)') 'ERROR: cannot open state file: ', filename
+        stop 'Exiting FACE'
     endif
 
-end subroutine store_history
+end subroutine store_state
+
+subroutine restore_state(filename)
+    character(*):: filename
+    integer ifile_restore,j, k, ios
+     call set_ifile(ifile_restore)
+    open(ifile_restore, file=trim(filename), iostat=ios,action='read',status='old',form='formatted')
+
+    if ( ios /= 0 ) then
+        write(iout,*) 'ERROR: Cannot open history store file :', trim(adjustl(filename))
+        stop 'Exiting FACE'
+    endif
+
+    write(iout,*) 'Restoring state from file: ', trim(filename)
 
 
-subroutine restore()
+    do k=1,nspc
+        do j=0,ngrd
+            read (ifile_restore) dens(ndt,j,k)
+        enddo
+    enddo
+    do k=1,nspc
 
-    integer i, j, k, ios
-    if (trim(restart_mode).eq."no") then
-        write(iout,*) 'no restorationof a previous state'
+        read (ifile_restore) dsrfl(ndt,k)
+        read (ifile_restore) dsrfr(ndt,k)
 
-    else
-        if (restart_mode.eq."yes") then
-            open (unit=ifile_restart, file=trim(path_folder)//'dsave.rst', form='unformatted',iostat=ios,&
-                action='read',status='old')
-            if ( ios .ne. 0 ) then
-                write(iout,*) 'ERROR: Opening of restart file "', 'dsave.rst' ,'" : FAIL '
-                stop
-            endif
-            write(iout,*) 'Restoring state from file: ', 'dsave.rst'
-        else
-            open(unit=ifile_restart, file=trim(restart_mode), iostat=ios,action='read',status='old',form='unformatted')
-            if ( ios /= 0 ) then
-                write(iout,*) 'ERROR: Opening of restart file "', trim(adjustl(restart_mode)) ,'" : FAIL '
-                stop
-            endif
-            write(iout,*) 'Restoring state from file: ', trim(restart_mode)
-        endif
+    enddo
+    do j=0,ngrd
+        read (ifile_restore) temp(ndt,j)
+    enddo
+    close (ifile_restore)
 
+end subroutine restore_state
+
+
+! ***** store and restore restart files *****
+
+subroutine store_restart(filename)
+    character(*):: filename
+    integer i, j, k,ios,ifile_restart
+    call set_ifile(ifile_restart)
+    open (unit=ifile_restart, file=filename,status='replace', form='unformatted', iostat=ios)
+    if (ios.eq.0) then
         do k=1,nspc
             do j=0,ngrd
                 do i=1,ndt
-                    read (ifile_restart) dens(i,j,k), flx (i,j,k), ero(i,j,k),cdif(i,j,k), rct(i,j,k), rtd(i,j,k)
+                    write (ifile_restart) dens(i,j,k), flx (i,j,k), ero (i,j,k),cdif(i,j,k), rct (i,j,k), rtd (i,j,k)
                 enddo
             enddo
         enddo
         do j=0,ngrd
-            read (ifile_restart) x(j)
+            write (ifile_restart) x(j)
         enddo
         do k=1,nspc
             do i=1,ndt
-                read (ifile_restart) dsrfl(i,k), rtsl(i,k)
-                read (ifile_restart) dsrfr(i,k), rtsr(i,k)
-                read (ifile_restart) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
-                read (ifile_restart) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
-                read (ifile_restart) jout(i,k)
+                write (ifile_restart) dsrfl(i,k), rtsl(i,k)
+                write (ifile_restart) dsrfr(i,k), rtsr(i,k)
+                write (ifile_restart) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
+                write (ifile_restart) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
+                write (ifile_restart) jout(i,k)
             enddo
         enddo
         do j=0,ngrd
             do i=1,ndt
-                read (ifile_restart) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
+                write (ifile_restart) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
             enddo
         enddo
-        read (ifile_restart) time
-        read (ifile_restart) sfln_voldata,sfln_srfdata,sfln_heatdata
+        write (ifile_restart) time
+        write (ifile_restart) sfln_voldata,sfln_srfdata,sfln_heatdata
         close (ifile_restart)
-        write (iout,'(a,1pe13.4e2,a)') '  *** simulation restarted with dbl precision file from t=',time, ' s'
-        call flx_update()
+    else
+        write (iout, '(a)') 'ERROR: cannot read restart file ', filename
     endif
-    call print_milestone('restore procedure done')
-end subroutine restore
+end subroutine store_restart
 
-subroutine restore_history(history_filename)
-    character(*):: history_filename
-    integer j, k, ios
-
-    open(ifile_restart, file=trim(history_filename), iostat=ios,action='read',status='old',form='unformatted')
-
-    if ( ios /= 0 ) then
-        write(iout,*) 'ERROR: Cannot open history store file :', trim(adjustl(history_filename))
-        stop
+subroutine restore_restart(filename)
+    character(*):: filename
+    integer i, j, k, ios,ifile_restart
+    call set_ifile(ifile_restart)
+    open (unit=ifile_restart, file=filename, form='unformatted',iostat=ios,&
+        action='read',status='old')
+    if ( ios .ne. 0 ) then
+        write(iout,*) 'ERROR: cannot open restart file : ',filename
+        stop 'Exiting FACE'
     endif
-
-    write(iout,*) 'Restoring state from file: ', trim(history_filename)
-
+    write(iout,*) 'Restoring state from restart file : ', filename
 
     do k=1,nspc
         do j=0,ngrd
-            read (ifile_restart) dens(ndt,j,k)
+            do i=1,ndt
+                read (ifile_restart) dens(i,j,k), flx (i,j,k), ero(i,j,k),cdif(i,j,k), rct(i,j,k), rtd(i,j,k)
+            enddo
         enddo
     enddo
-    do k=1,nspc
 
-        read (ifile_restart) dsrfl(ndt,k)
-        read (ifile_restart) dsrfr(ndt,k)
-
-    enddo
     do j=0,ngrd
-        read (ifile_restart) temp(ndt,j)
+        read (ifile_restart) x(j)
     enddo
-    close (ifile_restart)
-    write (iout,'(a,1pe13.4e2,a)') '  *** simulation restarted with dbl precision file from t=',time, ' s'
-    call flx_update()
-    call print_milestone('restore history procedure done')
-end subroutine restore_history
 
+    do k=1,nspc
+        do i=1,ndt
+            read (ifile_restart) dsrfl(i,k), rtsl(i,k)
+            read (ifile_restart) dsrfr(i,k), rtsr(i,k)
+            read (ifile_restart) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
+            read (ifile_restart) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
+            read (ifile_restart) jout(i,k)
+        enddo
+    enddo
+
+    do j=0,ngrd
+        do i=1,ndt
+            read (ifile_restart) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
+        enddo
+    enddo
+
+    read (ifile_restart) time
+    read (ifile_restart) sfln_voldata,sfln_srfdata,sfln_heatdata
+
+    close (ifile_restart)
+
+    call flx_update()
+
+    write (iout,'(a,1pe13.4e2,a)') '  *** simulation restarted with dbl precision file from t=',time, ' s'
+
+end subroutine restore_restart
+
+! ***** restore routine: restore from restart file or state file *****
+subroutine restore
+    character(string_length) :: restart_file
+    character(string_length) :: state_file
+    if (trim(read_restart_file).ne."no".and.trim(read_state_file).ne."no") then
+        write(iout,*) 'ERROR: Cannot restore from restart file and state file simultaneously'
+        stop 'Exiting FACE'
+    endif
+
+    if (trim(read_restart_file).eq."no") then
+        write(iout,*) 'no restoration from restart file'
+    elseif (read_restart_file.eq."yes") then
+        restart_file=trim(path_folder)//'dsave.rst'
+        call restore_restart(restart_file)
+    else
+        restart_file=read_restart_file
+        call restore_restart(restart_file)
+    endif
+
+    if (trim(read_state_file).eq."no") then
+        write(iout,*) 'no restoration from state file'
+    elseif (read_state_file.eq."yes") then
+        state_file=trim(path_folder)//'face.state'
+        call restore_state(state_file)
+    else
+        state_file=read_state_file
+        call restore_state(state_file)
+    endif
+
+end subroutine restore
+
+! ***** *****
 subroutine output_final_state
-    call store_history(store_history_file)
+store_state_file=trim(path_folder)//casename//".state"
+    call store_state(store_state_file)
     call FACE2fluidcode()
 
     call print_milestone('dumping file state completed')

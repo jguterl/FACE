@@ -51,6 +51,7 @@
       end subroutine initialize
 
       subroutine init_misc()
+      restart_filename=trim(path_folder)//"dsave.rst"
       lambda1c=lambda*clng
       lambda2c=lambda*lambda*csrf
       lambda3c=lambda*lambda*lambda*cvlm
