@@ -16,7 +16,7 @@ contains
 
         do k=1,nspc
             call set_ifile(ifile_timedata(k))
-            write (name, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'dat/time_', k, '.dat'
+            write (name, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'_dat/time_', k, '.dat'
             open (ifile_timedata(k), file=trim(name),status='replace', iostat=ios)
             if (ios.ne.0) then
                 write (iout,*) ' *** Cannot open file ', trim(name)
@@ -198,8 +198,8 @@ subroutine save_timedata
             dens (ndt,ngrd,k),&
             dsrfl(ndt,     k),&
             dsrfr(ndt,     k),&
-            j2l  (ndt,     k),&
-            j2r  (ndt,     k),&
+            Gdes_l  (ndt,     k),&
+            Gdes_r  (ndt,     k),&
             qnty,&
             frmn,&
             rctn,&
@@ -224,30 +224,30 @@ subroutine save_srfdata
         write (ifile_surfdata, myfmt2)&
             'spc#',&
             'NsrfL',&
-            'J1L',&
-            'J2L',&
-            'J3L',&
-            'J4L',&
+            'Gabs_l',&
+            'Gdes_l',&
+            'Gb_l',&
+            'Gads_l',&
             'NsrfR',&
-            'J1R',&
-            'J2R',&
-            'J3R',&
-            'J4R',&
+            'Gabs_r',&
+            'Gdes_r',&
+            'Gb_r',&
+            'Gads_r',&
             'Jout'
 
         do k=1,nspc
             write (ifile_surfdata, myfmt3) &
                 k, &
                 dsrfl(ndt,k),&
-                j1l  (ndt,k),&
-                j2l  (ndt,k),&
-                j3l  (ndt,k),&
-                j4l  (ndt,k),&
+                Gabs_l  (ndt,k),&
+                Gdes_l  (ndt,k),&
+                Gb_l  (ndt,k),&
+                Gads_l  (ndt,k),&
                 dsrfr(ndt,k),&
-                j1r  (ndt,k),&
-                j2r  (ndt,k),&
-                j3r  (ndt,k),&
-                j4r  (ndt,k),&
+                Gabs_r  (ndt,k),&
+                Gdes_r  (ndt,k),&
+                Gb_r  (ndt,k),&
+                Gads_r  (ndt,k),&
                 jout (ndt,k)
         enddo
 
@@ -351,8 +351,8 @@ subroutine store_restart(filename)
             do i=1,ndt
                 write (ifile_restart) dsrfl(i,k), rtsl(i,k)
                 write (ifile_restart) dsrfr(i,k), rtsr(i,k)
-                write (ifile_restart) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
-                write (ifile_restart) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
+                write (ifile_restart) Gabs_l(i,k), Gdes_l(i,k), Gb_l(i,k), Gads_l(i,k)
+                write (ifile_restart) Gabs_r(i,k), Gdes_r(i,k), Gb_r(i,k), Gads_r(i,k)
                 write (ifile_restart) jout(i,k)
             enddo
         enddo
@@ -397,8 +397,8 @@ subroutine restore_restart(filename)
         do i=1,ndt
             read (ifile_restart) dsrfl(i,k), rtsl(i,k)
             read (ifile_restart) dsrfr(i,k), rtsr(i,k)
-            read (ifile_restart) j1l(i,k), j2l(i,k), j3l(i,k), j4l(i,k)
-            read (ifile_restart) j1r(i,k), j2r(i,k), j3r(i,k), j4r(i,k)
+            read (ifile_restart) Gabs_l(i,k), Gdes_l(i,k), Gb_l(i,k), Gads_l(i,k)
+            read (ifile_restart) Gabs_r(i,k), Gdes_r(i,k), Gb_r(i,k), Gads_r(i,k)
             read (ifile_restart) jout(i,k)
         enddo
     enddo
@@ -495,5 +495,11 @@ write(iout,*) '# created    :', timestamp
 write(iout,*) '# casename   :', trim(casename)
 write(iout,*) '# pathfolder :', trim(path_folder)
 end subroutine write_header_log
+
+subroutine print_milestone(str)
+character(*)::str
+write(iout,"(a)") " "
+write(iout,"('--- ',a,' ---')") str
+end subroutine print_milestone
 
 end module modFACE_IO

@@ -2,7 +2,7 @@
     use modFACE_header
      implicit none
      save
-    integer:: iout=6
+
     integer:: ifile_heatdata
     integer :: ifile_voldata
     integer:: ifile_surfdata
@@ -219,9 +219,6 @@ write(myfmt,*) "('iter=', 1I6,' time=', 1pe12.4e2, ' s;   T_l=', 1pe12.4e2, ' K;
 
 end subroutine print_timestep_info
 
-subroutine print_milestone(str)
-character(*)::str
-write(iout,"('--- ',a,' ---')") str
-end subroutine print_milestone
+
 
     end module modFACE_output

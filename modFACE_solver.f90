@@ -20,7 +20,7 @@ contains
         do k=1,nspc
 
             i=i+1
-            if (stdst .eq. "no") then
+            if (steady_state .eq. "no") then
                 !     --- 1st order BDF ---
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
@@ -51,7 +51,7 @@ contains
             do j=0,ngrd
                 !     --- step ---
                 i=i+1
-                if (stdst .eq. "no") then
+                if (steady_state .eq. "no") then
                     !     --- 1st order BDF ---
                     if (order_solver.eq.1) then
                         f(i)=u(i)-a11*dens(ndt-1,j,k)
@@ -81,7 +81,7 @@ contains
             enddo
 
             i=i+1
-            if (stdst .eq. "no") then
+            if (steady_state .eq. "no") then
             !     --- 1st order BDF ---
             if (order_solver.eq.1) then
                 f(i)=u(i)-a11*dsrfr(ndt-1,k)
@@ -114,7 +114,7 @@ enddo
 if (solve_heat_eq .eq. "yes") then
     do j=0,ngrd
         i=i+1
-        if (stdst .eq. "no") then
+        if (steady_state .eq. "no") then
 
             !     --- 1st order BDF ---
         if (order_solver.eq.1) then
@@ -190,7 +190,7 @@ end subroutine func
             up(i)=u(i)
         enddo
         !     --- pseudo-transient continuation ---
-        if (stdst .eq. "yes") then
+        if (steady_state .eq. "yes") then
             do i=1,neq
                 fdot(i,i)=fdot(i,i)-ftran*norm
             enddo
@@ -377,16 +377,16 @@ end subroutine func
             do k=1,nspc
                 dsrfl(i,k)=dsrfl(i+1,k)
                 rtsl (i,k)=rtsl (i+1,k)
-                j1l  (i,k)=j1l  (i+1,k)
-                j2l  (i,k)=j2l  (i+1,k)
-                j3l  (i,k)=j3l  (i+1,k)
-                j4l  (i,k)=j4l  (i+1,k)
+                Gabs_l  (i,k)=Gabs_l  (i+1,k)
+                Gdes_l  (i,k)=Gdes_l  (i+1,k)
+                Gb_l  (i,k)=Gb_l  (i+1,k)
+                Gads_l  (i,k)=Gads_l  (i+1,k)
                 dsrfr(i,k)=dsrfr(i+1,k)
                 rtsr (i,k)=rtsr (i+1,k)
-                j1r  (i,k)=j1r  (i+1,k)
-                j2r  (i,k)=j2r  (i+1,k)
-                j3r  (i,k)=j3r  (i+1,k)
-                j4r  (i,k)=j4r  (i+1,k)
+                Gabs_r  (i,k)=Gabs_r  (i+1,k)
+                Gdes_r  (i,k)=Gdes_r  (i+1,k)
+                Gb_r  (i,k)=Gb_r  (i+1,k)
+                Gads_r  (i,k)=Gads_r  (i+1,k)
                 jout (i,k)=jout (i+1,k)
             enddo
         enddo
@@ -435,82 +435,45 @@ end subroutine func
 
     subroutine update_surface(k)
         integer k
-        real(DP) c1l, c2l, c3l, c4l,tmp
-        real(DP) c1r, c2r, c3r, c4r
+        real(DP) tmp
         !     --- surface ---
         tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
         qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
         !write(iout,*) "443: tmp",tmp
-        k1l(k)=j0(k)*r1l(k) *exp(-eekb* echl(k)/temp(ndt,   0))
-        k2l(k)=2.d0 *r2l(k)*exp(-2.d0*eekb*(echl(k)+qchtl(k))/temp(ndt,   0))
-        !write(iout,*) "445: r3l",r3l
-        !write(iout,*) "446: temp(ndt,   0)",temp(ndt,   0)
-        !write(iout,*) "447: ebl",ebl
-        !write(iout,*) "447: qchtl",qchtl
-        k3l(k)=      r3l(k)*exp(-     eekb*(ebl (k)+qchtl(k))/temp(ndt,   0))
-        k4l(k)=      r4l(k)*exp(-     eekb*(ebl (k)-esl  (k))/temp(ndt,   0))
+        Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-eekb* echl(k)/temp(ndt,   0))
+        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*eekb*(echl(k)+qchtl(k))/temp(ndt,   0))
+        Kb_l(k)=        K0b_l(k)  *exp(-     eekb*(ebl (k)+qchtl(k))/temp(ndt,   0))
+        Kads_l(k)=      K0ads_l(k)*exp(-     eekb*(ebl (k)-esl  (k))/temp(ndt,   0))
 
         tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
         qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
-        k1r(k)=j0(k)*r1r(k)*exp(-     eekb* echr(k)          /temp(ndt,ngrd))
-        k2r(k)=2.d0 *r2r(k)*exp(-2.d0*eekb*(echr(k)+qchtr(k))/temp(ndt,ngrd))
-        k3r(k)=      r3r(k)*exp(-     eekb*(ebr (k)+qchtr(k))/temp(ndt,ngrd))
-        k4r(k)=      r4r(k)*exp(-     eekb*(ebr (k)-esr  (k))/temp(ndt,ngrd))
+        Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* echr(k)          /temp(ndt,ngrd))
+        Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(echr(k)+qchtr(k))/temp(ndt,ngrd))
+        Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(ebr (k)+qchtr(k))/temp(ndt,ngrd))
+        Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(ebr (k)-esr  (k))/temp(ndt,ngrd))
 
-        if (dsrfl(ndt,k) .lt. dsrfm(k)) then
-            c1l=1.d0-dsrfl(ndt,k)/dsrfm(k)
-        else
-            c1l=0.d0
-        endif
-        if (dsrfr(ndt,k) .lt. dsrfm(k)) then
-            c1r=1.d0-dsrfr(ndt,k)/dsrfm(k)
-        else
-            c1r=0.d0
-        endif
+        ! left surface
+        Gabs_l (ndt,k)=Kabs_l(k)
+        Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)*dsrfl(ndt,k)
+        Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
+        Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
+        ! right surface
+        Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
+        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)*dsrfr(ndt,k) ! Gdesorp=K*ns^2
+        Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
+        Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
 
-        if (dsrfl(ndt,k) .gt. 0.d0) then
-            c2l=dsrfl(ndt,k)*dsrfl(ndt,k)
-        else
-            c2l=0.d0
-        endif
-        if (dsrfr(ndt,k) .gt. 0.d0) then
-            c2r=dsrfr(ndt,k)*dsrfr(ndt,k)
-        else
-            c2r=0.d0
-        endif
 
-        if ((dsrfl(ndt,k) .gt. 0.d0) .and. (dens(ndt,0,k) .lt. densm(k))) then
-            c3l=dsrfl(ndt,k)*(1.d0-dens(ndt,0,k)/densm(k))
-        else
-            c3l=0.d0
-        endif
-        if ((dsrfr(ndt,k) .gt. 0.d0) .and.(dens(ndt,ngrd,k) .lt. densm(k))) then
-            c3r=dsrfr(ndt,k)*(1.d0-dens(ndt,ngrd,k)/densm(k))
-        else
-            c3r=0.d0
-        endif
-
-        c4l=dens(ndt,0   ,k)
-        c4r=dens(ndt,ngrd,k)
-         !write(iout,*) "490: c3l",c3l
-         !write(iout,*) "490: k3l",k3l
-        j1l (ndt,k)=k1l(k)*c1l
-        j2l (ndt,k)=k2l(k)*c2l
-        j3l (ndt,k)=k3l(k)*c3l
-        j4l (ndt,k)=k4l(k)*c4l
-        j1r (ndt,k)=k1r(k)*c1r
-        j2r (ndt,k)=k2r(k)*c2r
-        j3r (ndt,k)=k3r(k)*c3r
-        j4r (ndt,k)=k4r(k)*c4r
+        call set_cap_factor_surface(k,ndt)
 
         if (solve_heat_eq .eq. "yes") then
-            jout(ndt,k)=jout(ndt,k)+j2l(ndt,k)
+            jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
             qflx=qflx+jout(ndt,k)*(ee*esl(k)-2.d0*kb*temp(ndt,0))
         endif
 
         !    --- surface ---
-        rtsl(ndt,k)=j1l(ndt,k)-j2l(ndt,k)-j3l(ndt,k)+j4l(ndt,k)
-        rtsr(ndt,k)=j1r(ndt,k)-j2r(ndt,k)-j3r(ndt,k)+j4r(ndt,k)
+        rtsl(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
+        rtsr(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
     end subroutine update_surface
 
     subroutine update_source(k)
@@ -787,7 +750,7 @@ end subroutine func
       call update_source(k)
       call update_flux(k)
       call update_reaction(k)
-!     write(iout,*) "784: j3l",j3l(ndt,k)
+!     write(iout,*) "784: Gb_l",Gb_l(ndt,k)
       call update_surface(k)
 
 
@@ -814,17 +777,17 @@ end subroutine func
        enddo
 !     --- diffusion ---
        flx(ndt,0,k)=cdif(ndt,0,k)*flx(ndt,0,k)
-!       write(iout,*) "811: j3l",j3l(ndt,k)
-       rtd(ndt,0,k)=rtd(ndt,0,k)+(j3l(ndt,k)-j4l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+!       write(iout,*) "811: Gb_l",Gb_l(ndt,k)
+       rtd(ndt,0,k)=rtd(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
 !       if (isnan(rtd(ndt,0,k))) then
-!        write(iout,*) "813: rtd is nan",flx(ndt,0,k),dx(0),j4l(ndt,k),j3l(ndt,k)
+!        write(iout,*) "813: rtd is nan",flx(ndt,0,k),dx(0),Gads_l(ndt,k),Gb_l(ndt,k)
  !       endif
        do j=1,ngrd-1
         flx(ndt,j,k)=cdif(ndt,j,k)*flx(ndt,j,k)
         rtd(ndt,j,k)=rtd(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
        enddo
        flx(ndt,ngrd,k)=cdif(ndt,ngrd,k)*flx(ndt,ngrd,k)
-       rtd(ndt,ngrd,k)=rtd(ndt,ngrd,k)+(j3r(ndt,k)-j4r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+       rtd(ndt,ngrd,k)=rtd(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
        do j=0,ngrd
 !     --- sources ---
         rtd(ndt,j,k)=rtd(ndt,j,k)+src(ndt,j,k)
@@ -868,5 +831,62 @@ end subroutine func
       endif
 !
       end subroutine update
+
+      subroutine set_cap_factor_surface(k,i)
+      ! setting cap factor to mimic saturation by hydrogen
+      real(DP) :: c1l, c2l, c3l, c4l
+      real(DP) :: c1r, c2r, c3r, c4r
+      integer  :: k,i
+
+        ! left surface
+        if (dsrfl(i,k) .lt. dsrfm(k)) then
+            c1l=1.d0-dsrfl(i,k)/dsrfm(k)
+        else
+            c1l=0.d0
+        endif
+
+        if (dsrfr(i,k) .lt. dsrfm(k)) then
+            c1r=1.d0-dsrfr(i,k)/dsrfm(k)
+        else
+            c1r=0.d0
+        endif
+
+        if (dsrfl(i,k) .gt. 0.d0) then
+            c2l=1.d0
+        else
+            c2l=0.d0
+        endif
+
+        if (dsrfr(i,k) .gt. 0.d0) then
+            c2r=1.d0
+        else
+            c2r=0.d0
+        endif
+
+        if ((dsrfl(i,k) .gt. 0.d0) .and. (dens(i,0,k) .lt. densm(k))) then
+            c3l=1.d0-dens(i,0,k)/densm(k)
+        else
+            c3l=0.d0
+        endif
+
+        if ((dsrfr(i,k) .gt. 0.d0) .and.(dens(i,ngrd,k) .lt. densm(k))) then
+            c3r=1.d0-dens(i,ngrd,k)/densm(k)
+        else
+            c3r=0.d0
+        endif
+
+        c4l=1.d0
+        c4r=1.d0
+        Gabs_l (i,k)=Gabs_l (i,k) *c1l
+        Gdes_l (i,k)=Gdes_l (i,k) *c2l
+        Gb_l (i,k)=Gb_l (i,k)     *c3l
+        Gads_l (i,k)=Gads_l (i,k) *c4l
+        ! right surface
+        Gabs_r (i,k)=Gabs_r (i,k) *c1r
+        Gdes_r (i,k)=Gdes_r (i,k) *c2r
+        Gb_r (i,k)=Gb_r (i,k)     *c3r
+        Gads_r (i,k)=Gads_r (i,k) *c4r
+
+      end subroutine set_cap_factor_surface
 
 end module modFACE_solver

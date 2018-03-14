@@ -4,6 +4,7 @@ module modFACE_input
     use modFACE_parser
     use modFACE_interface
     use modFACE_allocate
+    use modFACE_coupling
     implicit none
     save
 
@@ -82,7 +83,7 @@ contains
 
         ! check steady-state value
         case('steady_state')
-            if (stdst.ne."no".AND.stdst.ne."yes") then
+            if (steady_state.ne."no".AND.steady_state.ne."yes") then
                 write(iout,*) "ERROR: steady_state must be yes or no"
                 stop
             endif
@@ -112,7 +113,7 @@ contains
         call get_keyword_value('read_restart_file',read_restart_file)
         call get_keyword_value('read_state_file',read_state_file)
         call get_keyword_value('wall_thickness',length)
-        call get_keyword_value('steady_state', stdst)
+        call get_keyword_value('steady_state', steady_state)
         call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
@@ -127,6 +128,7 @@ contains
         call get_keyword_value('solve_heat_equation', solve_heat_eq)
         call get_keyword_value('n_species', nspc)
 
+        call get_keyword_value('species_name', namespc)
         call get_keyword_value('n0_max', dens0)
         call get_keyword_value('n0_profile', gprof)
         call get_keyword_value('n0_xmax', gxmax)
@@ -153,8 +155,8 @@ contains
         call get_keyword_value('Eimpact_ion', enrg)
         call get_keyword_value('Gamma_min', inflx_min)
         call get_keyword_value('Gamma_max', inflx_max)
-        call get_keyword_value('pressure_neutral', prg)
-        call get_keyword_value('temp_neutral', tg)
+        call get_keyword_value('pressure_neutral', gas_pressure)
+        call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
 
         call get_keyword_value('min_ablation_velocity', cero_min)
@@ -196,7 +198,7 @@ contains
         call write_input_log_keyword('read_restart_file',read_restart_file)
         call write_input_log_keyword('read_state_file',read_state_file)
         call write_input_log_keyword('wall_thickness',length)
-        call write_input_log_keyword('steady_state', stdst)
+        call write_input_log_keyword('steady_state', steady_state)
         call write_input_log_keyword('start_time', start_time)
         call write_input_log_keyword('end_time', end_time)
         call write_input_log_keyword('temp_ramp_start_time', tramp0)
@@ -211,7 +213,7 @@ contains
         call write_input_log_keyword('temp_ramp_filename', framp)
         call write_input_log_keyword('solve_heat_equation', solve_heat_eq)
         call write_input_log_keyword('n_species', nspc)
-
+        call write_input_log_keyword('species_name', namespc)
         call write_input_log_keyword('n0_max', dens0)
         call write_input_log_keyword('n0_profile', gprof)
         call write_input_log_keyword('n0_xmax', gxmax)
@@ -238,8 +240,8 @@ contains
         call write_input_log_keyword('Eimpact_ion', enrg)
         call write_input_log_keyword('Gamma_min', inflx_min)
         call write_input_log_keyword('Gamma_max', inflx_max)
-        call write_input_log_keyword('pressure_neutral', prg)
-        call write_input_log_keyword('temp_neutral', tg)
+        call write_input_log_keyword('pressure_neutral', gas_pressure)
+        call write_input_log_keyword('temp_neutral', gas_temp)
         call write_input_log_keyword('mass', mass)
 
         call write_input_log_keyword('min_ablation_velocity', cero_min)
@@ -386,7 +388,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
     subroutine init_input_single()
 
-        call init_zero(stdst)
+        call init_zero(steady_state)
         call init_zero(length)
         call init_zero(start_time)
         call init_zero(tramp0)
@@ -476,7 +478,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
     !      write (6, 1061) (i, inflx_max(i), i=1,nspc)
     !1061  format (' max influx of species ', i2, ' is', 1pe12.5,
     !     +        ' m^-2 s^-1')
-    !      write (6, 1070) (i, prg(i), i=1,nspc)
+    !      write (6, 1070) (i, gas_pressure(i), i=1,nspc)
     !1070  format (' ext. pressure of species ', i2, ' is', 1pe12.5, ' Pa')
     !      write (6, 1080) (i, tg(i), i=1,nspc)
     !1080  format (' ext. temperature of species ', i2, ' is', 1pe12.5,
@@ -519,6 +521,11 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
         else
             call set_input_parameters()
         endif
+
+        if (face_input%couple_fluidcode) then
+        call fluidcode2FACE(face_input%fluidcode_input)
+        endif
+
         call write_input_log
     end subroutine get_input
 

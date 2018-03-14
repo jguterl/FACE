@@ -8,7 +8,7 @@
        use modFACE_IO
       implicit none
       integer ::ifile_Tramp=200
-    !  real(DP)::r1l(nspc)
+    !  real(DP)::K0abs_l(nspc)
       contains
       subroutine initialize()
 !     ******************************************************************
@@ -222,8 +222,6 @@
 
       subroutine init_boundary()
       integer ::i,k
-      real(DP)::c1l, c2l, c3l, c4l
-      real(DP)::c1r, c2r, c3r, c4r
       real(DP)::tmp
 
 !     ------------------------------------------------------------------
@@ -231,35 +229,30 @@
 !     ------------------------------------------------------------------
       if (verbose_init) write(iout,*) "Initialization boundary variables"
       do k=1,nspc
-       r1l(k)=1.d0
-       r2l(k)=nu(k)*lambda2c
-       r3l(k)=nu(k)
-       r4l(k)=nu(k)*lambda1c
-       r1r(k)=1.d0
-       r2r(k)=nu(k)*lambda2c
-       r3r(k)=nu(k)
-       r4r(k)=nu(k)*lambda1c
-       if (mass(k)*tg(k) .ne. 0.d0) then
-        j0(k)=prg(k)/sqrt(twopi*mass(k)*ee*tg(k))
-       else
-        j0(k)=0.d0
+       K0abs_l(k)=1.d0
+       K0des_l(k)=nu(k)*lambda2c
+       K0b_l(k)=nu(k)
+       K0ads_l(k)=nu(k)*lambda1c
+       K0abs_r(k)=1.d0
+       K0des_r(k)=nu(k)*lambda2c
+       K0b_r(k)=nu(k)
+       K0ads_r(k)=nu(k)*lambda1c
+       if (mass(k)*gas_temp(k) .ne. 0.d0) then
+        j0(k)=j0(k)+gas_pressure(k)/sqrt(twopi*mass(k)*ee*gas_temp(k))
        endif
        tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
-       !write(iout,*) "247: tmp",tmp
-       !write(iout,*) "249: qcht",qchl
-       !write(iout,*) "erf(tmp)",erf(tmp)
        qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
-       !write(iout,*) "249: qchtl",qchtl
-       k1l(k)=j0(k)*r1l(k)*exp(-     ee* echl(k)          /(kb*temp(ndt,   0)))
-       k2l(k)=2.d0 *r2l(k)*exp(-2.d0*ee*(echl(k)+qchtl(k))/(kb*temp(ndt,   0)))
-       k3l(k)=      r3l(k) *exp(-     ee*(ebl (k)+qchtl(k))/(kb*temp(ndt,   0)))
-       k4l(k)=      r4l(k) *exp(-     ee*(ebl (k)-esl  (k))/(kb*temp(ndt,   0)))
+
+       Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-     ee* echl(k)          /(kb*temp(ndt,   0)))
+       Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*ee*(echl(k)+qchtl(k))/(kb*temp(ndt,   0)))
+       Kb_l(k)=      K0b_l(k) *exp(-     ee*(ebl (k)+qchtl(k))/(kb*temp(ndt,   0)))
+       Kads_l(k)=      K0ads_l(k) *exp(-     ee*(ebl (k)-esl  (k))/(kb*temp(ndt,   0)))
        tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
        qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
-       k1r(k)=j0(k)*r1r(k) *exp(-     ee* echr(k)          /(kb*temp(ndt,ngrd)))
-       k2r(k)=2.d0 *r2r(k) *exp(-2.d0*ee*(echr(k)+qchtr(k))/(kb*temp(ndt,ngrd)))
-       k3r(k)=      r3r(k)*exp(-     ee*(ebr (k)+qchtr(k))/(kb*temp(ndt,ngrd)))
-       k4r(k)=      r4r(k) *exp(-     ee*(ebr (k)-esr  (k))/(kb*temp(ndt,ngrd)))
+       Kabs_r(k)=j0(k)*K0abs_r(k) *exp(-     ee* echr(k)          /(kb*temp(ndt,ngrd)))
+       Kdes_r(k)=2.d0 *K0des_r(k) *exp(-2.d0*ee*(echr(k)+qchtr(k))/(kb*temp(ndt,ngrd)))
+       Kb_r(k)=      K0b_r(k)*exp(-     ee*(ebr (k)+qchtr(k))/(kb*temp(ndt,ngrd)))
+       Kads_r(k)=      K0ads_r(k) *exp(-     ee*(ebr (k)-esr  (k))/(kb*temp(ndt,ngrd)))
        do i=1,ndt
         rtsl(i,k)=0.d0
         rtsr(i,k)=0.d0
@@ -274,57 +267,21 @@
          dsrfr(i,k)=dsrfr0(k)
         endif
 !
-        if (dsrfl(i,k) .lt. dsrfm(k)) then
-         c1l=1.d0-dsrfl(i,k)/dsrfm(k)
-        else
-         c1l=0.d0
-        endif
-        if (dsrfr(i,k) .lt. dsrfm(k)) then
-         c1r=1.d0-dsrfr(i,k)/dsrfm(k)
-        else
-         c1r=0.d0
-        endif
 
-        if (dsrfl(i,k) .gt. 0.d0) then
-         c2l=dsrfl(i,k)*dsrfl(i,k)
-        else
-         c2l=0.d0
-        endif
-        if (dsrfr(i,k) .gt. 0.d0) then
-         c2r=dsrfr(i,k)*dsrfr(i,k)
-        else
-         c2r=0.d0
-        endif
 
-        if ((dsrfl(i,k) .gt. 0.d0) .and.(dens(i,0,k) .lt. densm(k))) then
-         c3l=dsrfl(i,k)*(1.d0-dens(i,0,k)/densm(k))
-        else
-         c3l=0.d0
-        endif
-        if ((dsrfr(i,k) .gt. 0.d0) .and.(dens(i,ngrd,k) .lt. densm(k))) then
-         c3r=dsrfr(i,k)*(1.d0-dens(i,ngrd,k)/densm(k))
+        Gabs_l (i,k)=Kabs_l(k)
+        Gdes_l (i,k)=Kdes_l(k)
+        Gb_l (i,k)=Kb_l(k)
+        Gads_l (i,k)=Kads_l(k)
+        Gabs_r (i,k)=Kabs_r(k)
+        Gdes_r (i,k)=Kdes_r(k)
+        Gb_r (i,k)=Kb_r(k)
+        Gads_r (i,k)=Kads_r(k)
 
-        else
-         c3r=0.d0
-        endif
-
-        c4l=dens(i,0   ,k)
-        c4r=dens(i,ngrd,k)
-!
-        j1l (i,k)=k1l(k)*c1l
-        j2l (i,k)=k2l(k)*c2l
-        j3l (i,k)=k3l(k)*c3l
-
-        !write(iout,*) "313: j3l (i,k) is nan",j3l(ndt,k)
-
-        j4l (i,k)=k4l(k)*c4l
-        j1r (i,k)=k1r(k)*c1r
-        j2r (i,k)=k2r(k)*c2r
-        j3r (i,k)=k3r(k)*c3r
-        j4r (i,k)=k4r(k)*c4r
+        call set_cap_factor_surface(k,i)
 !
         if (solve_heat_eq .eq. "yes") then
-         jout(i,k)=jout(i,k)+j2l(i,k)
+         jout(i,k)=jout(i,k)+Gdes_l(i,k)
         endif
 !
        enddo
@@ -447,7 +404,7 @@ subroutine init_casename(case_name)
    character(*)::case_name
    casename=trim(case_name)
    if (verbose_init) write(iout,*) 'Casename : ', casename
-   casename=trim(casename)//'_'
+   casename=trim(casename)
     end subroutine init_casename
 
 
@@ -460,7 +417,7 @@ subroutine init_casename(case_name)
    if (verbose_init) write(iout,*) "Files will be saved in the folder :", path_folder
    call system('mkdir -p '//trim(path_folder))
    path_folder=trim(path_folder)//'/'
-   call system('mkdir -p '//trim(path_folder)//trim(casename)//'dat')
+   call system('mkdir -p '//trim(path_folder)//trim(casename)//'_dat')
     open (unit=ifile_testpath, file=trim(path_folder)//name,status='replace', form='unformatted', iostat=ios)
     if (ios.ne.0) then
     stop

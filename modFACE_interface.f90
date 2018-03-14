@@ -17,11 +17,11 @@ module modFACE_interface
         real(DP),allocatable         :: Gammain(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
         real(DP)                 :: Qin                 ! Heat flux from fluid code
-        character(Lfn)           :: restore_state_file  ! restart from this staste file
-        character(Lfn)           :: store_state_file    ! store final state in this state file
+        character(string_length)           :: restore_state_file  ! restart from this staste file
+        character(string_length)           :: store_state_file    ! store final state in this state file
         real(DP)                 :: tempwall            ! temperature of the wall from fluid code
         character(15)            :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
-        character(Lfn)            ::casename            ! casename
+        character(string_length)            ::casename            ! casename
 
     end type fluidcode_inputs
 
@@ -49,7 +49,7 @@ module modFACE_interface
 contains
     subroutine read_arguments(face_input)
         type(FACE_inputs)::face_input
-        CHARACTER(lfn) :: arg
+        CHARACTER(string_length) :: arg
         integer narg,k
         !      running -pg --print-grid : only print the grid correspondign to the input file. No run
         !      running -ps --print-species:   dump vol and surface after reading restart file or history file if requested
@@ -233,8 +233,8 @@ contains
     subroutine wrapper_FACE(face_input,fluidcode_input)
         type(FACE_inputs),intent(out)::face_input
         type(fluidcode_inputs), intent(in) :: fluidcode_input
-        face_input%casename='solps_iter_test'
-        face_input%logfile=face_input%casename//".log"
+        face_input%casename=fluidcode_input%casename
+        face_input%logfile="no"!face_input%casename//".log"
         face_input%input_filename=default_inputfile
         face_input%run_mode='default'
         face_input%path='solps_iter'
@@ -245,7 +245,7 @@ contains
 
     subroutine set_fluidcode_input(fluidcode_input)
         type(fluidcode_inputs)::fluidcode_input
-        character(200)::str
+        character(string_length)::str
         !    type fluidcode_input
         !        integer                  :: wall_idx        ! Index of the wall stratum
         !        integer                  :: iter            ! Fluid code iteration
@@ -256,7 +256,7 @@ contains
         !        real(DP),allocatable     :: Gammain(:)      ! Particle flux'
         !        real(DP),allocatable     :: Emean(:)        ! Average energy of incoming particle enrg'
         !        real(DP)                 :: Qin_            ! Heat flux from fluid code
-        !        character(Lfn)           :: state_file    ! restart from file history
+        !        character(string_length)           :: state_file    ! restart from file history
         !        real(DP)                 :: tempwall        ! temperature of the wall from fluid code
         !        character(15)            :: solve_heat_eq   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         !    end type fluidcode_input
@@ -267,7 +267,7 @@ contains
         fluidcode_input%dt=1e-2
         fluidcode_input%nspc=1
         allocate(fluidcode_input%namespc(fluidcode_input%nspc))
-        fluidcode_input%namespc(1:fluidcode_input%nspc)="F"
+        fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
         allocate(fluidcode_input%indexspc(fluidcode_input%nspc))
         fluidcode_input%indexspc(1:fluidcode_input%nspc)=1
         allocate(fluidcode_input%Gammain(fluidcode_input%nspc))
@@ -280,7 +280,7 @@ contains
         fluidcode_input%tempwall=700        ! temperature of the wall from fluid code
         fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%casename='solps'
-        write(str,'(a,a,i4.4,a,i6.6)') fluidcode_input%casename,'_',fluidcode_input%wall_idx,'_',fluidcode_input%iter
+        write(str,'(a,a1,i0,a1,i0)') trim(fluidcode_input%casename),'_',(fluidcode_input%wall_idx),'_',fluidcode_input%iter
         fluidcode_input%casename=trim(str)
     !    end type fluidcode_input
     end subroutine set_fluidcode_input

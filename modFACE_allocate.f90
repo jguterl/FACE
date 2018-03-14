@@ -268,130 +268,130 @@
           endif
 
       ! surface
-      if (.not.allocated(k1l)) then
-      allocate(k1l(nspc))
-                call init_zero(k1l)
+      if (.not.allocated(Kabs_l)) then
+      allocate(Kabs_l(nspc))
+                call init_zero(Kabs_l)
           else
-              write(iout,*) 'ERROR: k1l already allocated'
+              write(iout,*) 'ERROR: Kabs_l already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(k2l)) then
-      allocate(k2l(nspc))
-                call init_zero(k2l)
+          if (.not.allocated(Kdes_l)) then
+      allocate(Kdes_l(nspc))
+                call init_zero(Kdes_l)
           else
-              write(iout,*) 'ERROR: k2l already allocated'
+              write(iout,*) 'ERROR: Kdes_l already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(k3l)) then
-      allocate(k3l(nspc))
-                call init_zero(k3l)
+          if (.not.allocated(Kb_l)) then
+      allocate(Kb_l(nspc))
+                call init_zero(Kb_l)
           else
-              write(iout,*) 'ERROR: k3l already allocated'
-              STOP 'Exiting FACE...'
-          endif
-
-          if (.not.allocated(k4l)) then
-      allocate(k4l(nspc))
-                call init_zero(k4l)
-          else
-              write(iout,*) 'ERROR: k4l already allocated'
+              write(iout,*) 'ERROR: Kb_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-
-          if (.not.allocated(k1r)) then
-      allocate(k1r(nspc))
-                call init_zero(k1r)
+          if (.not.allocated(Kads_l)) then
+      allocate(Kads_l(nspc))
+                call init_zero(Kads_l)
           else
-              write(iout,*) 'ERROR: k1r already allocated'
+              write(iout,*) 'ERROR: Kads_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(k2r)) then
-      allocate(k2r(nspc))
-                call init_zero(k2r)
+
+          if (.not.allocated(Kabs_r)) then
+      allocate(Kabs_r(nspc))
+                call init_zero(Kabs_r)
           else
-              write(iout,*) 'ERROR: k2r already allocated'
+              write(iout,*) 'ERROR: Kabs_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(k3r)) then
-      allocate(k3r(nspc))
-                call init_zero(k3r)
+          if (.not.allocated(Kdes_r)) then
+      allocate(Kdes_r(nspc))
+                call init_zero(Kdes_r)
           else
-              write(iout,*) 'ERROR: k3r already allocated'
+              write(iout,*) 'ERROR: Kdes_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(k4r)) then
-      allocate(k4r(nspc))
-                call init_zero(k4r)
+          if (.not.allocated(Kb_r)) then
+      allocate(Kb_r(nspc))
+                call init_zero(Kb_r)
           else
-              write(iout,*) 'ERROR: k4r already allocated'
+              write(iout,*) 'ERROR: Kb_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r1l)) then
-      allocate(r1l(nspc))
-                call init_zero(r1l)
+          if (.not.allocated(Kads_r)) then
+      allocate(Kads_r(nspc))
+                call init_zero(Kads_r)
           else
-              write(iout,*) 'ERROR: r1l already allocated'
+              write(iout,*) 'ERROR: Kads_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r2l)) then
-      allocate(r2l(nspc))
-                call init_zero(r2l)
+          if (.not.allocated(K0abs_l)) then
+      allocate(K0abs_l(nspc))
+                call init_zero(K0abs_l)
           else
-              write(iout,*) 'ERROR: r2l already allocated'
+              write(iout,*) 'ERROR: K0abs_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r3l)) then
-      allocate(r3l(nspc))
-                call init_zero(r3l)
+          if (.not.allocated(K0des_l)) then
+      allocate(K0des_l(nspc))
+                call init_zero(K0des_l)
           else
-              write(iout,*) 'ERROR: r3l already allocated'
+              write(iout,*) 'ERROR: K0des_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r4l)) then
-      allocate(r4l(nspc))
-                call init_zero(r4l)
+          if (.not.allocated(K0b_l)) then
+      allocate(K0b_l(nspc))
+                call init_zero(K0b_l)
           else
-              write(iout,*) 'ERROR: r4l already allocated'
+              write(iout,*) 'ERROR: K0b_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r1r)) then
-      allocate(r1r(nspc))
-                call init_zero(r1r)
+          if (.not.allocated(K0ads_l)) then
+      allocate(K0ads_l(nspc))
+                call init_zero(K0ads_l)
           else
-              write(iout,*) 'ERROR: r1r already allocated'
+              write(iout,*) 'ERROR: K0ads_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r2r)) then
-      allocate(r2r(nspc))
-                call init_zero(r2r)
+          if (.not.allocated(K0abs_r)) then
+      allocate(K0abs_r(nspc))
+                call init_zero(K0abs_r)
           else
-              write(iout,*) 'ERROR: r2r already allocated'
+              write(iout,*) 'ERROR: K0abs_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r3r)) then
-      allocate(r3r(nspc))
-                call init_zero(r3r)
+          if (.not.allocated(K0des_r)) then
+      allocate(K0des_r(nspc))
+                call init_zero(K0des_r)
           else
-              write(iout,*) 'ERROR: r3r already allocated'
+              write(iout,*) 'ERROR: K0des_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(r4r)) then
-      allocate(r4r(nspc))
-                call init_zero(r4r)
+          if (.not.allocated(K0b_r)) then
+      allocate(K0b_r(nspc))
+                call init_zero(K0b_r)
           else
-              write(iout,*) 'ERROR: r4r already allocated'
+              write(iout,*) 'ERROR: K0b_r already allocated'
+              STOP 'Exiting FACE...'
+          endif
+
+          if (.not.allocated(K0ads_r)) then
+      allocate(K0ads_r(nspc))
+                call init_zero(K0ads_r)
+          else
+              write(iout,*) 'ERROR: K0ads_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
@@ -452,67 +452,67 @@
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j1l)) then
-      allocate(j1l(ndt,nspc))
-                call init_zero(j1l)
+          if (.not.allocated(Gabs_l)) then
+      allocate(Gabs_l(ndt,nspc))
+                call init_zero(Gabs_l)
           else
-              write(iout,*) 'ERROR: j1l already allocated'
+              write(iout,*) 'ERROR: Gabs_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j2l)) then
-      allocate( j2l(ndt,nspc))
-                call init_zero(j2l)
+          if (.not.allocated(Gdes_l)) then
+      allocate( Gdes_l(ndt,nspc))
+                call init_zero(Gdes_l)
           else
-              write(iout,*) 'ERROR: j2l already allocated'
+              write(iout,*) 'ERROR: Gdes_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j3l)) then
-      allocate( j3l(ndt,nspc))
-                call init_zero(j3l)
+          if (.not.allocated(Gb_l)) then
+      allocate( Gb_l(ndt,nspc))
+                call init_zero(Gb_l)
           else
-              write(iout,*) 'ERROR: j3l already allocated'
+              write(iout,*) 'ERROR: Gb_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j4l)) then
-      allocate( j4l(ndt,nspc))
-                call init_zero(j4l)
+          if (.not.allocated(Gads_l)) then
+      allocate( Gads_l(ndt,nspc))
+                call init_zero(Gads_l)
           else
-              write(iout,*) 'ERROR: j4l already allocated'
+              write(iout,*) 'ERROR: Gads_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j1r)) then
-      allocate(j1r(ndt,nspc))
-                call init_zero(j1r)
+          if (.not.allocated(Gabs_r)) then
+      allocate(Gabs_r(ndt,nspc))
+                call init_zero(Gabs_r)
           else
-              write(iout,*) 'ERROR: j1r already allocated'
+              write(iout,*) 'ERROR: Gabs_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j2r)) then
-      allocate( j2r(ndt,nspc))
-                call init_zero(j2r)
+          if (.not.allocated(Gdes_r)) then
+      allocate( Gdes_r(ndt,nspc))
+                call init_zero(Gdes_r)
           else
-              write(iout,*) 'ERROR: j2r already allocated'
+              write(iout,*) 'ERROR: Gdes_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j3r)) then
-      allocate(j3r(ndt,nspc))
-                call init_zero(j3r)
+          if (.not.allocated(Gb_r)) then
+      allocate(Gb_r(ndt,nspc))
+                call init_zero(Gb_r)
           else
-              write(iout,*) 'ERROR:j3r already allocated'
+              write(iout,*) 'ERROR:Gb_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(j4r)) then
-      allocate(j4r(ndt,nspc))
-                call init_zero(j4r)
+          if (.not.allocated(Gads_r)) then
+      allocate(Gads_r(ndt,nspc))
+                call init_zero(Gads_r)
           else
-              write(iout,*) 'ERROR: j4r already allocated'
+              write(iout,*) 'ERROR: Gads_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
@@ -534,85 +534,85 @@
           call init_zero(namespc)
 
           allocate(dens0(nspc))
-          call init_zero(namespc)
+          call init_zero(dens0)
 
           allocate(gprof(nspc))
-          call init_zero(namespc)
+          call init_zero(gprof)
 
           allocate(gxmax(nspc))
-          call init_zero(namespc)
+          call init_zero(gxmax)
 
           allocate(gsigm(nspc))
-          call init_zero(namespc)
+          call init_zero(gsigm)
 
           allocate(densm(nspc))
-          call init_zero(namespc)
+          call init_zero(densm)
 
           allocate(cdif0(nspc))
-          call init_zero(namespc)
+          call init_zero(cdif0)
 
           allocate(edif   (nspc))
-          call init_zero(namespc)
+          call init_zero(edif)
 
           allocate(etr   (nspc))
-          call init_zero(namespc)
+          call init_zero(etr)
 
           allocate(edtr   (nspc))
-          call init_zero(namespc)
+          call init_zero(edtr)
 
           allocate(dsrfm(nspc))
-          call init_zero(namespc)
+          call init_zero(dsrfm)
 
           allocate(dsrfl0(nspc))
-          call init_zero(namespc)
+          call init_zero(dsrfl0)
 
           allocate(dsrfr0(nspc))
-          call init_zero(namespc)
+          call init_zero(dsrfr0)
 
           allocate(echl(nspc))
-          call init_zero(namespc)
+          call init_zero(echl)
 
           allocate(qchl(nspc))
-          call init_zero(namespc)
+          call init_zero(qchl)
 
           allocate(ebl(nspc))
-          call init_zero(namespc)
+          call init_zero(ebl)
 
           allocate(esl(nspc))
-          call init_zero(namespc)
+          call init_zero(esl)
 
           allocate(echr(nspc))
-          call init_zero(namespc)
+          call init_zero(echr)
 
           allocate(qchr(nspc))
-          call init_zero(namespc)
+          call init_zero(qchr)
 
           allocate(ebr(nspc))
-          call init_zero(namespc)
+          call init_zero(ebr)
 
           allocate(esr(nspc))
-          call init_zero(namespc)
+          call init_zero(esr)
 
           allocate(nu(nspc))
-          call init_zero(namespc)
+          call init_zero(nu)
 
           allocate(enrg(nspc))
-          call init_zero(namespc)
+          call init_zero(enrg)
 
           allocate(inflx_max(nspc))
-          call init_zero(namespc)
+          call init_zero(inflx_max)
 
           allocate(inflx_min(nspc))
-          call init_zero(namespc)
+          call init_zero(inflx_min)
 
-          allocate(prg  (nspc))
-          call init_zero(namespc)
+          allocate(gas_pressure  (nspc))
+          call init_zero(gas_pressure)
 
-          allocate( tg(nspc))
-          call init_zero(namespc)
+          allocate( gas_temp(nspc))
+          call init_zero(gas_temp)
 
           allocate( mass(nspc))
-          call init_zero(namespc)
+          call init_zero(mass)
 
         if (verbose_input) write(iout,*) 'Allocation of input parameters for species: OK'
     end subroutine alloc_input_species
@@ -647,8 +647,8 @@ subroutine deallocate_variables()
         deallocate(inflx)
         deallocate(inflx_max)
         deallocate(inflx_min)
-        deallocate(prg  )
-        deallocate( tg)
+        deallocate(gas_pressure  )
+        deallocate(gas_temp)
         deallocate( mass)
                deallocate(x)
       deallocate(dx)
@@ -659,22 +659,22 @@ subroutine deallocate_variables()
       deallocate(src)
 
 
-      deallocate(k1l)
-      deallocate(k2l)
-      deallocate(k3l)
-      deallocate(k4l)
-      deallocate(k1r)
-      deallocate(k2r)
-      deallocate(k3r)
-      deallocate(k4r)
-      deallocate(r1l)
-      deallocate(r2l)
-      deallocate(r3l)
-      deallocate(r4l)
-      deallocate(r1r)
-      deallocate(r2r)
-      deallocate(r3r)
-      deallocate(r4r)
+      deallocate(Kabs_l)
+      deallocate(Kdes_l)
+      deallocate(Kb_l)
+      deallocate(Kads_l)
+      deallocate(Kabs_r)
+      deallocate(Kdes_r)
+      deallocate(Kb_r)
+      deallocate(Kads_r)
+      deallocate(K0abs_l)
+      deallocate(K0des_l)
+      deallocate(K0b_l)
+      deallocate(K0ads_l)
+      deallocate(K0abs_r)
+      deallocate(K0des_r)
+      deallocate(K0b_r)
+      deallocate(K0ads_r)
       deallocate(temp)
     end subroutine deallocate_variables
 

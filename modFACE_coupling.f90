@@ -38,7 +38,7 @@ contains
 
  end subroutine FACE2fluidcode
 
-subroutine fluidcode2FACE_input(fluidcode_input)
+subroutine fluidcode2FACE(fluidcode_input)
 ! overwrite some input parameters from the input file read by FACE with input from the fluid code:
 integer kk,k
 type(fluidcode_inputs), intent(in) :: fluidcode_input
@@ -93,6 +93,6 @@ stop 'Exiting FACE'
 endif
 enddo
 if (verbose_couple) write(iout,*) '- checking species name done'
-end subroutine
+end subroutine fluidcode2FACE
 
     end module modFACE_coupling

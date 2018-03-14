@@ -1,6 +1,7 @@
 module modFACE_help
     use modFACE_misc
-    use modFACE_output,only:iout,timestring
+    use modFACE_IO
+
 
     !      use modFACE_parser,only:input_line,nlines
     implicit none

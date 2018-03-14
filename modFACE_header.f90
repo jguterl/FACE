@@ -40,7 +40,7 @@
       integer::nspc
       integer::neq
       integer:: nramp
-
+    integer:: iout=6
       real :: tcpustart, tcpufinish
 
       ! coefficients for BDF
@@ -131,16 +131,16 @@
 !     ------------------------------------------------------------------
       logical:: read_input_file=.true.
       integer::avr
-      character(Linput):: input_filename
-      character(Linput):: logfile
-      character(Linput):: read_restart_file
-      character(Linput):: read_state_file
-      character(Linput):: stdst
-      character(Linput):: framp
-      character(Linput):: solve_heat_eq
+      character(string_length):: input_filename
+      character(string_length):: logfile
+      character(string_length):: read_restart_file
+      character(string_length):: read_state_file
+      character(string_length):: steady_state
+      character(string_length):: framp
+      character(string_length):: solve_heat_eq
       character(string_length):: store_state_file
-      character(Linput):: restore_state_file
-      character(Linput):: casename
+      character(string_length):: restore_state_file
+      character(string_length):: casename
 !
 !     ------------------------------------------------------------------
 !       Material parameters
@@ -162,8 +162,8 @@
       real(DP),allocatable::inflx(:)
       real(DP),allocatable::inflx_max(:)
       real(DP),allocatable::inflx_min(:)
-      real(DP),allocatable::prg(:)
-      real(DP),allocatable:: tg(:)
+      real(DP),allocatable::gas_pressure(:)
+      real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
       real(DP),allocatable:: temp(:,:)
       real(DP),allocatable:: rtime(:)
@@ -205,22 +205,22 @@
       real(DP),allocatable::qchr(:)
       real(DP),allocatable::ebr(:)
       real(DP),allocatable::esr(:)
-      real(DP),allocatable::k1l(:)
-      real(DP),allocatable::k2l(:)
-      real(DP),allocatable::k3l(:)
-      real(DP),allocatable::k4l(:)
-      real(DP),allocatable::k1r(:)
-      real(DP),allocatable::k2r(:)
-      real(DP),allocatable::k3r(:)
-      real(DP),allocatable::k4r(:)
-      real(DP),allocatable::r1l(:)
-      real(DP),allocatable::r2l(:)
-      real(DP),allocatable::r3l(:)
-      real(DP),allocatable::r4l(:)
-      real(DP),allocatable::r1r(:)
-      real(DP),allocatable::r2r(:)
-      real(DP),allocatable::r3r(:)
-      real(DP),allocatable::r4r(:)
+      real(DP),allocatable::Kabs_l(:)
+      real(DP),allocatable::Kdes_l(:)
+      real(DP),allocatable::Kb_l(:)
+      real(DP),allocatable::Kads_l(:)
+      real(DP),allocatable::Kabs_r(:)
+      real(DP),allocatable::Kdes_r(:)
+      real(DP),allocatable::Kb_r(:)
+      real(DP),allocatable::Kads_r(:)
+      real(DP),allocatable::K0abs_l(:)
+      real(DP),allocatable::K0des_l(:)
+      real(DP),allocatable::K0b_l(:)
+      real(DP),allocatable::K0ads_l(:)
+      real(DP),allocatable::K0abs_r(:)
+      real(DP),allocatable::K0des_r(:)
+      real(DP),allocatable::K0b_r(:)
+      real(DP),allocatable::K0ads_r(:)
       real(DP),allocatable::qchtl(:)
       real(DP),allocatable::qchtr(:)
       real(DP),allocatable::nu (:)
@@ -252,14 +252,14 @@
       real(DP),allocatable:: rtsl(:,:)
       real(DP),allocatable::dsrfr(:,:)
       real(DP),allocatable:: rtsr(:,:)
-      real(DP),allocatable::j1l(:,:)
-      real(DP),allocatable:: j2l(:,:)
-      real(DP),allocatable:: j3l(:,:)
-      real(DP),allocatable:: j4l(:,:)
-      real(DP),allocatable::j1r(:,:)
-      real(DP),allocatable:: j2r(:,:)
-      real(DP),allocatable::j3r(:,:)
-      real(DP),allocatable::j4r(:,:)
+      real(DP),allocatable::Gabs_l(:,:)
+      real(DP),allocatable:: Gdes_l(:,:)
+      real(DP),allocatable:: Gb_l(:,:)
+      real(DP),allocatable:: Gads_l(:,:)
+      real(DP),allocatable::Gabs_r(:,:)
+      real(DP),allocatable:: Gdes_r(:,:)
+      real(DP),allocatable::Gb_r(:,:)
+      real(DP),allocatable::Gads_r(:,:)
 
 !
 !     ------------------------------------------------------------------
