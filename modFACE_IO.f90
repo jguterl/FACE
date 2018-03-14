@@ -424,11 +424,15 @@ end subroutine restore_restart
 subroutine restore
     character(string_length) :: restart_file
     character(string_length) :: state_file
+    if (verbose_restore) write(iout,*) 'read_restart_file:',read_restart_file
+    if (verbose_restore) write(iout,*) 'read_state_file:',read_state_file
+    ! cannot restore from restart and state file  at the same time
     if (trim(read_restart_file).ne."no".and.trim(read_state_file).ne."no") then
         write(iout,*) 'ERROR: Cannot restore from restart file and state file simultaneously'
         stop 'Exiting FACE'
     endif
 
+    ! restore from restart file?
     if (trim(read_restart_file).eq."no") then
         write(iout,*) 'no restoration from restart file'
     elseif (read_restart_file.eq."yes") then
@@ -439,6 +443,7 @@ subroutine restore
         call restore_restart(restart_file)
     endif
 
+    ! restore from state file?
     if (trim(read_state_file).eq."no") then
         write(iout,*) 'no restoration from state file'
     elseif (read_state_file.eq."yes") then
@@ -483,6 +488,12 @@ end subroutine print_summary
     end subroutine finalize
 
 
-
+subroutine write_header_log
+character(string_length)::timestamp
+call timestring ( timestamp )
+write(iout,*) '# created    :', timestamp
+write(iout,*) '# casename   :', trim(casename)
+write(iout,*) '# pathfolder :', trim(path_folder)
+end subroutine write_header_log
 
 end module modFACE_IO

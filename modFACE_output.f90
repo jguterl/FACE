@@ -21,14 +21,14 @@
                 iout=6 !default output unit
             elseif (logfile_.eq."yes") then
                 call set_ifile(iout)
-                open (iout, file='log_FACE', status='replace', iostat=ios)
+                open (iout, file=trim(path_folder)//'log_FACE', status='replace', iostat=ios)
                 if (ios.ne.0) then
                     write (*, '(2a)') 'ERROR: Cannot open log file:', 'log_FACE'
                     stop
                 endif
             else
                 call set_ifile(iout)
-                open (iout, file=logfile_, status='replace', iostat=ios)
+                open (iout, file=trim(logfile_), status='replace', iostat=ios)
                 if (ios.ne.0) then
                     write (*, '(2a)') 'ERROR: Cannot open log file:', logfile_
                     stop

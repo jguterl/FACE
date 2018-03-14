@@ -1,5 +1,5 @@
 module modFACE_parser
-    use modFACE_output,only:iout,verbose_parser
+    use modFACE_output
     use modFACE_header
     use modFACE_help
     use modFACE_misc
@@ -9,15 +9,15 @@ module modFACE_parser
     type input_valsp
         real(DP),allocatable:: r(:)
         integer,allocatable :: i(:)
-        character(len=lname),allocatable::s(:)
-        character(len=20)::status
+        character(string_length),allocatable::s(:)
+        character(string_length)::status
     end type input_valsp
 
     type input_val
         real(DP):: r
         integer :: i
-        character(150),allocatable::s
-        character(len=20)::status
+        character(string_length)::s
+        character(string_length)::status
     end type input_val
 
     character, allocatable :: input_line(:)
@@ -26,9 +26,9 @@ module modFACE_parser
     character::delimdata=' '
     integer,parameter::maxlength_input=2000
     type string
-        character(100), allocatable :: keyword
-        character(100), allocatable :: data
-        character(100), allocatable :: comment
+        character(string_length) :: keyword
+        character(string_length) :: data
+        character(string_length) :: comment
     end type string
     type(string), allocatable :: input_lines(:)
 
@@ -59,10 +59,11 @@ contains
         found_str=.false.
         idx=-1
         do i=1,nlines
-            if (compare_string(keyword,(input_lines(i)%keyword))) then
+            if (compare_string(keyword,input_lines(i)%keyword)) then
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
                     write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
+                        write(iout,*) 'input_lines(i)%keyword=',input_lines(i)%keyword
                     stop 'Exiting FACE'
                 endif
                 idx=i
@@ -93,7 +94,7 @@ contains
         type(input_val) ::inputval
         character::typeval
         integer::idx,idx_help
-        character(1000)::str0
+        character(string_length+1)::str0
 
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
@@ -101,22 +102,26 @@ contains
             write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
             stop 'Exiting FACE...'
         endif
-
+        if (verbose_parser) write(iout,*) 'keyword:',keyword,' idx=',idx,' idx_help=',idx_help
         write(inputval%status,*) adjustl(help(idx_help)%status)
 
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
             write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
             stop 'Exiting FACE...'
         else if (idx.ne.-1) then
-            str0=''
+            ! seems that an extra blank is added when writing in string, leading to seg fault if size of receiving string is not incremeted by +1
             write(str0,*) input_lines(idx)%data
+            if (verbose_parser) write(iout,*) 'getting data from string:',str0
             call get_single_data(str0,delimdata)
+
         else
             ! setting default value for keyword
             write(str0,*) help(idx_help)%default
-
             if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,keyword,'"'
         endif
+
+        if (verbose_parser) write(iout,*) 'get data for keyword:',keyword
+
         if (typeval.eq."r") then
             read(str0,*) inputval%r
         elseif (typeval.eq."i") then
@@ -133,7 +138,7 @@ contains
         type(input_valsp) ::inputval
         character::typeval
         integer::idx,idx_help,k
-        character(1000)::str0,str1
+        character(string_length+1)::str0,str1
 
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
@@ -146,7 +151,6 @@ contains
             write(iout,*) 'ERROR: mandatory keyword "', keyword ,'" not found in the inputfile'
             stop 'Exiting FACE...'
         else if (idx.ne.-1) then
-            str0=''
             write(str0,*) help(idx_help)%default
             do k=1,nspc
 
@@ -258,11 +262,13 @@ contains
         logical:: found_str
         found_str=.false.
         idx_help=-1
-        do i=1,nlines
-            if (compare_string(keyword,(help(i)%keyword))) then
+        do i=1,Nhelp
+
+            if (compare_string(keyword,help(i)%keyword)) then
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
                     write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
+
                     stop 'Exiting FACE'
                 endif
                 idx_help=i

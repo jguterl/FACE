@@ -4,7 +4,7 @@ module modFACE_interface
 
     save
     logical :: verbose_interface=.true.
-    character(Lfn) :: default_inputfile="default_inputfile.face"
+    character(string_length) :: default_inputfile="default_inputfile.face"
     type fluidcode_inputs
     integer                  :: wall_idx            ! Index of the wall stratum
         integer                  :: iter                ! Fluid code iteration
@@ -36,14 +36,14 @@ module modFACE_interface
     end type fluidcode_out
 
     type FACE_inputs
-        character(Lfn):: run_mode
-        character(Lfn):: input_filename
+        character(string_length):: run_mode
+        character(string_length):: input_filename
         logical   :: read_input_file=.true.
-        character(Lfn)::logfile
+        character(string_length)::logfile
         logical :: couple_fluidcode
         type(fluidcode_inputs) :: fluidcode_input
-        character(Lfn)::path
-        character(Lfn)::casename
+        character(string_length)::path
+        character(string_length)::casename
     end type FACE_inputs
 
 contains
@@ -237,7 +237,7 @@ contains
         face_input%logfile=face_input%casename//".log"
         face_input%input_filename=default_inputfile
         face_input%run_mode='default'
-        face_input%path='solps_iter_'
+        face_input%path='solps_iter'
 
         face_input%fluidcode_input=fluidcode_input
     end subroutine wrapper_FACE
@@ -267,7 +267,7 @@ contains
         fluidcode_input%dt=1e-2
         fluidcode_input%nspc=1
         allocate(fluidcode_input%namespc(fluidcode_input%nspc))
-        fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
+        fluidcode_input%namespc(1:fluidcode_input%nspc)="F"
         allocate(fluidcode_input%indexspc(fluidcode_input%nspc))
         fluidcode_input%indexspc(1:fluidcode_input%nspc)=1
         allocate(fluidcode_input%Gammain(fluidcode_input%nspc))

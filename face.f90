@@ -5,7 +5,7 @@
       implicit none
       type(FACE_inputs)::face_input
       type(fluidcode_inputs)::fluidcode_input
-      logical:: couple_test=.false.
+      logical:: couple_test=.true.
 !     ******************************************************************
 !     * 1-dimensional First wAll simulation CodE "FACE"                *
 !     * for modeling of particle transport in the first wall           *

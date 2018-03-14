@@ -34,12 +34,13 @@
     logical :: verbose_step=.false.
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
+    logical :: verbose_restore=.true.
 !      integer ngrdm, nspcm, ndt, nrampm
       integer::ngrd
       integer::nspc
       integer::neq
       integer:: nramp
-      integer,parameter::string_length=256
+
       real :: tcpustart, tcpufinish
 
       ! coefficients for BDF

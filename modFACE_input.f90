@@ -7,7 +7,6 @@ module modFACE_input
     implicit none
     save
 
-
     interface  get_keyword_value
         module procedure get_keyword_value_i
         module procedure get_keyword_value_r
@@ -30,7 +29,7 @@ contains
         ! get the number of line in the file
         call get_nlines()
         ! allocate array of string
-        write(iout,*) 'call 1'
+
         if (.not.allocated(input_lines)) allocate(input_lines(nlines))
 
         rewind(iuinput)
@@ -111,12 +110,13 @@ contains
         if (verbose_input) write(iout,*) "Parsing keyword"
         call get_keyword_value('order_solver',order_solver)
         call get_keyword_value('read_restart_file',read_restart_file)
+        call get_keyword_value('read_state_file',read_state_file)
         call get_keyword_value('wall_thickness',length)
         call get_keyword_value('steady_state', stdst)
         call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
-        call get_keyword_value('simulation_end_time', end_time)
+        call get_keyword_value('end_time', end_time)
         call get_keyword_value('min_dt', dtmin)
         call get_keyword_value('timestep_factor', cdt)
         call get_keyword_value('filter_freq', nucut)
@@ -194,10 +194,11 @@ contains
         else
         call write_input_log_keyword('order_solver',order_solver)
         call write_input_log_keyword('read_restart_file',read_restart_file)
+        call write_input_log_keyword('read_state_file',read_state_file)
         call write_input_log_keyword('wall_thickness',length)
         call write_input_log_keyword('steady_state', stdst)
         call write_input_log_keyword('start_time', start_time)
-        call write_input_log_keyword('simulation_end_time', end_time)
+        call write_input_log_keyword('end_time', end_time)
         call write_input_log_keyword('temp_ramp_start_time', tramp0)
         call write_input_log_keyword('temp_ramp_stop_time', tramp1)
 
@@ -507,11 +508,11 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
     subroutine get_input(face_input)
         type(face_inputs):: face_input
-        if (.not.allocated(input_lines)) then
-        write(iout,*) 'check 0'
-        else
-         write(iout,*) 'check 0: allocated'
-        endif
+        !if (.not.allocated(input_lines)) then
+        !write(iout,*) 'check 0'
+        !else
+         !write(iout,*) 'check 0: allocated'
+        !endif
         call init_input()
         if (face_input%read_input_file) then
             call read_inputfile(face_input%input_filename)
