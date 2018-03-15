@@ -123,20 +123,12 @@ do k=1,nspc
             write (ifile_heatdata, myfmt1) 'time=', time, ' s'
 
             write (ifile_heatdata, myfmt2)&
-                '       #',&
-<<<<<<< HEAD
+                '       icell',&
                 '                  x',&
                 '               temp',&
                 '               qflx',&
                 '                rate_t',&
                 '               ero_qflx)'
-=======
-                '            x',&
-                '         temp',&
-                '         flxt',&
-                '          rtt',&
-                '         erot'
->>>>>>> branch 'develop' of git@git.ucsd.edu:face-group/face.git
 
             do j=0,ngrd
                 write (ifile_heatdata, myfmt3)&
