@@ -21,7 +21,7 @@
        source=srate(1)*exp(-0.5d0*abs((x(j)-rdpth(1))/sigma(1))**2.d0)
        return
       endif
-
+      ! create empty traps
       do n=2,nspc-1,2
        if (k .eq. n) then
         source=srate(n)*(1.d0-erf((x(j)-rdpth(n))/(sqrt2*sigma(n))))
@@ -118,7 +118,7 @@
       integer k, n
       real(DP) r, sig, crsc
 !      data crsc /3.d-20/
-      data crsc /0.d0/
+       crsc=0.d0
 
        srate=0.0
 
@@ -128,7 +128,7 @@
          srate=inflx(1)/(0.5d0*sqrt(pi)*(1.d0+erf(r/sig))*sig)
          return
         endif
-
+        ! create empty traps
         do n=2,nspc-1,2
          if (k .eq. n) then
           srate=crsc*inflx(1)/lambda3c

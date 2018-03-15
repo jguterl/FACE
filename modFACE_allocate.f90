@@ -168,9 +168,9 @@
               write(iout,*) 'ERROR: rct already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(ero)) then
-              allocate(ero (ndt,0:ngrd,nspc))
-              call init_zero(ero)
+          if (.not.allocated(ero_flx)) then
+              allocate(ero_flx (ndt,0:ngrd,nspc))
+              call init_zero(ero_flx)
           else
               write(iout,*) 'ERROR: ero already allocated'
               STOP 'Exiting FACE...'
@@ -428,11 +428,11 @@
           endif
 
 
-          if (.not.allocated(rtsl)) then
-      allocate( rtsl(ndt,nspc))
-                call init_zero(rtsl)
+          if (.not.allocated(Gsrf_l)) then
+      allocate( Gsrf_l(ndt,nspc))
+                call init_zero(Gsrf_l)
           else
-              write(iout,*) 'ERROR: rtsl already allocated'
+              write(iout,*) 'ERROR: Gsrf_l already allocated'
               STOP 'Exiting FACE...'
           endif
 
@@ -444,11 +444,11 @@
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(rtsr)) then
-      allocate( rtsr(ndt,nspc))
-                call init_zero(rtsr)
+          if (.not.allocated(Gsrf_r)) then
+      allocate( Gsrf_r(ndt,nspc))
+                call init_zero(Gsrf_r)
           else
-              write(iout,*) 'ERROR: rtsr already allocated'
+              write(iout,*) 'ERROR: Gsrf_r already allocated'
               STOP 'Exiting FACE...'
           endif
 
@@ -599,11 +599,11 @@
           allocate(enrg(nspc))
           call init_zero(enrg)
 
-          allocate(inflx_max(nspc))
-          call init_zero(inflx_max)
+          allocate(inflx_in_max(nspc))
+          call init_zero(inflx_in_max)
 
-          allocate(inflx_min(nspc))
-          call init_zero(inflx_min)
+          allocate(inflx_in(nspc))
+          call init_zero(inflx_in)
 
           allocate(gas_pressure  (nspc))
           call init_zero(gas_pressure)
@@ -645,8 +645,8 @@ subroutine deallocate_variables()
         deallocate(nu)
         deallocate(enrg)
         deallocate(inflx)
-        deallocate(inflx_max)
-        deallocate(inflx_min)
+        deallocate(inflx_in_max)
+        deallocate(inflx_in)
         deallocate(gas_pressure  )
         deallocate(gas_temp)
         deallocate( mass)

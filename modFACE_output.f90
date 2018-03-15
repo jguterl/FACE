@@ -1,58 +1,40 @@
     module modFACE_output
     use modFACE_header
+    use modFACE_error
      implicit none
      save
 
     integer:: ifile_heatdata
     integer :: ifile_voldata
     integer:: ifile_surfdata
-    integer::ifile_log
     integer:: ifile_inputlog
     integer::current_ifile=10
-    integer:: ifile_testpath
 
     public::iout,timestring
     contains
 
         subroutine init_log(logfile_)
         character(*)::logfile_
+        character(string_length)::filename
         integer ios
             if (logfile_.eq."no") then
                 iout=6 !default output unit
             elseif (logfile_.eq."yes") then
                 call set_ifile(iout)
-                open (iout, file=trim(path_folder)//'log_FACE', status='replace', iostat=ios)
+                filename=trim(path_folder)//trim(casename)//'.log'
+                open (iout, file=trim(filename), status='replace', iostat=ios)
                 if (ios.ne.0) then
-                    write (*, '(2a)') 'ERROR: Cannot open log file:', 'log_FACE'
-                    stop
+                    call face_error('Cannot open log file:',trim(filename))
                 endif
             else
                 call set_ifile(iout)
                 open (iout, file=trim(logfile_), status='replace', iostat=ios)
                 if (ios.ne.0) then
-                    write (*, '(2a)') 'ERROR: Cannot open log file:', logfile_
-                    stop
+                    call face_error('Cannot open log file:', trim(logfile_))
                 endif
             endif
             if(verbose_init) write(iout,*) "iout=",iout
         end subroutine init_log
-
-        ! set unit numbers for various files opened by FACE
-        subroutine init_ifile()
-
-            call set_ifile(ifile_heatdata)
-            if(verbose_init) write(iout,*) "ifile_heatdata=",ifile_heatdata
-
-            call set_ifile(ifile_voldata)
-            if(verbose_init) write(iout,*) "ifile_voldata=",ifile_voldata
-
-            call set_ifile(ifile_inputlog)
-            if(verbose_init) write(iout,*) "ifile_inputlog=",ifile_inputlog
-
-            call set_ifile(ifile_testpath)
-            if(verbose_init) write(iout,*) "ifile_testpath=",ifile_testpath
-
-        end subroutine init_ifile
 
 subroutine set_ifile(ifile)
       integer ifile

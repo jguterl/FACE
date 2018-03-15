@@ -6,6 +6,7 @@
        use modFACE_output
        use modFACE_input
        use modFACE_IO
+       use modFACE_error
       implicit none
       integer ::ifile_Tramp=200
     !  real(DP)::K0abs_l(nspc)
@@ -51,7 +52,11 @@
       end subroutine initialize
 
       subroutine init_misc()
+      ! default restart filename
       restart_filename=trim(path_folder)//"dsave.rst"
+
+
+      ! some material constants
       lambda1c=lambda*clng
       lambda2c=lambda*lambda*csrf
       lambda3c=lambda*lambda*lambda*cvlm
@@ -60,16 +65,22 @@
 
 !      tmp=rand(seed)
 
+      ! counter for filename numbers
       sfln_voldata=0
       sfln_srfdata=0
       sfln_heatdata=0
+
       cnt =0
+
+      ! number fo equations to solve
       if (solve_heat_eq .eq."no") then
        neq=nspc*(ngrd+3)
       else
        neq=nspc*(ngrd+3)+ngrd+1
       endif
+
       call open_timedata_files
+
       end subroutine init_misc
 
 
@@ -254,8 +265,8 @@
        Kb_r(k)=      K0b_r(k)*exp(-     ee*(ebr (k)+qchtr(k))/(kb*temp(ndt,ngrd)))
        Kads_r(k)=      K0ads_r(k) *exp(-     ee*(ebr (k)-esr  (k))/(kb*temp(ndt,ngrd)))
        do i=1,ndt
-        rtsl(i,k)=0.d0
-        rtsr(i,k)=0.d0
+        Gsrf_l(i,k)=0.d0
+        Gsrf_r(i,k)=0.d0
         if (dsrfl0(k) .eq. 0.d0) then
          dsrfl(i,k)=1.d0
         else
@@ -375,7 +386,7 @@
        do j=0,ngrd
         do i=1,ndt
          flx (i,j,k)=0.d0
-         ero (i,j,k)=0.d0
+         ero_flx (i,j,k)=0.d0
          cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
          rtd (i,j,k)=0.d0
          if (gprof(k) .eq. 'S'.or.gprof(k) .eq. 'F') then
@@ -409,22 +420,26 @@ subroutine init_casename(case_name)
 
 
    subroutine init_path(path)
+
    character(*)::path
    character(30)::name
-   integer ios
+   integer ios,ifile_testpath
+
    name='test.path'
    path_folder=trim(path)
    if (verbose_init) write(iout,*) "Files will be saved in the folder :", path_folder
    call system('mkdir -p '//trim(path_folder))
    path_folder=trim(path_folder)//'/'
-   call system('mkdir -p '//trim(path_folder)//trim(casename)//'_dat')
+   dat_folder=trim(path_folder)//trim(casename)//'_dat'
+   call system('mkdir -p '//dat_folder)
+
+   call set_ifile(ifile_testpath)
     open (unit=ifile_testpath, file=trim(path_folder)//name,status='replace', form='unformatted', iostat=ios)
     if (ios.ne.0) then
-    stop
-    write (iout, '(a)') 'ERROR: cannot write in the save/write folder : ', trim(path_folder)//name
-    stop 'Exiting FACE...'
+    call face_error('cannot write in the folder : ', trim(path_folder)//name)
     endif
     close(ifile_testpath)
+
     end subroutine init_path
 
 

@@ -1,6 +1,7 @@
 module modFACE_coupling
 use modFACE_header
 use modFACE_interface
+use modFACE_error
 contains
 
 !    subroutine write_fluid2wallcode_data(ifile)
@@ -63,12 +64,12 @@ if (verbose_couple) write(iout,*) '- store_state_file overwritten :', store_stat
 store_state_file=fluidcode_input%store_state_file
 if (verbose_couple) write(iout,*) '- restore_state_file overwritten :', restore_state_file
 
+
 ! temperature input mode
 if (solve_heat_eq.eq."yes") then
 elseif  (solve_heat_eq.eq."no") then
 else
-write(iout,*) 'ERROR: unknown mode for solve_heat_eq fron fluide code'
-stop 'Exiting Face'
+call face_error('unknown mode for solve_heat_eq fron fluide code')
 endif
 
 
@@ -93,6 +94,8 @@ stop 'Exiting FACE'
 endif
 enddo
 if (verbose_couple) write(iout,*) '- checking species name done'
+
+! overwrite influx_input
 end subroutine fluidcode2FACE
 
     end module modFACE_coupling

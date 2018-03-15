@@ -153,8 +153,8 @@ contains
         call get_keyword_value('Es_right', esr)
         call get_keyword_value('nu0', nu)
         call get_keyword_value('Eimpact_ion', enrg)
-        call get_keyword_value('Gamma_min', inflx_min)
-        call get_keyword_value('Gamma_max', inflx_max)
+        call get_keyword_value('Gamma_in', inflx_in)
+        call get_keyword_value('Gamma_in_max', inflx_in_max)
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
@@ -180,7 +180,8 @@ contains
         call get_keyword_value('first_ramp_end_time', t1)
         call get_keyword_value('second_ramp_start_time', t2)
         call get_keyword_value('second_ramp_end_time', t3)
-        call get_keyword_value('pulse_period', tp)
+        call get_keyword_value('pulsed_flux', pulsed_flux)
+        call get_keyword_value('pulse_period', tpulse)
         if (verbose_input) write(iout,*) "Parsing keyword: DONE"
     end subroutine parse_keywords
 
@@ -238,8 +239,8 @@ contains
         call write_input_log_keyword('Es_right', esr)
         call write_input_log_keyword('nu0', nu)
         call write_input_log_keyword('Eimpact_ion', enrg)
-        call write_input_log_keyword('Gamma_min', inflx_min)
-        call write_input_log_keyword('Gamma_max', inflx_max)
+        call write_input_log_keyword('Gamma_in', inflx_in)
+        call write_input_log_keyword('Gamma_in_max', inflx_in_max)
         call write_input_log_keyword('pressure_neutral', gas_pressure)
         call write_input_log_keyword('temp_neutral', gas_temp)
         call write_input_log_keyword('mass', mass)
@@ -265,7 +266,8 @@ contains
         call write_input_log_keyword('first_ramp_end_time', t1)
         call write_input_log_keyword('second_ramp_start_time', t2)
         call write_input_log_keyword('second_ramp_end_time', t3)
-        call write_input_log_keyword('pulse_period', tp)
+        call write_input_log_keyword('pulsed_flux', pulsed_flux)
+        call write_input_log_keyword('pulse_period', tpulse)
         close(ifile_inputlog)
   endif
     end subroutine write_input_log
@@ -423,7 +425,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
         call init_zero(t1)
         call init_zero( t2)
         call init_zero( t3)
-        call init_zero(tp)
+        call init_zero(tpulse)
         if (verbose_input) write(iout,*) 'Initialization of single input parameters: OK'
     end subroutine init_input_single
 
@@ -472,10 +474,10 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
     !      write (6, 1050) (i, enrg(i), i=1,nspc)
     !1050  format (' impact energy of species ', i2, ' is ',
     !     + 1pe12.5, ' eV')
-    !      write (6, 1060) (i, inflx_min(i), i=1,nspc)
+    !      write (6, 1060) (i, inflx_in(i), i=1,nspc)
     !1060  format (' min influx of species ', i2, ' is', 1pe12.5,
     !     +        ' m^-2 s^-1')
-    !      write (6, 1061) (i, inflx_max(i), i=1,nspc)
+    !      write (6, 1061) (i, inflx_in_max(i), i=1,nspc)
     !1061  format (' max influx of species ', i2, ' is', 1pe12.5,
     !     +        ' m^-2 s^-1')
     !      write (6, 1070) (i, gas_pressure(i), i=1,nspc)

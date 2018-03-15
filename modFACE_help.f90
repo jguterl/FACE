@@ -131,7 +131,7 @@ contains
         call set_help('implantation_model','S: Step E: ERFC T:Trim','none','non-mandatory',"S","species")
         call set_help('Eimpact_ion','Impact energy of ionized species','[eV]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
-        call set_help('Gamma_min','Minimal external flux of ionized species','[m^-2 s^-1]','non-mandatory',&
+        call set_help('Gamma_in','External flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
         call set_help('Gamma_max','Maximal external flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
@@ -168,6 +168,7 @@ contains
         call set_help('first_ramp_end_time','End of first ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_start_time','Start of second ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_end_time','End of second ramp time','[s]','non-mandatory',"1.0e+99")
+        call set_help('pulsed_flux','pulse incoming plasma flux: yes|no','none','non-mandatory',"no")
         call set_help('pulse_period','Pulse period','[s]','non-mandatory',"1.0e+99")
           call set_help('# ********* Miscelleneaous *********************************************')
         call set_help('verbose','yes|no','none','non-mandatory',"yes")

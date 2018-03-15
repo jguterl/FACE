@@ -4,6 +4,7 @@
     use modFACE_header
     use modFACE_functions
     use modFACE_output
+    use modFACE_error
     implicit none
 
 contains
@@ -24,27 +25,27 @@ contains
                 !     --- 1st order BDF ---
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
-                    f(i)=f(i)-a12*rtsl (ndt  ,k)*dt_face
+                    f(i)=f(i)-a12*Gsrf_l (ndt  ,k)*dt_face
                 !     --- 2nd order BDF ---
                 elseif (order_solver.eq.2) then
                     f(i)=u(i)-a21*dsrfl(ndt-1,k) &
                         -a22*dsrfl(ndt-2,k)
-                    f(i)=f(i)-a23*rtsl (ndt  ,k)*dt_face
+                    f(i)=f(i)-a23*Gsrf_l (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfl(ndt-1,k)&
                         -a52*dsrfl(ndt-2,k)&
                         -a53*dsrfl(ndt-3,k)&
                         -a54*dsrfl(ndt-4,k)
-                    f(i)=f(i)-a55*rtsl (ndt  ,k)*dt_face
+                    f(i)=f(i)-a55*Gsrf_l (ndt  ,k)*dt_face
                 else
                     write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
                 endif
             else
                 if (dsrfl(ndt,k) .gt. 1.d0) then
-                    f(i)=rtsl(ndt,k)
+                    f(i)=Gsrf_l(ndt,k)
                 else
-                    f(i)=rtsl(ndt,k)*dsrfl(ndt,k)
+                    f(i)=Gsrf_l(ndt,k)*dsrfl(ndt,k)
                 endif
             endif
 
@@ -85,27 +86,27 @@ contains
             !     --- 1st order BDF ---
             if (order_solver.eq.1) then
                 f(i)=u(i)-a11*dsrfr(ndt-1,k)
-                f(i)=f(i)-a12*rtsr (ndt  ,k)*dt_face
+                f(i)=f(i)-a12*Gsrf_r (ndt  ,k)*dt_face
             !     --- 2nd order BDF ---
             elseif (order_solver.eq.2) then
                 f(i)=u(i)-a21*dsrfr(ndt-1,k)&
                     -a22*dsrfr(ndt-2,k)
-                f(i)=f(i)-a23*rtsr (ndt  ,k)*dt_face
+                f(i)=f(i)-a23*Gsrf_r (ndt  ,k)*dt_face
             !     --- 5th order BDF ---
             elseif (order_solver.eq.5) then
                 f(i)=u(i)-a51*dsrfr(ndt-1,k)&
                     -a52*dsrfr(ndt-2,k)&
                     -a53*dsrfr(ndt-3,k)&
                     -a54*dsrfr(ndt-4,k)
-                f(i)=f(i)-a55*rtsr (ndt  ,k)*dt_face
+                f(i)=f(i)-a55*Gsrf_r (ndt  ,k)*dt_face
             else
                 write(iout,*) "ERROR: order of solver not implanted. order=",order_solver
             endif
         else
         if (dsrfr(ndt,k) .gt. 1.d0) then
-            f(i)=rtsr(ndt,k)
+            f(i)=Gsrf_r(ndt,k)
         else
-            f(i)=rtsr(ndt,k)*dsrfr(ndt,k)
+            f(i)=Gsrf_r(ndt,k)*dsrfr(ndt,k)
         endif
     endif
 
@@ -306,35 +307,46 @@ end subroutine func
         real(DP):: trel, tmp
         real(DP):: cenr
         parameter (cenr=1.d0)
-        if (tp.gt.0) then
-        trel=time-tp*int(time/tp)
-        if (trel .le. t1) then ! phase 1 of pulse
-            tmp=trel/t1
+
+        ! pulsed plasma flow
+        if (pulsed_flux.eq."yes") then
+            ! check that the pulse period is not zero
+            if (tpulse.le.0) then
+            write(iout,*) "ERROR: Pulsed incoming plasma flux activated but pulse_period =0"
+            stop 'Exiting FACE'
+            endif
+
+            trel=time-tpulse*int(time/tpulse)
+            if (trel .le. t1) then ! phase 1 of pulse
+                tmp=trel/t1
+                do k=1,nspc
+                    inflx(k)=inflx_in(k)+(inflx_in_max(k)-inflx_in(k))*tmp
+                enddo
+                rad =rad_min +(rad_max -rad_min )*tmp
+                cero=cero_min+(cero_max-cero_min)*tmp
+            elseif (trel .le. t2) then ! phase 2 of pusle
+                do k=1,nspc
+                    inflx(k)=inflx_in_max(k)
+                enddo
+                rad =rad_max
+                cero=cero_max
+            elseif (trel .le. t3) then ! phase 3 of pulse
+                tmp=(trel-t2)/(t3-t2)
+                do k=1,nspc
+                    inflx(k)=inflx_in_max(k)+(inflx_in(k)-inflx_in_max(k))*tmp
+                enddo
+                rad =rad_max +(rad_min -rad_max )*tmp
+                cero=cero_max+(cero_min-cero_max)*tmp
+            endif
+
+        elseif (pulsed_flux.eq."no") then ! no pulse
             do k=1,nspc
-                inflx(k)=inflx_min(k)+(inflx_max(k)-inflx_min(k))*tmp
-            enddo
-            rad =rad_min +(rad_max -rad_min )*tmp
-            cero=cero_min+(cero_max-cero_min)*tmp
-        elseif (trel .le. t2) then ! phase 2 of pusle
-            do k=1,nspc
-                inflx(k)=inflx_max(k)
-            enddo
-            rad =rad_max
-            cero=cero_max
-        elseif (trel .le. t3) then ! phase 3 of pulse
-            tmp=(trel-t2)/(t3-t2)
-            do k=1,nspc
-                inflx(k)=inflx_max(k)+(inflx_min(k)-inflx_max(k))*tmp
-            enddo
-            rad =rad_max +(rad_min -rad_max )*tmp
-            cero=cero_max+(cero_min-cero_max)*tmp
-        endif
-        else ! no pulse
-            do k=1,nspc
-                inflx(k)=inflx_min(k)
+                inflx(k)=inflx_in(k)
             enddo
             rad =rad_min
             cero=cero_min
+        else
+        call face_error("Unknown mode for pulsed_flux")
         endif
         cero=cero+gamero*inflx(1)*lambda3c ! sputtering
         ! TODO modif Q flux here
@@ -348,11 +360,10 @@ end subroutine func
 
     end subroutine flx_update
 
-    subroutine shift_array()
+    subroutine shift_array
+    ! shifting time array down in time (current time: ndt, past time: ndt-1,ndt-2,...)
         integer i,j,k,l
-        !    ------------------------------------------------------------------
-        !      shifting time array down
-        !     ------------------------------------------------------------------
+        ! volume
         do i=1,ndt-1
             do j=0,ngrd
                 temp(i,j)=temp(i+1,j)
@@ -361,7 +372,7 @@ end subroutine func
                 do k=1,nspc
                     dens(i,j,k)=dens(i+1,j,k)
                     flx (i,j,k)=flx (i+1,j,k)
-                    ero (i,j,k)=ero (i+1,j,k)
+                    ero_flx (i,j,k)=ero_flx (i+1,j,k)
                     src (i,j,k)=src (i+1,j,k)
                     srs (i,j,k)=srs (i+1,j,k)
                     cdif(i,j,k)=cdif(i+1,j,k)
@@ -373,16 +384,17 @@ end subroutine func
                 enddo
             enddo
         enddo
+        ! surface
         do i=1,ndt-1
             do k=1,nspc
                 dsrfl(i,k)=dsrfl(i+1,k)
-                rtsl (i,k)=rtsl (i+1,k)
+                Gsrf_l (i,k)=Gsrf_l (i+1,k)
                 Gabs_l  (i,k)=Gabs_l  (i+1,k)
                 Gdes_l  (i,k)=Gdes_l  (i+1,k)
                 Gb_l  (i,k)=Gb_l  (i+1,k)
                 Gads_l  (i,k)=Gads_l  (i+1,k)
                 dsrfr(i,k)=dsrfr(i+1,k)
-                rtsr (i,k)=rtsr (i+1,k)
+                Gsrf_r (i,k)=Gsrf_r (i+1,k)
                 Gabs_r  (i,k)=Gabs_r  (i+1,k)
                 Gdes_r  (i,k)=Gdes_r  (i+1,k)
                 Gb_r  (i,k)=Gb_r  (i+1,k)
@@ -437,43 +449,49 @@ end subroutine func
         integer k
         real(DP) tmp
         !     --- surface ---
+        ! reducing qch when close to surface saturation
         tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
         qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
-        !write(iout,*) "443: tmp",tmp
+        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
+        qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
+
+        ! calculate rates of surface processes
+        ! - left surface
         Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-eekb* echl(k)/temp(ndt,   0))
         Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*eekb*(echl(k)+qchtl(k))/temp(ndt,   0))
         Kb_l(k)=        K0b_l(k)  *exp(-     eekb*(ebl (k)+qchtl(k))/temp(ndt,   0))
         Kads_l(k)=      K0ads_l(k)*exp(-     eekb*(ebl (k)-esl  (k))/temp(ndt,   0))
 
-        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
-        qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
+        ! - right surface
         Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* echr(k)          /temp(ndt,ngrd))
         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(echr(k)+qchtr(k))/temp(ndt,ngrd))
         Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(ebr (k)+qchtr(k))/temp(ndt,ngrd))
         Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(ebr (k)-esr  (k))/temp(ndt,ngrd))
 
-        ! left surface
+        ! calculate surface fluxes using rates and density
+        ! - left surface
         Gabs_l (ndt,k)=Kabs_l(k)
         Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)*dsrfl(ndt,k)
         Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
         Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
-        ! right surface
+        ! - right surface
         Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
         Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)*dsrfr(ndt,k) ! Gdesorp=K*ns^2
         Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
         Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
 
-
+        ! apply cap factor to mimic effects of saturation
         call set_cap_factor_surface(k,ndt)
 
+        ! calculate effective desorptiopn and heat fluxes
         if (solve_heat_eq .eq. "yes") then
             jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
             qflx=qflx+jout(ndt,k)*(ee*esl(k)-2.d0*kb*temp(ndt,0))
         endif
 
-        !    --- surface ---
-        rtsl(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
-        rtsr(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
+        ! - net flux onto surface
+        Gsrf_l(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
+        Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
     end subroutine update_surface
 
     subroutine update_source(k)
@@ -484,15 +502,11 @@ end subroutine func
             do j=0,ngrd
                 src(ndt,j,k)=0.d0
                 if (srs(ndt,j,k) .ne. 0.d0) then
-                    csrs         =csours(ndt,j,k)
-                    tmp          =srs   (ndt,j,k)*csrs
-                    src (ndt,j,k)=src   (ndt,j,k)+tmp
+                    src (ndt,j,k)=src(ndt,j,k)+srs(ndt,j,k)*csours(ndt,j,k)
                 endif
                 do l=1,nspc
                     if (srb(ndt,j,k,l) .ne. 0.d0) then
-                        csrb           =csrbin(ndt,j,k,l)
-                        tmp            =srb   (ndt,j,k,l)*dens(ndt,j,l)*csrb
-                        src (ndt,j,k  )=src   (ndt,j,k  )+tmp
+                        src (ndt,j,k  )=src(ndt,j,k  )+srb(ndt,j,k,l)*dens(ndt,j,l)*csrbin(ndt,j,k,l)
                     endif
                 enddo
             enddo
@@ -502,32 +516,31 @@ end subroutine func
                 src(ndt,j,k)=0.d0
                 if (srs(ndt,j,k) .ne. 0.d0) then
                     csrs         =csours(ndt,j,k)
-                    tmp          =srs   (ndt,j,k)*csrs
-                    src (ndt,j,k)=src   (ndt,j,k)+tmp
+                    src (ndt,j,k)=src   (ndt,j,k)+srs   (ndt,j,k)*csrs
                     jout(ndt,  k)=jout  (ndt,  k)+srs(ndt,j,k)*(1.d0-csrs)*dx(j)
                 endif
                 do l=1,nspc
                     if (srb(ndt,j,k,l) .ne. 0.d0) then
                         csrb           =csrbin(ndt,j,k,l)
-                        tmp            =srb   (ndt,j,k,l)*dens(ndt,j,l)*csrb
-                        src (ndt,j,k  )=src   (ndt,j,k  )+tmp
+                        src (ndt,j,k  )=src   (ndt,j,k  )+srb   (ndt,j,k,l)*dens(ndt,j,l)*csrb
                         jout(ndt,  k  )=jout  (ndt,  k  )+srb   (ndt,j,k,l)*dens(ndt,j,l)*(1.d0-csrb)*dx(j)
                     endif
                 enddo
             enddo
         else
-            write(iout,*) "ERROR: Unknown option for solve_heat_eq:", solve_heat_eq
-            stop
+            call face_error("Unknown option for solve_heat_eq:", solve_heat_eq)
         endif
     end subroutine update_source
 
-    subroutine update_flux(k)
+    subroutine update_gradient_dens(k)
+
         integer k,j
         do j=0,ngrd-1
             flx (ndt,j,k)=(dens(ndt,j,k)-dens(ndt,j+1,k))/dx(j)
         enddo
         flx (ndt,ngrd,k)=flx (ndt,ngrd-1,k)
-    end subroutine update_flux
+
+    end subroutine update_gradient_dens
 
     subroutine check_value_inputs
         integer ::j,k,l,m
@@ -747,41 +760,34 @@ end subroutine func
       call check_value_inputs
 
       do k=1,nspc
-      call update_source(k)
-      call update_flux(k)
-      call update_reaction(k)
+      call update_source(k)    !
+      call update_gradient_dens(k)      ! set flx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
+      call update_reaction(k)  !
 !     write(iout,*) "784: Gb_l",Gb_l(ndt,k)
       call update_surface(k)
 
 
 !     --- low-pass filter ---
-       rtsl(ndt,k)=delta*rtsl(ndt-1,k)+(1.d0-delta)*rtsl(ndt,k)
-       rtsr(ndt,k)=delta*rtsr(ndt-1,k)+(1.d0-delta)*rtsr(ndt,k)
-!
+       Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
+       Gsrf_r(ndt,k)=delta*Gsrf_r(ndt-1,k)+(1.d0-delta)*Gsrf_r(ndt,k)
+
 !     --- erosion ---
-       ero(ndt,0,k)=-cero*flx(ndt,0,k)
+       ero_flx(ndt,0,k)=-cero*flx(ndt,0,k) ! until now, flx is the gradient (see line 764)
        do j=1,ngrd-1
-!        ero(ndt,j,k)=-cero*(dx(j)*flx(ndt,j-1,k)+dx(j-1)*flx(ndt,j,k))
-!     +                    /(dx(j-1)+dx(j))
-        ero(ndt,j,k)=-cero*flx(ndt,j,k)
+!        ero(ndt,j,k)=-cero*(dx(j)*flx(ndt,j-1,k)+dx(j-1)*flx(ndt,j,k))/(dx(j-1)+dx(j))
+        ero_flx(ndt,j,k)=-cero*flx(ndt,j,k)
        enddo
 !       ero(ndt,ngrd,k)=-cero*flx(ndt,ngrd,k)
-       ero(ndt,ngrd,k)=0.d0
-!
+       ero_flx(ndt,ngrd,k)=0.d0 ! no erosion on the right side of the material (only left side is facing plasma)
+
        do j=0,ngrd
-        rtd(ndt,j,k)=ero(ndt,j,k)
-  !      if (isnan(rtd(ndt,j,k))) then
- !       write(iout,*) "804: rtd is nan"
- !       stop
-  !      endif
+        rtd(ndt,j,k)=ero_flx(ndt,j,k)
        enddo
+
 !     --- diffusion ---
        flx(ndt,0,k)=cdif(ndt,0,k)*flx(ndt,0,k)
-!       write(iout,*) "811: Gb_l",Gb_l(ndt,k)
        rtd(ndt,0,k)=rtd(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
-!       if (isnan(rtd(ndt,0,k))) then
-!        write(iout,*) "813: rtd is nan",flx(ndt,0,k),dx(0),Gads_l(ndt,k),Gb_l(ndt,k)
- !       endif
+
        do j=1,ngrd-1
         flx(ndt,j,k)=cdif(ndt,j,k)*flx(ndt,j,k)
         rtd(ndt,j,k)=rtd(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))

@@ -96,7 +96,7 @@
       real(DP):: start_time ! start time  of simulation
       real(DP):: cdt   ! factor for solver time step (dt)
       ! temp
-      real(DP):: cero
+      real(DP):: cero     ! erosion velocity
       real(DP):: cero_min
       real(DP):: cero_max
       real(DP):: gamero
@@ -141,6 +141,7 @@
       character(string_length):: store_state_file
       character(string_length):: restore_state_file
       character(string_length):: casename
+      character(string_length):: pulsed_flux
 !
 !     ------------------------------------------------------------------
 !       Material parameters
@@ -160,8 +161,8 @@
 !     species parameters
       real(DP),allocatable::enrg(:)
       real(DP),allocatable::inflx(:)
-      real(DP),allocatable::inflx_max(:)
-      real(DP),allocatable::inflx_min(:)
+      real(DP),allocatable::inflx_in_max(:)
+      real(DP),allocatable::inflx_in(:)
       real(DP),allocatable::gas_pressure(:)
       real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
@@ -246,39 +247,44 @@
       real(DP),allocatable::src (:,:,:)
       real(DP),allocatable::cdif(:,:,:)
       real(DP),allocatable::rct (:,:,:)
-      real(DP),allocatable::ero (:,:,:)
+      real(DP),allocatable::ero_flx (:,:,:)  ! erosion flux
 !     Surface
-      real(DP),allocatable::dsrfl(:,:)
-      real(DP),allocatable:: rtsl(:,:)
-      real(DP),allocatable::dsrfr(:,:)
-      real(DP),allocatable:: rtsr(:,:)
-      real(DP),allocatable::Gabs_l(:,:)
+
+
+
+      ! left surface at x(j=0)
+      real(DP),allocatable:: dsrfl(:,:)   ! density on left surface
+      real(DP),allocatable:: Gsrf_l(:,:) ! net flux of species onto the left surface
+      real(DP),allocatable:: Gabs_l(:,:)
       real(DP),allocatable:: Gdes_l(:,:)
       real(DP),allocatable:: Gb_l(:,:)
       real(DP),allocatable:: Gads_l(:,:)
-      real(DP),allocatable::Gabs_r(:,:)
+      !right surface at x(j=n+1)
+      real(DP),allocatable:: dsrfr(:,:)   ! density on right surface
+      real(DP),allocatable:: Gsrf_r(:,:) ! net flux of species onto the right surface
+      real(DP),allocatable:: Gabs_r(:,:)
       real(DP),allocatable:: Gdes_r(:,:)
-      real(DP),allocatable::Gb_r(:,:)
-      real(DP),allocatable::Gads_r(:,:)
+      real(DP),allocatable:: Gb_r(:,:)
+      real(DP),allocatable:: Gads_r(:,:)
 
 !
 !     ------------------------------------------------------------------
 !       Thermal variables
 !     ------------------------------------------------------------------
-      real(DP):: thcond=0
-      real(DP):: rho=0
-      real(DP):: cp=0
-      real(DP)::rhocp=0
-      real(DP):: emiss=0
-      real(DP)::qform=0
-      real(DP):: qflx=0
-      real(DP):: rad=0
-      real(DP)::rad_min=0
-      real(DP):: rad_max=0
-      real(DP)::t1=0
-      real(DP):: t2 =0
-      real(DP)::t3=0
-       real(DP)::tp=0
+      real(DP):: thcond  =0
+      real(DP):: rho     =0
+      real(DP):: cp      =0
+      real(DP)::rhocp    =0
+      real(DP):: emiss   =0
+      real(DP)::qform    =0
+      real(DP):: qflx    =0
+      real(DP):: rad     =0
+      real(DP)::rad_min  =0
+      real(DP):: rad_max =0
+      real(DP)::t1       =0
+      real(DP):: t2      =0
+      real(DP)::t3       =0
+      real(DP)::tpulse   =0 ! period of plasma pulse
       real(DP),allocatable::rtt(:,:)
       real(DP),allocatable::flxt(:,:)
       real(DP),allocatable::erot(:,:)
@@ -286,5 +292,9 @@
 !     ------------------------------------------------------------------
 !       Environment variables
 !     ------------------------------------------------------------------
-      character *128 path_folder
+      character(string_length) path_folder ! top folder where simulations files anf folders are written in
+      character(string_length) dat_folder ! top folder where vol,srf and heat data files are written in
+
+
+
 end module modFACE_header

@@ -1,5 +1,6 @@
 module modFACE_IO
     use modFACE_header
+    use modFACE_error
     use modFACE_allocate
     use modFACE_step
     use modFACE_coupling
@@ -23,20 +24,20 @@ contains
                 stop 'Exiting FACE...'
             endif
             write (ifile_timedata(k), '(14a13)')&
-                '    time[s]',&
-                '    Temp[K]',&
-                '      densL',&
-                '      densR',&
-                '      NsrfL',&
-                '      NsrfR',&
-                '      GdesL',&
-                '      GdesR',&
-                '       Qnty',&
-                '        Src',&
-                '        Rct',&
-                '        Rtd',&
-                '     inflx1',&
-                '       qrad'
+                'time',&
+                'temp',&
+                'densL',&
+                'densR',&
+                'NsrfL',&
+                'NsrfR',&
+                'GdesL',&
+                'GdesR',&
+                'Qnty',&
+                'Src',&
+                'Rct',&
+                'Rtd',&
+                'inflx1',&
+                'qrad'
         enddo
     end subroutine open_timedata_files
 
@@ -55,7 +56,7 @@ do k=1,nspc
     subroutine save_voldata()
 
         integer j, k,ios
-        character*256  name,myfmt1,myfmt2,myfmt3
+        character(string_length)::  filename,myfmt1,myfmt2,myfmt3
 
         !     --- saving snapshot of volume distributions ---
 
@@ -64,22 +65,22 @@ do k=1,nspc
         write(myfmt3,*) "(i13.4, 8(1pe13.4e2))"
 
         do k=1,nspc
-            write (name, '(a,a,a, i2.2, a, i3.3, a)') trim(path_folder),trim(casename),'dat/vol', k, '_', sfln_voldata, '.dat'
-            open (unit=ifile_voldata, file=name, status='replace', iostat=ios)
+            write (filename, '(a,a, i2.2, a, i3.3, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
+            open (unit=ifile_voldata, file=trim(filename), status='replace', iostat=ios)
             if (ios.eq.0) then
 
                 write (ifile_voldata,myfmt1) 'time=', time, ' s'
 
                 write (ifile_voldata,myfmt2) &
-                    ' #', &
+                    ' icell', &
                     '  x',&
                     ' dens',&
-                    '   flx',&
-                    '  ero',&
+                    'flx',&
+                    'ero_flx',&
                     '   src',&
                     '  rct',&
                     '   rtd',&
-                    '  Cdif'
+                    '  cdif'
 
                 do j=0,ngrd
                     write (ifile_voldata, fmt=myfmt3) &
@@ -87,7 +88,7 @@ do k=1,nspc
                         x(j), &
                         dens(ndt,j,k), &
                         flx (ndt,j,k), &
-                        ero (ndt,j,k), &
+                        ero_flx(ndt,j,k), &
                         src (ndt,j,k), &
                         rct (ndt,j,k), &
                         rtd (ndt,j,k), &
@@ -98,7 +99,7 @@ do k=1,nspc
 
 
             else
-                write (iout, '(2a)') ' *** error saving ', name
+                write (iout, '(2a)') ' *** error saving ', trim(filename)
 
             endif
             sfln_voldata=sfln_voldata+1
@@ -110,14 +111,14 @@ do k=1,nspc
     subroutine save_heatdata()
 
         integer j, ios
-        character*256  name,myfmt1,myfmt2,myfmt3
+        character(string_length):: filename,myfmt1,myfmt2,myfmt3
 
         write(myfmt1,*) "(a, 1pe13.4e2, a)"
         write(myfmt2,*) "(6(a))"
         write(myfmt3,*)"(i8.4, 5(1pe13.4e2))"
 
-        write (name, '(a,a,a, i3.3, a)') trim(path_folder),trim(casename),'dat/heat_', sfln_heatdata, '.dat'
-        open (ifile_heatdata, file=name, status='replace',iostat=ios)
+        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
+        open (ifile_heatdata, file=trim(filename), status='replace',iostat=ios)
         if (ios.eq.0) then
             write (ifile_heatdata, myfmt1) 'time=', time, ' s'
 
@@ -141,12 +142,65 @@ do k=1,nspc
 
             close (ifile_heatdata)
         else
-        write (iout, '(2a)') ' *** error saving ', name
-    endif
+            write (iout, '(2a)') ' *** error saving ', trim(filename)
+        endif
 
-    sfln_heatdata=sfln_heatdata+1
+        sfln_heatdata=sfln_heatdata+1
 
-end subroutine save_heatdata
+    end subroutine save_heatdata
+
+    subroutine save_srfdata
+        character(string_length)::filename,myfmt1,myfmt2,myfmt3
+        integer k,ios
+        !     --- saving snapshot of surface parameters
+        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/srf_', sfln_srfdata, '.dat'
+        write(myfmt1,*) "(a, 1pe13.4e2, a)"
+        write(myfmt2,*) "(12(a13))"
+        write(myfmt3,*) "(i13.2, 11(1pe13.4e2))"
+        open (ifile_surfdata, file=trim(filename), status='replace',iostat=ios)
+        if (ios.eq.0) then
+            write (ifile_surfdata, myfmt1) 'time=', time, ' s'
+            write (ifile_surfdata, myfmt2)&
+                'spc#',&
+                'NsrfL',&
+                'Gabs_l',&
+                'Gdes_l',&
+                'Gb_l',&
+                'Gads_l',&
+                'NsrfR',&
+                'Gabs_r',&
+                'Gdes_r',&
+                'Gb_r',&
+                'Gads_r',&
+                'Jout'
+
+            do k=1,nspc
+                write (ifile_surfdata, myfmt3) &
+                    k, &
+                    dsrfl(ndt,k),&
+                    Gabs_l  (ndt,k),&
+                    Gdes_l  (ndt,k),&
+                    Gb_l  (ndt,k),&
+                    Gads_l  (ndt,k),&
+                    dsrfr(ndt,k),&
+                    Gabs_r  (ndt,k),&
+                    Gdes_r  (ndt,k),&
+                    Gb_r  (ndt,k),&
+                    Gads_r  (ndt,k),&
+                    jout (ndt,k)
+            enddo
+
+            close (ifile_surfdata)
+
+        else
+            write (iout, '(2a)') ' *** error saving ', trim(filename)
+        endif
+
+        sfln_srfdata=sfln_srfdata+1
+
+    end subroutine save_srfdata
+
+
 
 subroutine save
     real(DP)::tmp
@@ -210,56 +264,7 @@ subroutine save_timedata
 
 end subroutine save_timedata
 
-subroutine save_srfdata
-    character*256  name,myfmt1,myfmt2,myfmt3
-    integer k,ios
-    !     --- saving snapshot of surface parameters
-    write (name, '(a,a,a, i3.3, a)') trim(path_folder),trim(casename),'dat/srf_', sfln_srfdata, '.dat'
-    write(myfmt1,*) "(a, 1pe13.4e2, a)"
-    write(myfmt2,*) "(12(a13))"
-    write(myfmt3,*) "(i13.2, 11(1pe13.4e2))"
-    open (ifile_surfdata, file=name, status='replace',iostat=ios)
-    if (ios.eq.0) then
-        write (ifile_surfdata, myfmt1) 'time=', time, ' s'
-        write (ifile_surfdata, myfmt2)&
-            'spc#',&
-            'NsrfL',&
-            'Gabs_l',&
-            'Gdes_l',&
-            'Gb_l',&
-            'Gads_l',&
-            'NsrfR',&
-            'Gabs_r',&
-            'Gdes_r',&
-            'Gb_r',&
-            'Gads_r',&
-            'Jout'
 
-        do k=1,nspc
-            write (ifile_surfdata, myfmt3) &
-                k, &
-                dsrfl(ndt,k),&
-                Gabs_l  (ndt,k),&
-                Gdes_l  (ndt,k),&
-                Gb_l  (ndt,k),&
-                Gads_l  (ndt,k),&
-                dsrfr(ndt,k),&
-                Gabs_r  (ndt,k),&
-                Gdes_r  (ndt,k),&
-                Gb_r  (ndt,k),&
-                Gads_r  (ndt,k),&
-                jout (ndt,k)
-        enddo
-
-        close (ifile_surfdata)
-
-    else
-        write (iout, '(2a)') ' *** error saving ', name
-    endif
-
-    sfln_srfdata=sfln_srfdata+1
-
-end subroutine save_srfdata
 
 
 ! store and restore state files
@@ -273,25 +278,24 @@ subroutine store_state(filename)
     if (ios.eq.0) then
         do k=1,nspc
             do j=0,ngrd
-                write (ifile_store) dens(ndt,j,k)
+                write (ifile_store,*) dens(ndt,j,k)
             enddo
         enddo
         do k=1,nspc
-            write (ifile_store) dsrfl(ndt,k)
-            write (ifile_store) dsrfr(ndt,k)
+            write (ifile_store,*) dsrfl(ndt,k)
+            write (ifile_store,*) dsrfr(ndt,k)
         enddo
 
         do j=0,ngrd
 
-            write (ifile_store) temp(ndt,j)
+            write (ifile_store,*) temp(ndt,j)
 
         enddo
         close (ifile_store)
 
-        write(iout,*) 'simulation state stored in '//filename
+        write(iout,*) '-- simulation state stored in '//filename
     else
-        write (iout, '(a)') 'ERROR: cannot open state file: ', filename
-        stop 'Exiting FACE'
+        call face_error('cannot open state file: ', filename)
     endif
 
 end subroutine store_state
@@ -340,7 +344,7 @@ subroutine store_restart(filename)
         do k=1,nspc
             do j=0,ngrd
                 do i=1,ndt
-                    write (ifile_restart) dens(i,j,k), flx (i,j,k), ero (i,j,k),cdif(i,j,k), rct (i,j,k), rtd (i,j,k)
+                    write (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct (i,j,k), rtd (i,j,k)
                 enddo
             enddo
         enddo
@@ -349,8 +353,8 @@ subroutine store_restart(filename)
         enddo
         do k=1,nspc
             do i=1,ndt
-                write (ifile_restart) dsrfl(i,k), rtsl(i,k)
-                write (ifile_restart) dsrfr(i,k), rtsr(i,k)
+                write (ifile_restart) dsrfl(i,k), Gsrf_l(i,k)
+                write (ifile_restart) dsrfr(i,k), Gsrf_r(i,k)
                 write (ifile_restart) Gabs_l(i,k), Gdes_l(i,k), Gb_l(i,k), Gads_l(i,k)
                 write (ifile_restart) Gabs_r(i,k), Gdes_r(i,k), Gb_r(i,k), Gads_r(i,k)
                 write (ifile_restart) jout(i,k)
@@ -384,7 +388,7 @@ subroutine restore_restart(filename)
     do k=1,nspc
         do j=0,ngrd
             do i=1,ndt
-                read (ifile_restart) dens(i,j,k), flx (i,j,k), ero(i,j,k),cdif(i,j,k), rct(i,j,k), rtd(i,j,k)
+                read (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct(i,j,k), rtd(i,j,k)
             enddo
         enddo
     enddo
@@ -395,8 +399,8 @@ subroutine restore_restart(filename)
 
     do k=1,nspc
         do i=1,ndt
-            read (ifile_restart) dsrfl(i,k), rtsl(i,k)
-            read (ifile_restart) dsrfr(i,k), rtsr(i,k)
+            read (ifile_restart) dsrfl(i,k), Gsrf_l(i,k)
+            read (ifile_restart) dsrfr(i,k), Gsrf_r(i,k)
             read (ifile_restart) Gabs_l(i,k), Gdes_l(i,k), Gb_l(i,k), Gads_l(i,k)
             read (ifile_restart) Gabs_r(i,k), Gdes_r(i,k), Gb_r(i,k), Gads_r(i,k)
             read (ifile_restart) jout(i,k)
@@ -493,7 +497,9 @@ character(string_length)::timestamp
 call timestring ( timestamp )
 write(iout,*) '# created    :', timestamp
 write(iout,*) '# casename   :', trim(casename)
-write(iout,*) '# pathfolder :', trim(path_folder)
+write(iout,*) '# path folder :', trim(path_folder)
+write(iout,*) '# data folder :', trim(dat_folder)
+
 end subroutine write_header_log
 
 subroutine print_milestone(str)
@@ -501,5 +507,7 @@ character(*)::str
 write(iout,"(a)") " "
 write(iout,"('--- ',a,' ---')") str
 end subroutine print_milestone
+
+
 
 end module modFACE_IO
