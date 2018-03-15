@@ -124,25 +124,12 @@ do k=1,nspc
 
             write (ifile_heatdata, myfmt2)&
                 '       #',&
-<<<<<<< Upstream, based on branch 'develop' of git@git.ucsd.edu:face-group/face.git
-<<<<<<< Upstream, based on branch 'develop' of git@git.ucsd.edu:face-group/face.git
-                '            x',&
-                '         temp',&
-                '         flxt',&
-                '          rtt',&
-                '         erot'
-=======
-=======
 <<<<<<< HEAD
->>>>>>> cebf78c commit after rebase from Roman linux update
                 '                  x',&
                 '               temp',&
                 '               qflx',&
                 '                rate_t',&
                 '               ero_qflx)'
-<<<<<<< Upstream, based on branch 'develop' of git@git.ucsd.edu:face-group/face.git
->>>>>>> 73c8ced another major commit
-=======
 =======
                 '            x',&
                 '         temp',&
@@ -150,7 +137,6 @@ do k=1,nspc
                 '          rtt',&
                 '         erot'
 >>>>>>> branch 'develop' of git@git.ucsd.edu:face-group/face.git
->>>>>>> cebf78c commit after rebase from Roman linux update
 
             do j=0,ngrd
                 write (ifile_heatdata, myfmt3)&
