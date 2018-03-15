@@ -236,8 +236,8 @@ contains
         call set_ifile(idefault)
         open(unit=idefault, file=trim(filename), iostat=ios,action='write')
         if ( ios /= 0 ) then
-            write(iout,*) 'ERROR: Cannot write into default input file ', trim(filename)
-            stop 'Exiting FACE'
+            write(iout,*)'ERROR: Cannot write into default input file "', trim(filename)
+            stop'Exiting FACE'
         endif
 
         write(iout,*)'Default input file: "', trim(filename) ,'" created'
