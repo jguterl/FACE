@@ -65,8 +65,7 @@ contains
         !check order of the numerical solver
         case('order_solver')
             if (order_solver.ne.1.and.order_solver.ne.2.and.order_solver.ne.5) then
-                write(iout,*) "ERROR: order of the solver must be 1 2 or 5. current order : ", order_solver
-                stop 'Exiting FACE...'
+                call face_error("order of the solver must be 1 2 or 5. current order : ", order_solver)
             else
             ndt=order_solver+1
             write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
@@ -94,9 +93,8 @@ contains
            do k=1,nspc
              do kk=1,nspc
                  if (k.ne.kk.and.namespc(k).eq.namespc(kk)) then
-                write(iout,*) "ERROR: two species have the same name: k=",k," and k=",kk
-                write(iout,*) "ERROR:  namespc=",namespc(k)," and namespc=",namespc(kk)
-                stop 'Exiting FACE'
+                call face_error("two species have the same name: k=",k," and k=",kk," namespc=",namespc(k),&
+                " and namespc=",namespc(kk))
             endif
        enddo
        enddo
@@ -192,8 +190,7 @@ contains
         write (filename, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'_input.face'
         open (ifile_inputlog, file=trim(filename),status='replace', iostat=ios)
         if (ios.ne.0) then
-        write (iout,*) ' *** Cannot open file ', trim(filename)
-        stop 'Exiting FACE...'
+        call face_error('Cannot open file ', trim(filename))
         else
         call write_input_log_keyword('order_solver',order_solver)
         call write_input_log_keyword('read_restart_file',read_restart_file)

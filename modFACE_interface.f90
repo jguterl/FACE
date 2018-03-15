@@ -1,5 +1,6 @@
 module modFACE_interface
     use modFACE_precision
+    use modFACE_error
     implicit none
 
     save
@@ -80,12 +81,10 @@ contains
                     call getarg(k,arg)
                     if (verbose_interface) write(*,*)arg
                     if (arg(1:1).eq.'-') then
-                        write(*,*) 'ERROR: Invalid input filename :',arg
-                        stop 'Exiting FACE...'
+                        call face_error('Invalid input filename :',arg)
                     endif
                 else
-                    write(*,*) 'ERROR: Missing input filename'
-                    stop 'Exiting FACE...'
+                    call facE_error('Missing input filename')
                 endif
                 face_input%input_filename=arg
                 k=k+1
@@ -132,8 +131,7 @@ contains
             ! help
             elseif (arg.eq."-h" .or. arg.eq."--help") then
                 if (face_input%run_mode.ne."default") then
-                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
-                    stop 'Exiting FACE...'
+                    call face_error('Current flag incompatible with previous flags (current flag: ',arg,')')
                 else
                     face_input%run_mode="help"
                     k=k+1
@@ -142,8 +140,7 @@ contains
             ! version
             elseif (arg.eq."-v" .or. arg.eq."--version") then
                 if (face_input%run_mode.ne."default") then
-                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
-                    stop 'Exiting FACE...'
+                    call face_error('Current flag incompatible with previous flags (current flag: ',arg,')')
                 else
                     face_input%run_mode="version"
                     k=k+1
