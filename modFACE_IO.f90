@@ -11,17 +11,16 @@ contains
 
     subroutine open_timedata_files()
         integer:: ios,k
-        character(300)::name
+        character(string_length)::filename
         ! open time file
         allocate(ifile_timedata(nspc))
 
         do k=1,nspc
             call set_ifile(ifile_timedata(k))
-            write (name, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'_dat/time_', k, '.dat'
-            open (ifile_timedata(k), file=trim(name),status='replace', iostat=ios)
+            write (filename, '(a,a, i2.2, a)') trim(dat_folder),'/time_', k, '.dat'
+            open (ifile_timedata(k), file=trim(filename),status='replace', iostat=ios)
             if (ios.ne.0) then
-                write (iout,*) ' *** Cannot open file ', trim(name)
-                stop 'Exiting FACE...'
+                call face_error('Cannot open file ', trim(filename))
             endif
             write (ifile_timedata(k), '(14a13)')&
                 'time',&
@@ -46,11 +45,12 @@ contains
         logical:: test
 do k=1,nspc
         inquire(ifile_timedata(k),opened=test)
-        write(iout,*) test
+        if (test) then
         close(ifile_timedata(k))
+        endif
           enddo
-          deallocate(ifile_timedata)
 
+          deallocate(ifile_timedata)
     end subroutine close_timedata_files
 
     subroutine save_voldata()
@@ -307,8 +307,7 @@ subroutine restore_state(filename)
     open(ifile_restore, file=trim(filename), iostat=ios,action='read',status='old',form='formatted')
 
     if ( ios /= 0 ) then
-        write(iout,*) 'ERROR: Cannot open history store file :', trim(adjustl(filename))
-        stop 'Exiting FACE'
+        call face_error('Cannot open state file :', trim(adjustl(filename)))
     endif
 
     write(iout,*) 'Restoring state from file: ', trim(filename)
@@ -380,8 +379,7 @@ subroutine restore_restart(filename)
     open (unit=ifile_restart, file=filename, form='unformatted',iostat=ios,&
         action='read',status='old')
     if ( ios .ne. 0 ) then
-        write(iout,*) 'ERROR: cannot open restart file : ',filename
-        stop 'Exiting FACE'
+        call face_error('cannot open restart file : ',filename)
     endif
     write(iout,*) 'Restoring state from restart file : ', filename
 
@@ -432,8 +430,7 @@ subroutine restore
     if (verbose_restore) write(iout,*) 'read_state_file:',read_state_file
     ! cannot restore from restart and state file  at the same time
     if (trim(read_restart_file).ne."no".and.trim(read_state_file).ne."no") then
-        write(iout,*) 'ERROR: Cannot restore from restart file and state file simultaneously'
-        stop 'Exiting FACE'
+        call face_error('Cannot restore from restart file and state file simultaneously')
     endif
 
     ! restore from restart file?

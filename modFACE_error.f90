@@ -11,6 +11,8 @@ module procedure print_error5
 module procedure print_error6
 module procedure print_error7
 module procedure print_error8
+module procedure print_error9
+module procedure print_error10
 end interface face_error
 interface face_warning
 module procedure print_warning1
@@ -107,6 +109,27 @@ write(iout,*) message_exit_error
 stop
 endif
 end subroutine print_error8
+
+subroutine print_error9(str,str2,str3)
+character(*)::str,str2,str3
+write(iout,*) "ERROR:", str,str2,str3
+if (enforce_error) then
+write(iout,*) message_exit_error
+stop
+endif
+end subroutine print_error9
+
+subroutine print_error10(str,str2,str3,i)
+character(*)::str,str2,str3
+integer :: i
+write(iout,*) "ERROR:", str,str2,str3,i
+if (enforce_error) then
+write(iout,*) message_exit_error
+stop
+endif
+end subroutine print_error10
+
+
 ! warning
 subroutine print_warning1(str)
 character(*)::str

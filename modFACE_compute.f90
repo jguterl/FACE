@@ -486,8 +486,7 @@ subroutine compute_source_rate(k)
         if (pulsed_flux.eq."yes") then
             ! check that the pulse period is not zero
             if (tpulse.le.0) then
-            write(iout,*) "ERROR: Pulsed incoming plasma flux activated but pulse_period =0"
-            stop 'Exiting FACE'
+            call face_error('Pulsed incoming plasma flux activated but pulse_period =0')
             endif
 
             trel=time-tpulse*int(time/tpulse)

@@ -241,8 +241,7 @@ contains
         call set_ifile(idefault)
         open(unit=idefault, file=trim(filename), iostat=ios,action='write')
         if ( ios /= 0 ) then
-            write(iout,*) 'ERROR: Cannot write into default input file ', trim(filename)
-            stop 'Exiting FACE'
+            call face_error('Cannot write into default input file ', trim(filename))
         endif
 
         write(iout,*)'Default input file: "', trim(filename) ,'" created'
@@ -259,8 +258,7 @@ contains
                     elseif (mode.eq."H+Tr") then
                         write(str_data,fmt) "3"
                     else
-                        write(iout,*) "ERROR: Unknown mode when writing default input file"
-                        STOP 'Exiting FACE...'
+                        call face_error("Unknown mode when writing default input file")
                     endif
                else
                     write(str_data,fmt) adjustl(help(i)%default)

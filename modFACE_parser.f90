@@ -63,8 +63,7 @@ contains
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
                     write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
-                        write(iout,*) 'input_lines(i)%keyword=',input_lines(i)%keyword
-                    stop 'Exiting FACE'
+                        call face_error('input_lines(i)%keyword=',input_lines(i)%keyword)
                 endif
                 idx=i
                 found_str=.true.
@@ -99,15 +98,13 @@ contains
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
         if (idx_help.eq.-1) then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
         endif
         if (verbose_parser) write(iout,*) 'keyword:',keyword,' idx=',idx,' idx_help=',idx_help
         write(inputval%status,*) adjustl(help(idx_help)%status)
 
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
         else if (idx.ne.-1) then
             ! seems that an extra blank is added when writing in string, leading to seg fault if size of receiving string is not incremeted by +1
             write(str0,*) input_lines(idx)%data
@@ -143,13 +140,11 @@ contains
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
         if (idx_help.eq.-1) then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
         endif
         write(inputval%status,*) adjustl(help(idx_help)%status)
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
-            write(iout,*) 'ERROR: mandatory keyword "', keyword ,'" not found in the inputfile'
-            stop 'Exiting FACE...'
+            call face_error('mandatory keyword "', keyword ,'" not found in the inputfile')
         else if (idx.ne.-1) then
             write(str0,*) help(idx_help)%default
             do k=1,nspc
@@ -267,9 +262,7 @@ contains
             if (compare_string(keyword,help(i)%keyword)) then
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
-                    write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
-
-                    stop 'Exiting FACE'
+                    call face_error('keyword "', keyword ,'" found twice in the input file,idx=',i)
                 endif
                 idx_help=i
                 found_str=.true.

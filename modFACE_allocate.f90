@@ -18,8 +18,7 @@
         real(DP),allocatable::r(:,:)
 !        integer:: n1,n2,i,j
          if (.not.allocated(r))  then
-         write(iout,*) 'ERROR: trying to set value to non-allocated variable'
-         stop 'Exiting FACE...'
+         call face_error('trying to set value to non-allocated variable')
          endif
 !        n1=size(r,1)
 !        n2=size(r,2)
@@ -35,8 +34,7 @@
         real(DP),allocatable::r(:,:,:)
 !        integer:: n1,n2,n3,i,j,k
          if (.not.allocated(r))  then
-         write(iout,*) 'ERROR: trying to set value to non-allocated variable'
-         stop 'Exiting FACE...'
+         call face_error("trying to set value to non-allocated variable")
          endif
 !        n1=size(r,1)
 !        n2=size(r,2)
@@ -55,8 +53,7 @@
         real(DP),allocatable::r(:,:,:,:)
 !        integer:: n1,n2,n3,n4,i,j,k,l
          if (.not.allocated(r))  then
-         write(iout,*) 'ERROR: trying to set value to non-allocated variable'
-         stop 'Exiting FACE...'
+         call face_error("trying to set value to non-allocated variable")
          endif
         r=0.d0
 
@@ -65,8 +62,7 @@
     subroutine init_zero_rarr(r)
         real(DP),allocatable::r(:)
           if (.not.allocated(r))  then
-         write(iout,*) 'ERROR: trying to set value to non-allocated variable'
-         stop 'Exiting FACE...'
+         call face_error("trying to set value to non-allocated variable")
          endif
         r=0
     end subroutine init_zero_rarr
@@ -104,16 +100,16 @@
               allocate(x(0:ngrd))
               call init_zero(x)
           else
-              write(iout,*) 'ERROR: x already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('x already allocated')
+
           endif
 
           if (.not.allocated(dx)) then
               allocate(dx(0:ngrd))
               call init_zero(dx)
           else
-              write(iout,*) 'ERROR: dx already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('dx already allocated')
+
           endif
 
           ! temperature
@@ -121,8 +117,7 @@
           allocate( temp(ndt,0:ngrd))
           call init_zero(temp)
           else
-              write(iout,*) 'ERROR: dx already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('dx already allocated')
           endif
           ! surface
 
@@ -133,91 +128,87 @@
               allocate(dens(ndt,0:ngrd,nspc))
               call init_zero(dens)
           else
-              write(iout,*) 'ERROR: dens already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('dens already allocated')
           endif
 
           if (.not.allocated(flx)) then
               allocate(flx (ndt,0:ngrd,nspc))
               call init_zero(flx)
           else
-              write(iout,*) 'ERROR: flx already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('flx already allocated')
           endif
 
           if (.not.allocated(rate_d)) then
               allocate(rate_d (ndt,0:ngrd,nspc))
               call init_zero(rate_d)
           else
-              write(iout,*) 'ERROR: rate_d already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('rate_d already allocated')
           endif
 
           if (.not.allocated(cdif)) then
               allocate(cdif(ndt,0:ngrd,nspc))
               call init_zero(cdif)
           else
-              write(iout,*) 'ERROR: cdif already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('cdif already allocated')
+
           endif
 
           if (.not.allocated(rct)) then
               allocate(rct (ndt,0:ngrd,nspc))
               call init_zero(rct)
           else
-              write(iout,*) 'ERROR: rct already allocated'
-              STOP 'Exiting FACE...'
+             call face_error(' rct already allocated')
           endif
           if (.not.allocated(ero_flx)) then
               allocate(ero_flx (ndt,0:ngrd,nspc))
               call init_zero(ero_flx)
           else
-              write(iout,*) 'ERROR: ero already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('ero_flx already allocated')
+
           endif
           if (.not.allocated(rate_t)) then
               allocate(rate_t(ndt,0:ngrd))
               call init_zero(rate_t)
           else
-              write(iout,*) 'ERROR: srs already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('srs already allocated')
+
           endif
           if (.not.allocated(qflx)) then
               allocate(qflx(ndt,0:ngrd))
               call init_zero(qflx)
           else
-              write(iout,*) 'ERROR: qflx already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('qflx already allocated')
+
           endif
           if (.not.allocated(ero_qflx)) then
               allocate(ero_qflx(ndt,0:ngrd))
               call init_zero(ero_qflx)
           else
-              write(iout,*) 'ERROR: srs already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('ero_qflx already allocated')
+
           endif
 
           if (.not.allocated(srs)) then
               allocate(srs(ndt,0:ngrd,nspc))
               call init_zero(srs)
           else
-              write(iout,*) 'ERROR: srs already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('srs already allocated')
+
           endif
 
           if (.not.allocated(srb)) then
               allocate(srb (ndt,0:ngrd,nspc,nspc))
               call init_zero(srb)
           else
-              write(iout,*) 'ERROR: srb already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('srb already allocated')
+
           endif
           if (.not.allocated(src)) then
               allocate(src (ndt,0:ngrd,nspc))
               call init_zero(src)
           else
-              write(iout,*) 'ERROR: src already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('src already allocated')
+
           endif
 
          ! reaction parameters
@@ -225,22 +216,20 @@
      allocate(kbin0(nspc,nspc,nspc))
          call init_zero(kbin0)
           else
-              write(iout,*) 'ERROR: kbin0 already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('kbin0 already allocated')
+
           endif
      if (.not.allocated(ebin)) then
       allocate(ebin(nspc,nspc,nspc))
           call init_zero(ebin)
           else
-              write(iout,*) 'ERROR: ebin already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('ebin already allocated')
           endif
       if (.not.allocated(kbin)) then
       allocate(kbin(nspc,nspc,nspc))
           call init_zero(kbin)
           else
-              write(iout,*) 'ERROR: kbin already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('kbin already allocated')
           endif
 
 
@@ -248,23 +237,21 @@
        allocate(nuth0(nspc,nspc))
            call init_zero(nuth0)
           else
-              write(iout,*) 'ERROR: nuth0 already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('nuth0 already allocated')
           endif
 
        if (.not.allocated(eth)) then
       allocate(eth(nspc,nspc))
           call init_zero(eth)
           else
-              write(iout,*) 'ERROR: eth already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('eth already allocated')
           endif
       if (.not.allocated(nuth)) then
       allocate(nuth(nspc,nspc))
           call init_zero(nuth)
           else
-              write(iout,*) 'ERROR: nuth already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('nuth already allocated')
+
           endif
 
       ! surface
@@ -272,30 +259,27 @@
       allocate(Kabs_l(nspc))
                 call init_zero(Kabs_l)
           else
-              write(iout,*) 'ERROR: Kabs_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kabs_l already allocated')
           endif
           if (.not.allocated(Kdes_l)) then
       allocate(Kdes_l(nspc))
                 call init_zero(Kdes_l)
           else
-              write(iout,*) 'ERROR: Kdes_l already allocated'
-              STOP 'Exiting FACE...'
+             call face_error('Kdes_l already allocated')
           endif
           if (.not.allocated(Kb_l)) then
       allocate(Kb_l(nspc))
                 call init_zero(Kb_l)
           else
-              write(iout,*) 'ERROR: Kb_l already allocated'
-              STOP 'Exiting FACE...'
+             call face_error('Kb_l already allocated')
+
           endif
 
           if (.not.allocated(Kads_l)) then
       allocate(Kads_l(nspc))
                 call init_zero(Kads_l)
           else
-              write(iout,*) 'ERROR: Kads_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kads_l already allocated')
           endif
 
 
@@ -303,128 +287,112 @@
       allocate(Kabs_r(nspc))
                 call init_zero(Kabs_r)
           else
-              write(iout,*) 'ERROR: Kabs_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kabs_r already allocated')
           endif
 
           if (.not.allocated(Kdes_r)) then
       allocate(Kdes_r(nspc))
                 call init_zero(Kdes_r)
           else
-              write(iout,*) 'ERROR: Kdes_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kdes_r already allocated')
           endif
 
           if (.not.allocated(Kb_r)) then
       allocate(Kb_r(nspc))
                 call init_zero(Kb_r)
           else
-              write(iout,*) 'ERROR: Kb_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kb_r already allocated')
           endif
 
           if (.not.allocated(Kads_r)) then
       allocate(Kads_r(nspc))
                 call init_zero(Kads_r)
           else
-              write(iout,*) 'ERROR: Kads_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Kads_r already allocated')
           endif
 
           if (.not.allocated(K0abs_l)) then
       allocate(K0abs_l(nspc))
                 call init_zero(K0abs_l)
           else
-              write(iout,*) 'ERROR: K0abs_l already allocated'
-              STOP 'Exiting FACE...'
+             call face_error('K0abs_l already allocated')
           endif
 
           if (.not.allocated(K0des_l)) then
       allocate(K0des_l(nspc))
                 call init_zero(K0des_l)
           else
-              write(iout,*) 'ERROR: K0des_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0des_l already allocated')
           endif
 
           if (.not.allocated(K0b_l)) then
       allocate(K0b_l(nspc))
                 call init_zero(K0b_l)
           else
-              write(iout,*) 'ERROR: K0b_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0b_l already allocated')
           endif
 
           if (.not.allocated(K0ads_l)) then
       allocate(K0ads_l(nspc))
                 call init_zero(K0ads_l)
           else
-              write(iout,*) 'ERROR: K0ads_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0ads_l already allocated')
           endif
 
           if (.not.allocated(K0abs_r)) then
       allocate(K0abs_r(nspc))
                 call init_zero(K0abs_r)
           else
-              write(iout,*) 'ERROR: K0abs_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0abs_r already allocated')
           endif
 
           if (.not.allocated(K0des_r)) then
       allocate(K0des_r(nspc))
                 call init_zero(K0des_r)
           else
-              write(iout,*) 'ERROR: K0des_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0des_r already allocated')
           endif
 
           if (.not.allocated(K0b_r)) then
       allocate(K0b_r(nspc))
                 call init_zero(K0b_r)
           else
-              write(iout,*) 'ERROR: K0b_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0b_r already allocated')
           endif
 
           if (.not.allocated(K0ads_r)) then
       allocate(K0ads_r(nspc))
                 call init_zero(K0ads_r)
           else
-              write(iout,*) 'ERROR: K0ads_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('K0ads_r already allocated')
           endif
 
           if (.not.allocated(j0)) then
       allocate(j0(nspc))
                 call init_zero(j0)
           else
-              write(iout,*) 'ERROR: j0 already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('j0 already allocated')
           endif
 
           if (.not.allocated(qchtr)) then
       allocate(qchtr(nspc))
                 call init_zero(qchtr)
           else
-              write(iout,*) 'ERROR: qchtr already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('qchtr already allocated')
           endif
 
           if (.not.allocated(qchtl)) then
       allocate(qchtl(nspc))
                 call init_zero(qchtl)
           else
-              write(iout,*) 'ERROR: qchtl already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('qchtl already allocated')
           endif
 
           if (.not.allocated(dsrfl)) then
       allocate(dsrfl(ndt,nspc))
                 call init_zero(dsrfl)
           else
-              write(iout,*) 'ERROR: dsrfl already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('dsrfl already allocated')
           endif
 
 
@@ -432,96 +400,87 @@
       allocate( Gsrf_l(ndt,nspc))
                 call init_zero(Gsrf_l)
           else
-              write(iout,*) 'ERROR: Gsrf_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gsrf_l already allocated')
           endif
 
           if (.not.allocated(dsrfr)) then
       allocate(dsrfr(ndt,nspc))
                 call init_zero(dsrfr)
           else
-              write(iout,*) 'ERROR: dsrfr already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('dsrfr already allocated')
           endif
 
           if (.not.allocated(Gsrf_r)) then
       allocate( Gsrf_r(ndt,nspc))
                 call init_zero(Gsrf_r)
           else
-              write(iout,*) 'ERROR: Gsrf_r already allocated'
-              STOP 'Exiting FACE...'
+             call face_error('Gsrf_r already allocated')
           endif
 
           if (.not.allocated(Gabs_l)) then
       allocate(Gabs_l(ndt,nspc))
                 call init_zero(Gabs_l)
           else
-              write(iout,*) 'ERROR: Gabs_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gabs_l already allocated')
           endif
 
           if (.not.allocated(Gdes_l)) then
       allocate( Gdes_l(ndt,nspc))
                 call init_zero(Gdes_l)
           else
-              write(iout,*) 'ERROR: Gdes_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gdes_l already allocated')
           endif
 
           if (.not.allocated(Gb_l)) then
       allocate( Gb_l(ndt,nspc))
                 call init_zero(Gb_l)
           else
-              write(iout,*) 'ERROR: Gb_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gb_l already allocated')
           endif
 
           if (.not.allocated(Gads_l)) then
       allocate( Gads_l(ndt,nspc))
                 call init_zero(Gads_l)
           else
-              write(iout,*) 'ERROR: Gads_l already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gads_l already allocated')
           endif
 
           if (.not.allocated(Gabs_r)) then
       allocate(Gabs_r(ndt,nspc))
                 call init_zero(Gabs_r)
           else
-              write(iout,*) 'ERROR: Gabs_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gabs_r already allocated')
           endif
 
           if (.not.allocated(Gdes_r)) then
       allocate( Gdes_r(ndt,nspc))
                 call init_zero(Gdes_r)
           else
-              write(iout,*) 'ERROR: Gdes_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gdes_r already allocated')
+
           endif
 
           if (.not.allocated(Gb_r)) then
       allocate(Gb_r(ndt,nspc))
                 call init_zero(Gb_r)
           else
-              write(iout,*) 'ERROR:Gb_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gb_r already allocated')
+
           endif
 
           if (.not.allocated(Gads_r)) then
       allocate(Gads_r(ndt,nspc))
                 call init_zero(Gads_r)
           else
-              write(iout,*) 'ERROR: Gads_r already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('Gads_r already allocated')
+
           endif
 
           if (.not.allocated(jout)) then
       allocate(jout(ndt,nspc))
                 call init_zero(jout)
           else
-              write(iout,*) 'ERROR: jout already allocated'
-              STOP 'Exiting FACE...'
+              call face_error('jout already allocated')
           endif
 
 

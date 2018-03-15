@@ -77,8 +77,7 @@ endif
 ! but first check if the numbers of species between fluide code and FACe is consistent:
 
 if (fluidcode_input%nspc.gt.nspc) then
-write(iout,*) "N species in fluid code input must be <= to N species in FACE"
-stop 'Exiting FACE'
+call face_error("N species in fluid code input must be <= to N species in FACE")
 endif
 
 if (verbose_couple) write(iout,*) '- checking if impinging species from fluide codes are the same than the ones set in FACE :'
@@ -90,7 +89,7 @@ write(iout,*) 'species fluide code index=',kk
 write(iout,*) 'species FACE k index=',fluidcode_input%indexspc(kk)
 write(iout,*) 'species fluide code name=',fluidcode_input%namespc(kk)
 write(iout,*) 'species FACE name=',namespc(k)
-stop 'Exiting FACE'
+call face_error('Issue with coupling')
 endif
 enddo
 if (verbose_couple) write(iout,*) '- checking species name done'
