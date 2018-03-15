@@ -114,7 +114,7 @@ do k=1,nspc
         character(string_length):: filename,myfmt1,myfmt2,myfmt3
 
         write(myfmt1,*) "(a, 1pe13.4e2, a)"
-        write(myfmt2,*) "(6(a))"
+        write(myfmt2,*) "(a8,5(a13))"
         write(myfmt3,*)"(i8.4, 5(1pe13.4e2))"
 
         write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
@@ -122,13 +122,13 @@ do k=1,nspc
         if (ios.eq.0) then
             write (ifile_heatdata, myfmt1) 'time=', time, ' s'
 
-            write (ifile_heatdata, myfmt2)'(',&
+            write (ifile_heatdata, myfmt2)&
                 '       #',&
-                '                  x',&
-                '               temp',&
-                '               flxt',&
-                '                rtt',&
-                '               erot)'
+                '            x',&
+                '         temp',&
+                '         flxt',&
+                '          rtt',&
+                '         erot'
 
             do j=0,ngrd
                 write (ifile_heatdata, myfmt3)&
