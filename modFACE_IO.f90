@@ -35,7 +35,7 @@ contains
                 'Qnty',&
                 'Src',&
                 'Rct',&
-                'Rtd',&
+                'rate_d',&
                 'inflx1',&
                 'qrad'
         enddo
@@ -79,7 +79,7 @@ do k=1,nspc
                     'ero_flx',&
                     '   src',&
                     '  rct',&
-                    '   rtd',&
+                    '   rate_d',&
                     '  cdif'
 
                 do j=0,ngrd
@@ -91,7 +91,7 @@ do k=1,nspc
                         ero_flx(ndt,j,k), &
                         src (ndt,j,k), &
                         rct (ndt,j,k), &
-                        rtd (ndt,j,k), &
+                        rate_d (ndt,j,k), &
                         cdif(ndt,j,k)
                 enddo
 
@@ -124,20 +124,28 @@ do k=1,nspc
 
             write (ifile_heatdata, myfmt2)&
                 '       #',&
+<<<<<<< Upstream, based on branch 'develop' of git@git.ucsd.edu:face-group/face.git
                 '            x',&
                 '         temp',&
                 '         flxt',&
                 '          rtt',&
                 '         erot'
+=======
+                '                  x',&
+                '               temp',&
+                '               qflx',&
+                '                rate_t',&
+                '               ero_qflx)'
+>>>>>>> 73c8ced another major commit
 
             do j=0,ngrd
                 write (ifile_heatdata, myfmt3)&
                     j,&
                     x(j),&
                     temp(ndt,j),&
-                    flxt(ndt,j),&
-                    rtt (ndt,j),&
-                    erot(ndt,j)
+                    qflx(ndt,j),&
+                    rate_t (ndt,j),&
+                    ero_qflx(ndt,j)
             enddo
 
             close (ifile_heatdata)
@@ -233,7 +241,7 @@ subroutine save_timedata
     write(myfmt1,*) &
         "('+', ' time=', 1pe13.4e2, ' s; T_l=', 1pe13.4e2,' K; dt=', 1pe13.4e2, ' s; number of iterations ', i3)"
     write(myfmt2,*) "(14(1pe13.4e2))"
-    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, cnt
+    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
         qnty=0.d0
@@ -257,7 +265,7 @@ subroutine save_timedata
             qnty,&
             frmn,&
             rctn,&
-            rtd  (ndt,0,k),&
+            rate_d  (ndt,0,k),&
             inflx(1),&
             rad
     enddo
@@ -344,7 +352,7 @@ subroutine store_restart(filename)
         do k=1,nspc
             do j=0,ngrd
                 do i=1,ndt
-                    write (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct (i,j,k), rtd (i,j,k)
+                    write (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct (i,j,k), rate_d (i,j,k)
                 enddo
             enddo
         enddo
@@ -362,7 +370,7 @@ subroutine store_restart(filename)
         enddo
         do j=0,ngrd
             do i=1,ndt
-                write (ifile_restart) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
+                write (ifile_restart) temp(i,j), qflx(i,j), rate_t(i,j), ero_qflx(i,j)
             enddo
         enddo
         write (ifile_restart) time
@@ -388,7 +396,7 @@ subroutine restore_restart(filename)
     do k=1,nspc
         do j=0,ngrd
             do i=1,ndt
-                read (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct(i,j,k), rtd(i,j,k)
+                read (ifile_restart) dens(i,j,k), flx (i,j,k), ero_flx(i,j,k),cdif(i,j,k), rct(i,j,k), rate_d(i,j,k)
             enddo
         enddo
     enddo
@@ -409,7 +417,7 @@ subroutine restore_restart(filename)
 
     do j=0,ngrd
         do i=1,ndt
-            read (ifile_restart) temp(i,j), flxt(i,j), rtt(i,j), erot(i,j)
+            read (ifile_restart) temp(i,j), qflx(i,j), rate_t(i,j), ero_qflx(i,j)
         enddo
     enddo
 
@@ -418,7 +426,7 @@ subroutine restore_restart(filename)
 
     close (ifile_restart)
 
-    call flx_update()
+    call compute_inflx()
 
     write (iout,'(a,1pe13.4e2,a)') '  *** simulation restarted with dbl precision file from t=',time, ' s'
 

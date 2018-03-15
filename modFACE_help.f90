@@ -175,6 +175,12 @@ contains
         call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
         call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")
         call set_help('fluid-interface','yes|no','none','non-mandatory',"no")
+        call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
+        call set_help('solver_eps','solver: precision norm (norm<eps:exit','none','non-mandatory',"3.d-3")
+        call set_help('solver_udspl','solver: displacement min vector u','none','non-mandatory',"9.d-1")
+        call set_help('solver_fdspl','solver: displacement min function f(u)','none','non-mandatory',"9.d0")
+        call set_help('solver_gdspl','solver: displacement min grad u','none','non-mandatory',"1.d-3")
+        call set_help('solver_fstp','solver: step reduction for function f(u)','none','non-mandatory',"1.d-1")
         if (verbose_init) call print_milestone('initialization help completed')
     end subroutine init_help
 
@@ -217,9 +223,8 @@ contains
         character(*)::mode
         integer,parameter::l=15
         character(string_length)::str_keyword
-        character(string_length)::str_tmp,str_tmp2
+        character(string_length)::str_tmp
         character(8)::str_type
-        character(3*l):: strvalue
         character(3*(l+1)):: strvaluel
         character(80)::str_def
         character(26)::str_status

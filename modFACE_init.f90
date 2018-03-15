@@ -42,7 +42,7 @@
  !     call init_seed
       call init_grid
       call init_temp
-      call flx_update()
+      call compute_inflx()
       call init_volume_species
       call init_source
       call init_boundary
@@ -70,7 +70,7 @@
       sfln_srfdata=0
       sfln_heatdata=0
 
-      cnt =0
+      iter_solver =0
 
       ! number fo equations to solve
       if (solve_heat_eq .eq."no") then
@@ -289,7 +289,7 @@
         Gb_r (i,k)=Kb_r(k)
         Gads_r (i,k)=Kads_r(k)
 
-        call set_cap_factor_surface(k,i)
+        call compute_cap_factor_surface(k,i)
 !
         if (solve_heat_eq .eq. "yes") then
          jout(i,k)=jout(i,k)+Gdes_l(i,k)
@@ -388,7 +388,7 @@
          flx (i,j,k)=0.d0
          ero_flx (i,j,k)=0.d0
          cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
-         rtd (i,j,k)=0.d0
+         rate_d (i,j,k)=0.d0
          if (gprof(k) .eq. 'S'.or.gprof(k) .eq. 'F') then
           dens(i,j,k)=dens0(k)
          elseif(gprof(k) .eq. 'G') then

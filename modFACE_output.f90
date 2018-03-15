@@ -187,7 +187,7 @@ subroutine open_timedata_file
 !       '            09:Qnty',&
 !       '             10:Src',&
 !       '             11:Rct',&
-!       '             12:Rtd',&
+!       '             12:rate_d',&
 !       '           13:inflx',&
 !       '            14:qrad'&
 !      enddo

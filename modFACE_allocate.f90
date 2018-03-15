@@ -145,11 +145,11 @@
               STOP 'Exiting FACE...'
           endif
 
-          if (.not.allocated(rtd)) then
-              allocate(rtd (ndt,0:ngrd,nspc))
-              call init_zero(rtd)
+          if (.not.allocated(rate_d)) then
+              allocate(rate_d (ndt,0:ngrd,nspc))
+              call init_zero(rate_d)
           else
-              write(iout,*) 'ERROR: rtd already allocated'
+              write(iout,*) 'ERROR: rate_d already allocated'
               STOP 'Exiting FACE...'
           endif
 
@@ -175,23 +175,23 @@
               write(iout,*) 'ERROR: ero already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(rtt)) then
-              allocate(rtt(ndt,0:ngrd))
-              call init_zero(rtt)
+          if (.not.allocated(rate_t)) then
+              allocate(rate_t(ndt,0:ngrd))
+              call init_zero(rate_t)
           else
               write(iout,*) 'ERROR: srs already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(flxt)) then
-              allocate(flxt(ndt,0:ngrd))
-              call init_zero(flxt)
+          if (.not.allocated(qflx)) then
+              allocate(qflx(ndt,0:ngrd))
+              call init_zero(qflx)
           else
-              write(iout,*) 'ERROR: flxt already allocated'
+              write(iout,*) 'ERROR: qflx already allocated'
               STOP 'Exiting FACE...'
           endif
-          if (.not.allocated(erot)) then
-              allocate(erot(ndt,0:ngrd))
-              call init_zero(erot)
+          if (.not.allocated(ero_qflx)) then
+              allocate(ero_qflx(ndt,0:ngrd))
+              call init_zero(ero_qflx)
           else
               write(iout,*) 'ERROR: srs already allocated'
               STOP 'Exiting FACE...'

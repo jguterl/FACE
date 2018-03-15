@@ -13,10 +13,10 @@
       contains
 
       real(DP) function source(j,k)
+      ! Source rate of incoming species
       integer j, k, n
 
       source=0.d0
-
       if (k .eq. 1) then
        source=srate(1)*exp(-0.5d0*abs((x(j)-rdpth(1))/sigma(1))**2.d0)
        return
@@ -31,10 +31,10 @@
       return
       end
 
-!     Rate of induced-detrapping: detrappping rate from trap n+1 into 1 + n
-     !due to collisions of filled traps n with incoming ion
+
       real(DP) function srcbin(j,k,l)
-!
+      ! Rate of induced-detrapping: detrappping rate from trap n+1 into 1 + n
+      ! due to collisions of filled traps n with incoming ion
       integer j, k, l, n
       real(DP):: s, rs, crsc
       ! why?
@@ -42,7 +42,7 @@
       data crsc /0.d0/
 
 
-      srcbin=0
+      srcbin=0.d0
       do n=3,nspc,2
        if (l .eq. n) then
         s=crsc*inflx(1)
@@ -62,55 +62,7 @@
       end function srcbin
 !
 !
-!    linear cap function to model saturation of total H
-      real(DP) function cspcs(i,j,k)
-      integer i, j, k
-      if (dens(i,j,k) .lt. densm(k)) then
-       cspcs=1.d0-dens(i,j,k)/densm(k)
-      else
-       cspcs=0.d0
-      endif
-      return
-      end
 
-      ! linear cap function to model saturation of material with traps or H
-      ! i= index time step
-      ! j = index grid
-      ! k= species
-      real(DP) function csours(i,j,k)
-      integer i, j, k, n
-      csours=1.0
-
-      if (k .eq. 1) then
-       csours=cspcs(i,j,1)
-      endif
-
-      do n=2,nspc-1,2
-       if (k .eq. n) then
-        csours=(1.d0-(dens(i,j,n)+dens(i,j,n+1))/(densm(n)+densm(n+1)))
-       endif
-      enddo
-
-      return
-
-      end
-
-        ! linear cap function to model saturation of material with traps or H
-      ! i= index time step
-      ! j = index grid
-      ! k,l= species
-      real(DP) function csrbin(i,j,k,l)
-      integer i, j, k, l, n
-      csrbin=1.0
-      do n=3,nspc,2
-       if (l.eq.n) then
-       if ((k.eq.1).or.(k.eq.n-1).or.(k.eq.n)) then
-        csrbin=cspcs(i,j,1)
-       endif
-       endif
-      enddo
-      return
-      end
 
 
       ! implantation rate
@@ -207,26 +159,7 @@
       end
 
 
-!     linear cap for trapping
-      real(DP) function cbinar(i,j,k,l,m)
 
-      integer i, j, k, l, m
-      cbinar=1.d0
-!      do n=2,nspc-1,2
-!
-!       if ((l .eq. n+1) .and. (m .eq. 1)) then
-!        if ((k .eq. 1) .or. (k .eq. n) .or. (k .eq. n+1)) then
-!         c0=cspcs(i,j,1)
-!         tmp(1  ,n+1,1)=c0
-!         tmp(n  ,n+1,1)=c0
-!         tmp(n+1,n+1,1)=c0
-!        endif
-!       endif
-!
-!      enddo
-!
-      return
-      end
 
       !prex-exponential factor for thermal (activated) detrapping
       !(n+1)-> (1) + (n)
@@ -274,20 +207,7 @@
       end
 
 
-!>     linear cap for thermal detrappinng
-!!limited by amount of free H in material)
-      real(DP) function ctherm(i,j,k,l)
-      integer i, j, k, l, n
 
-      ctherm=1.d0
-
-      do n=3,nspc,2
-       if (l .eq. n) then
-        ctherm=cspcs(i,j,1)
-       endif
-      enddo
-      return
-      end
 
        subroutine print_source(ifile)
       integer j,k,ifile

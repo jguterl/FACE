@@ -31,10 +31,11 @@
        logical::verbose_parser=.false.
            logical::verbose_input=.false.
     logical::verbose_init=.false.
-    logical :: verbose_step=.false.
+    logical :: verbose_step=.true.
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
     logical :: verbose_restore=.true.
+    logical:: enforce_error=.true.
 !      integer ngrdm, nspcm, ndt, nrampm
       integer::ngrd
       integer::nspc
@@ -112,7 +113,7 @@
       real(DP):: nucut=0
       real(DP):: delta=0
 
-      integer:: cnt=0
+      integer:: iter_solver=0 ! #of solver iterations at each time step
       integer::iteration
       integer:: order_solver
 !     ------------------------------------------------------------------
@@ -123,7 +124,7 @@
       integer:: sfln_voldata=0
       integer:: sfln_srfdata=0
       integer:: sfln_heatdata=0
-      real(DP):: normf=0d0
+      real(DP):: normf=0.d0
       character(string_length)::restart_filename
 !
 !     ------------------------------------------------------------------
@@ -183,7 +184,7 @@
       real(DP),allocatable::cdif0(:)
       real(DP),allocatable::edif (:)
       real(DP),allocatable::flx (:,:,:)
-      real(DP),allocatable::rtd (:,:,:)
+      real(DP),allocatable::rate_d (:,:,:)
       character(lname),allocatable:: gprof(:)
       real(DP),allocatable::jout(:,:)
 
@@ -277,7 +278,7 @@
       real(DP)::rhocp    =0
       real(DP):: emiss   =0
       real(DP)::qform    =0
-      real(DP):: qflx    =0
+      real(DP):: qflx_in =0 ! incoming heat flux_in
       real(DP):: rad     =0
       real(DP)::rad_min  =0
       real(DP):: rad_max =0
@@ -285,9 +286,9 @@
       real(DP):: t2      =0
       real(DP)::t3       =0
       real(DP)::tpulse   =0 ! period of plasma pulse
-      real(DP),allocatable::rtt(:,:)
-      real(DP),allocatable::flxt(:,:)
-      real(DP),allocatable::erot(:,:)
+      real(DP),allocatable::rate_t(:,:)
+      real(DP),allocatable::qflx(:,:)
+      real(DP),allocatable::ero_qflx(:,:)
 !
 !     ------------------------------------------------------------------
 !       Environment variables

@@ -312,7 +312,6 @@ contains
     subroutine write_input_log_keyword_species_r(keyword,variable)
 
         character(*)::keyword
-        character*60::myfmt
         real(DP)::variable(:)
         integer::k
 
