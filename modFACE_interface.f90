@@ -7,34 +7,39 @@ module modFACE_interface
     logical :: verbose_interface=.true.
     character(string_length) :: default_inputfile="default_inputfile.face"
     type fluidcode_inputs
-    integer                  :: wall_idx            ! Index of the wall stratum
-        integer                  :: iter                ! Fluid code iteration
-        real(DP)                 :: time                ! Fluid code time
-        real(DP)                 :: dt                  ! Time step of the fluid
-        real(DP)                 :: dt_face             ! Time step of FACE
-        integer                 :: nspc                 ! Number of incoming species from fluid code
+         integer                     :: wall_idx            ! Index of the wall stratum
+        integer                      :: iter                ! Fluid code iteration
+        real(DP)                     :: time                ! Fluid code time
+        real(DP)                     :: dt                  ! Time step of the fluid
+        real(DP)                     :: dt_face             ! Time step of FACE
+        integer                      :: nspc                 ! Number of incoming species from fluid code
         integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
         character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
         real(DP),allocatable         :: inflx_in(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
-        real(DP)                 :: qflx_in                 ! Heat flux from fluid code
-        character(string_length)           :: restore_state_file  ! restart from this staste file
-        character(string_length)           :: store_state_file    ! store final state in this state file
-        real(DP)                 :: tempwall            ! temperature of the wall from fluid code
-        character(15)            :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        real(DP)                     :: qflx_in                 ! Heat flux from fluid code
+        character(string_length)     :: restore_state_file  ! restart from this staste file
+        character(string_length)     :: final_state_file    ! store final state in this state file
+        real(DP)                     :: tempwall            ! temperature of the wall from fluid code
+        character(15)                :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         character(string_length)            ::casename            ! casename
 
     end type fluidcode_inputs
 
-    type fluidcode_out
-        real(DP),allocatable   :: out_flux(:)            ! outgassing flux
-        real(DP),allocatable   :: Ntot(:)                ! total species in material
-        real(DP),allocatable   :: Nnet_dt_fc(:)          ! total species added during dt_fx
-        real(DP),allocatable   :: Nnet_free_dt_fc(:)     ! total free species added during dt_fx
-        real(DP),allocatable   :: Nnet_trapped_dt_fc(:)  ! total trapped species added during dt_fx
-        real(DP),allocatable   :: Nnet_srf_dt_fc(:)      ! total species added on surface during dt_fx
-        real(DP),allocatable   :: Nnet_vol_dt_fc(:)      ! total species added in bulk during dt_fx
-    end type fluidcode_out
+    type trace_outgassing_flx
+
+     end type trace_outgassing_flx
+
+
+
+    type fluidcode_outputs
+        real(DP)         :: Gdes
+        real(DP)         :: min_Gdes
+        real(DP)         :: max_Gdes
+        real(DP)         :: ave_Gdes    ! ave deviation of Gdes over FACE run
+        real(DP)         :: sig_Gdes   ! sdt deviation of Gdes over FACE run
+        real(DP)         :: Gpermeation ! =Gdes_r
+    end type fluidcode_outputs
 
     type FACE_inputs
         character(string_length):: run_mode
@@ -47,6 +52,11 @@ module modFACE_interface
         character(string_length)::casename
     end type FACE_inputs
 
+    type FACE_outputs
+        real(DP) :: cpu_runtime
+        integer :: status
+        type(fluidcode_outputs)   :: fluidcode_outputs
+    end type FACE_outputs
 contains
     subroutine read_arguments(face_input)
         type(FACE_inputs)::face_input
@@ -261,7 +271,8 @@ contains
         fluidcode_input%wall_idx=1
         fluidcode_input%iter=1
         fluidcode_input%time=1e-5
-        fluidcode_input%dt=1e-2
+        fluidcode_input%dt=1
+        fluidcode_input%dt_face=1e-4
         fluidcode_input%nspc=1
         allocate(fluidcode_input%namespc(fluidcode_input%nspc))
         fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
@@ -270,10 +281,9 @@ contains
         allocate(fluidcode_input%inflx_in(fluidcode_input%nspc))
         fluidcode_input%inflx_in(1:fluidcode_input%nspc)=1e20
         allocate(fluidcode_input%Emean(fluidcode_input%nspc))
-        fluidcode_input%Emean(1:fluidcode_input%nspc)=100
         fluidcode_input%qflx_in=0           ! Heat flux from fluid code
         fluidcode_input%restore_state_file="no"    ! restart from this state file
-        fluidcode_input%store_state_file="no"    ! save from state file history
+        fluidcode_input%final_state_file="no"    ! save from state file history
         fluidcode_input%tempwall=700        ! temperature of the wall from fluid code
         fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%casename='solps'
@@ -281,6 +291,27 @@ contains
         fluidcode_input%casename=trim(str)
     !    end type fluidcode_input
     end subroutine set_fluidcode_input
+
+    subroutine allocate_fluidcode_output
+    type trace_outgassing_flx
+        real(DP),allocatable         :: Gdes(:)
+        real(DP),allocatable         :: min_Gdes(:)
+        real(DP),allocatable         :: max_Gdes(:)
+        real(DP),allocatable         :: ave_Gdes(:)    ! ave deviation of Gdes over FACE run
+        real(DP),allocatable         :: sig_Gdes(:)    ! sdt deviation of Gdes over FACE run
+        real(DP),allocatable         :: Gpermeation(:) ! =Gdes_r(:)
+     end type trace_outgassing_flx
+
+    type fluidcode_output
+        real(DP),allocatable   :: out_flux(:)            ! outgassing flux
+        real(DP),allocatable   :: Ntot(:)                ! total species in material
+        real(DP),allocatable   :: Nnet_dt_fc(:)          ! total species added during dt_fx
+        real(DP),allocatable   :: Nnet_free_dt_fc(:)     ! total free species added during dt_fx
+        real(DP),allocatable   :: Nnet_trapped_dt_fc(:)  ! total trapped species added during dt_fx
+        real(DP),allocatable   :: Nnet_srf_dt_fc(:)      ! total species added on surface during dt_fx
+        real(DP),allocatable   :: Nnet_vol_dt_fc(:)      ! total species added in bulk during dt_fx
+    end type fluidcode_output
+    end subroutine allocate_fluidcode_output
 
 
 end module modFACE_interface

@@ -431,6 +431,7 @@
               call face_error('Gdes_l already allocated')
           endif
 
+
           if (.not.allocated(Gb_l)) then
       allocate( Gb_l(ndt,nspc))
                 call init_zero(Gb_l)
@@ -460,6 +461,8 @@
 
           endif
 
+
+
           if (.not.allocated(Gb_r)) then
       allocate(Gb_r(ndt,nspc))
                 call init_zero(Gb_r)
@@ -481,6 +484,28 @@
                 call init_zero(jout)
           else
               call face_error('jout already allocated')
+          endif
+
+               if (.not.allocated(init_inventory)) then
+      allocate(init_inventory(nspc))
+
+          else
+              call face_error('init_inventory already allocated')
+          endif
+
+
+               if (.not.allocated(final_inventory)) then
+      allocate(final_inventory(nspc))
+
+          else
+              call face_error('final_inventory already allocated')
+          endif
+
+               if (.not.allocated(trace_flux)) then
+      allocate(trace_flux(nspc))
+
+          else
+              call face_error('trace_outgassing already allocated')
           endif
 
 
@@ -635,6 +660,17 @@ subroutine deallocate_variables()
       deallocate(K0b_r)
       deallocate(K0ads_r)
       deallocate(temp)
+      deallocate(Gads_l)
+      deallocate(Gads_r)
+      deallocate(Gdes_l)
+      deallocate(Gdes_r)
+      deallocate(Gabs_l)
+
+      deallocate(Gb_l)
+      deallocate(Gb_r)
+      deallocate(trace_flux)
+       deallocate(init_inventory)
+       deallocate(final_inventory)
     end subroutine deallocate_variables
 
 

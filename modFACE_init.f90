@@ -52,9 +52,10 @@
       end subroutine initialize
 
       subroutine init_misc()
+      integer k
       ! default restart filename
       restart_filename=trim(path_folder)//"dsave.rst"
-
+      final_state_file=trim(path_folder)//casename//".state"
 
       ! some material constants
       lambda1c=lambda*clng
@@ -78,6 +79,18 @@
       else
        neq=nspc*(ngrd+3)+ngrd+1
       endif
+
+      do k=1,nspc
+       trace_flux(k)%sum_inflx=0.d0
+       trace_flux(k)%sum_Gdes_l=0.d0
+       trace_flux(k)%sum_Gdes_r=0.d0
+       trace_flux(k)%min_Gdes_l=1.d99
+       trace_flux(k)%min_Gdes_r=1.d99
+       trace_flux(k)%max_Gdes_l=0.d0
+       trace_flux(k)%max_Gdes_r=0.d0
+       trace_flux(k)%sig_Gdes_l=0.d0
+       trace_flux(k)%sig_Gdes_r=0.d0
+      enddo
 
       call open_timedata_files
 
@@ -282,7 +295,7 @@
 
         Gabs_l (i,k)=Kabs_l(k)
         Gdes_l (i,k)=Kdes_l(k)
-        Gb_l (i,k)=Kb_l(k)
+        Gb_l (i,k)  =Kb_l(k)
         Gads_l (i,k)=Kads_l(k)
         Gabs_r (i,k)=Kabs_r(k)
         Gdes_r (i,k)=Kdes_r(k)

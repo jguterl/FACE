@@ -343,6 +343,8 @@ subroutine compute_source_rate(k)
         ! - left surface
         Gabs_l (ndt,k)=Kabs_l(k)
         Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)*dsrfl(ndt,k)
+       ! write(*,*) "echl(k)+qchtl(k)",echl(k)+qchtl(k)
+       ! write(*,*) "dsrfl(ndt,k)=",dsrfl(ndt,k)
         Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
         Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
         ! - right surface
@@ -722,5 +724,23 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
 
       end subroutine get_density_values
 
+    subroutine compute_trace_flux
+    ! sum up the outgassing flux left and right over time to estimate the average outgassing flux over the simulation
+    ! end verify if <Gdes_l>\approx Gdes_l(end)
+
+    integer k
+
+    do k=1,nspc
+    trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+inflx(k)*dt_face
+    trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
+    trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
+    trace_flux(k)%sig_Gdes_l=trace_flux(k)%sig_Gdes_l+Gdes_l(ndt,k)**2
+    trace_flux(k)%sig_Gdes_r=trace_flux(k)%sig_Gdes_r+Gdes_r(ndt,k)**2
+    trace_flux(k)%max_Gdes_l=max(trace_flux(k)%max_Gdes_l,Gdes_l(ndt,k))
+    trace_flux(k)%max_Gdes_r=max(trace_flux(k)%max_Gdes_r,Gdes_r(ndt,k))
+    trace_flux(k)%min_Gdes_l=min(trace_flux(k)%min_Gdes_l,Gdes_l(ndt,k))
+    trace_flux(k)%min_Gdes_r=min(trace_flux(k)%min_Gdes_r,Gdes_r(ndt,k))
+    enddo
+        end subroutine compute_trace_flux
 
 end module modFACE_compute

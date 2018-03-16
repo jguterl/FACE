@@ -131,6 +131,7 @@
 !       Flags
 !     ------------------------------------------------------------------
       logical:: read_input_file=.true.
+      logical:: restore_state_temp=.true.
       integer::avr
       character(string_length):: input_filename
       character(string_length):: logfile
@@ -139,10 +140,21 @@
       character(string_length):: steady_state
       character(string_length):: framp
       character(string_length):: solve_heat_eq
-      character(string_length):: store_state_file
+      character(string_length):: final_state_file
       character(string_length):: restore_state_file
       character(string_length):: casename
       character(string_length):: pulsed_flux
+
+      type inventories
+       real(DP)         ::  Nnetbulk
+        real(DP)         :: Nnetsrf
+        real(DP)         :: Ntotbulk
+        real(DP)         :: Ntotsrf
+     end type inventories
+
+     type(inventories),allocatable :: init_inventory(:)
+     type(inventories),allocatable :: final_inventory(:)
+
 !
 !     ------------------------------------------------------------------
 !       Material parameters
@@ -250,7 +262,7 @@
       real(DP),allocatable::rct (:,:,:)
       real(DP),allocatable::ero_flx (:,:,:)  ! erosion flux
 !     Surface
-
+      integer :: error_status=0
 
 
       ! left surface at x(j=0)
@@ -260,6 +272,7 @@
       real(DP),allocatable:: Gdes_l(:,:)
       real(DP),allocatable:: Gb_l(:,:)
       real(DP),allocatable:: Gads_l(:,:)
+
       !right surface at x(j=n+1)
       real(DP),allocatable:: dsrfr(:,:)   ! density on right surface
       real(DP),allocatable:: Gsrf_r(:,:) ! net flux of species onto the right surface
@@ -268,6 +281,18 @@
       real(DP),allocatable:: Gb_r(:,:)
       real(DP),allocatable:: Gads_r(:,:)
 
+      type trace_fluxes
+      real(DP):: sum_inflx
+      real(DP):: sum_Gdes_l
+      real(DP):: sig_Gdes_l
+      real(DP):: min_Gdes_l
+      real(DP):: max_Gdes_l
+      real(DP):: sum_Gdes_r
+      real(DP):: sig_Gdes_r
+      real(DP):: min_Gdes_r
+      real(DP):: max_Gdes_r
+      end type trace_fluxes
+      type(trace_fluxes),allocatable :: trace_flux(:)
 !
 !     ------------------------------------------------------------------
 !       Thermal variables

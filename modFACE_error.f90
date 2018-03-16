@@ -35,7 +35,7 @@ contains
 subroutine print_error1(str)
 character(*)::str
 write(iout,*) "ERROR:", str
-
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -46,6 +46,7 @@ subroutine print_error2(str,r)
 real(DP) :: r
 character(*)::str
 write(iout,*) "ERROR:", str,r
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -56,6 +57,7 @@ subroutine print_error3(str,i)
 integer :: i
 character(*)::str
 write(iout,*) "ERROR:", str,i
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -66,6 +68,7 @@ subroutine print_error4(str,r,str2,r2)
 real(DP) :: r,r2
 character(*)::str,str2
 write(iout,*) "ERROR:", str,r,str2,r2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -76,6 +79,7 @@ subroutine print_error5(str,i,str2,i2)
 integer :: i,i2
 character(*)::str,str2
 write(iout,*) "ERROR:", str,i,str2,i2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -85,6 +89,7 @@ end subroutine print_error5
 subroutine print_error6(str,str2)
 character(*)::str,str2
 write(iout,*) "ERROR:", str,str2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -96,6 +101,7 @@ integer ::i
 real(DP) :: r,r2
 character(*)::str,str2,str3
 write(iout,*) "ERROR:", str,i,str2,r,str3,r2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -107,6 +113,7 @@ integer ::i,i2
 real(DP) :: r,r2
 character(*)::str,str2,str3,str4
 write(iout,*) "ERROR:", str,i,str2,i2,str3,r,str4,r2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -116,6 +123,7 @@ end subroutine print_error8
 subroutine print_error9(str,str2,str3)
 character(*)::str,str2,str3
 write(iout,*) "ERROR:", str,str2,str3
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -126,6 +134,7 @@ subroutine print_error10(str,str2,str3,i)
 character(*)::str,str2,str3
 integer :: i
 write(iout,*) "ERROR:", str,str2,str3,i
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -136,6 +145,7 @@ subroutine print_error11(str,i,str2,i2,str3,str4,str5,str6)
 character(*)::str,str2,str3,str4,str5,str6
 integer :: i,i2
 write(iout,*) "ERROR:", str,i,str2,i2,str3,str4,str5,str6
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -147,6 +157,7 @@ real(DP) :: r
 integer::i
 character(*)::str,str2
 write(iout,*) "ERROR:", str,i,str2,r
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop
@@ -156,7 +167,8 @@ end subroutine print_error12
 subroutine print_error13(str,str2,r,str3,r2)
 real(DP) :: r,r2
 character(*)::str,str2,str3
-write(iout,*) "ERROR:", str,str2,r,str2,r2
+write(iout,*) "ERROR:", str,str2,r,str3,r2
+error_status=1
 if (enforce_error) then
 write(iout,*) message_exit_error
 stop

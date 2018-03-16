@@ -36,6 +36,8 @@ contains
 !if (couple_wallcode) then
 !! ?
 !endif
+!call compute_trace_outgassing(face_output%trace_outgassing)
+!call
 
  end subroutine FACE2fluidcode
 
@@ -58,10 +60,13 @@ if (verbose_couple) write(iout,*) '- start time overwritten : ', start_time
 ! end time
 end_time=start_time+fluidcode_input%dt
 if (verbose_couple) write(iout,*) '- end time overwritten   : ', end_time
+! end time
+dt_face=start_time+fluidcode_input%dt_face
+if (verbose_couple) write(iout,*) '- dt_face overwritten   : ', dt_face
 ! state_files
 restore_state_file=fluidcode_input%restore_state_file
-if (verbose_couple) write(iout,*) '- store_state_file overwritten :', store_state_file
-store_state_file=fluidcode_input%store_state_file
+if (verbose_couple) write(iout,*) '- final_state_file overwritten :', final_state_file
+final_state_file=fluidcode_input%final_state_file
 if (verbose_couple) write(iout,*) '- restore_state_file overwritten :', restore_state_file
 
 
@@ -165,6 +170,8 @@ enddo
 elseif  (solve_heat_eq.eq."no") then
 ! if not solving the heat eq then we just set the entire wall temperature to the temperature from the fluid code
 temp0=fluidcode_input%tempwall
+temp1=fluidcode_input%tempwall
+restore_state_temp=.false. ! do not restore temperature from state file if temperature imposed by Face code
 ! check that the temperature is positive
 if (fluidcode_input%tempwall.le.0d0) then
 call face_error('temperature from fluid code <=0": T=',fluidcode_input%tempwall)

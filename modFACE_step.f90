@@ -22,6 +22,8 @@
 
       call check_positivity_max
 
+      call compute_trace_flux
+
       end subroutine step
 
 
@@ -69,6 +71,8 @@
         enddo
 
     end subroutine shift_array
+
+
 
 
 

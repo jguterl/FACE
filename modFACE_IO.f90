@@ -302,7 +302,7 @@ end subroutine store_state
 
 subroutine restore_state(filename)
     character(*):: filename
-    integer ifile_restore,j, k, ios
+    integer ifile_restore,j, k, ios,i
      call set_ifile(ifile_restore)
     open(ifile_restore, file=trim(filename), iostat=ios,action='read',status='old',form='formatted')
 
@@ -318,15 +318,31 @@ subroutine restore_state(filename)
             read (ifile_restore) dens(ndt,j,k)
         enddo
     enddo
-    do k=1,nspc
+    do i=1,ndt
+    dens(i,0:ngrd,1:nspc)=dens(ndt,0:ngrd,1:nspc)
+    dens(i,0:ngrd,1:nspc)=dens(ndt,0:ngrd,1:nspc)
+    enddo
 
+
+    do k=1,nspc
         read (ifile_restore) dsrfl(ndt,k)
         read (ifile_restore) dsrfr(ndt,k)
+    enddo
 
+    do i=1,ndt
+    dsrfl(i,1:nspc)=dsrfl(ndt,1:nspc)
+    dsrfr(i,1:nspc)=dsrfr(ndt,1:nspc)
     enddo
+
+    if (restore_state_temp) then
     do j=0,ngrd
-        read (ifile_restore) temp(ndt,j)
+        read (ifile_restore) temp(ndt,0:ngrd)
     enddo
+    do i=1,ndt
+    temp(i,0:ngrd)=temp(ndt,j)
+    enddo
+    endif
+
     close (ifile_restore)
 
 end subroutine restore_state
@@ -458,14 +474,12 @@ subroutine restore
 end subroutine restore
 
 ! ***** *****
-subroutine output_final_state
-store_state_file=trim(path_folder)//casename//".state"
-    call store_state(store_state_file)
-    call FACE2fluidcode()
+subroutine store_final_state
 
+    call store_state(final_state_file)
     call print_milestone('dumping file state completed')
 
-end subroutine output_final_state
+end subroutine store_final_state
 
 subroutine close_log()
     if (iout.ne.6) then
