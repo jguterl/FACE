@@ -15,9 +15,9 @@ module modFACE_interface
         integer                 :: nspc                 ! Number of incoming species from fluid code
         integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
         character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
-        real(DP),allocatable         :: Gammain(:)      ! Particle flux'
+        real(DP),allocatable         :: inflx_in(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
-        real(DP)                 :: Qin                 ! Heat flux from fluid code
+        real(DP)                 :: qflx_in                 ! Heat flux from fluid code
         character(string_length)           :: restore_state_file  ! restart from this staste file
         character(string_length)           :: store_state_file    ! store final state in this state file
         real(DP)                 :: tempwall            ! temperature of the wall from fluid code
@@ -250,9 +250,9 @@ contains
         !        real(DP)                 :: dt              ! Time step of the fluid
         !        real(DP)                 :: nspc            ! Number of incoming species from fluid code
         !        character(Lname),allocatable :: namespc(:)  ! Name of the incoming species from fluid code
-        !        real(DP),allocatable     :: Gammain(:)      ! Particle flux'
+        !        real(DP),allocatable     :: inflx_in(:)      ! Particle flux'
         !        real(DP),allocatable     :: Emean(:)        ! Average energy of incoming particle enrg'
-        !        real(DP)                 :: Qin_            ! Heat flux from fluid code
+        !        real(DP)                 :: qflx_in_            ! Heat flux from fluid code
         !        character(string_length)           :: state_file    ! restart from file history
         !        real(DP)                 :: tempwall        ! temperature of the wall from fluid code
         !        character(15)            :: solve_heat_eq   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
@@ -267,11 +267,11 @@ contains
         fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
         allocate(fluidcode_input%indexspc(fluidcode_input%nspc))
         fluidcode_input%indexspc(1:fluidcode_input%nspc)=1
-        allocate(fluidcode_input%Gammain(fluidcode_input%nspc))
-        fluidcode_input%Gammain(1:fluidcode_input%nspc)=1e20
+        allocate(fluidcode_input%inflx_in(fluidcode_input%nspc))
+        fluidcode_input%inflx_in(1:fluidcode_input%nspc)=1e20
         allocate(fluidcode_input%Emean(fluidcode_input%nspc))
         fluidcode_input%Emean(1:fluidcode_input%nspc)=100
-        fluidcode_input%Qin=0           ! Heat flux from fluid code
+        fluidcode_input%qflx_in=0           ! Heat flux from fluid code
         fluidcode_input%restore_state_file="no"    ! restart from this state file
         fluidcode_input%store_state_file="no"    ! save from state file history
         fluidcode_input%tempwall=700        ! temperature of the wall from fluid code

@@ -161,9 +161,9 @@
 
 !     species parameters
       real(DP),allocatable::enrg(:)
-      real(DP),allocatable::inflx(:)
-      real(DP),allocatable::inflx_in_max(:)
-      real(DP),allocatable::inflx_in(:)
+      real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
+      real(DP),allocatable::inflx_in_max(:) ! max influx of particles
+      real(DP),allocatable::inflx_in(:) ! nominal influx of particles
       real(DP),allocatable::gas_pressure(:)
       real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
@@ -278,7 +278,7 @@
       real(DP)::rhocp    =0
       real(DP):: emiss   =0
       real(DP)::qform    =0
-      real(DP):: qflx_in =0 ! incoming heat flux_in
+      real(DP):: qflx_in =0 ! incoming heat flux from plasma
       real(DP):: rad     =0
       real(DP)::rad_min  =0
       real(DP):: rad_max =0

@@ -527,7 +527,7 @@ subroutine compute_source_rate(k)
         ! TODO modif Q flux here
         qflx_in=0.d0
         do k=1,nspc
-            qflx_in=qflx_in+cenr*ee*enrg(k)*inflx(k)
+            qflx_in=qflx_in+ee*enrg(k)*inflx(k)
         enddo
         qflx_in=qflx_in+rad
         qflx_in=qflx_in-cero*ee*qform/lambda3c
