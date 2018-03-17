@@ -31,10 +31,10 @@
        logical::verbose_parser=.false.
            logical::verbose_input=.false.
     logical::verbose_init=.false.
-    logical :: verbose_step=.true.
+    logical :: verbose_step=.false.
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
-    logical :: verbose_restore=.true.
+    logical :: verbose_restore=.false.
     logical:: enforce_error=.true.
 !      integer ngrdm, nspcm, ndt, nrampm
       integer::ngrd
@@ -43,40 +43,35 @@
       integer:: nramp
     integer:: iout=6
       real :: tcpustart, tcpufinish
+     integer :: Nprint_run_info=2 ! print info on current run every Nprint_run_info steps
 
-      ! coefficients for BDF
-       real(DP):: a11, a12, a21,a22,a23,a51,a52, a53,a54, a55
-        !     --- 1st order BDF ---
-        parameter (a11=1.d0)
-        parameter (a12=1.d0)
-        !     --- 2nd order BDF ---
-        parameter (a21= 4.d0/3.d0)
-        parameter (a22=-1.d0/3.d0)
-        parameter (a23= 2.d0/3.d0)
-        !     --- 5th order BDF ---
-              parameter (a51= 48.d0/25.d0)
-              parameter (a52=-36.d0/25.d0)
-              parameter (a53= 16.d0/25.d0)
-              parameter (a54=- 3.d0/25.d0)
-              parameter (a55= 12.d0/25.d0)
-!
-!      parameter ( ngrdm=1000, nspcm=40, ndt=5, nrampm=10000 )
-!
-!     ------------------------------------------------------------------
-!      Some physical and mathematical constants
-!     ------------------------------------------------------------------
-      real(DP)::ee, eps0, pi, twopi, sqrt2, amass, kb, eekb, sigma_sb
+      ! **  Some physical and mathematical constants
+      real(DP),parameter ::ee=1.602176462d-19
+      real(DP),parameter ::eps0=8.854187817d-12
+      real(DP),parameter ::amass=1.66053886d-27
+      real(DP),parameter ::pi=3.14159265358979d0
+      real(DP),parameter ::twopi=6.28318530717959d0
+      real(DP),parameter ::sqrt2=sqrt(2.d0)
+      real(DP),parameter ::kb=1.3806504d-23
+      real(DP),parameter ::eekb=1.160450595d+04
+      real(DP),parameter ::sigma_sb=5.670400d-08
+
+      ! ** coefficients for BDF
+      !     --- 1st order BDF ---
+      real(DP),parameter ::a11=1.d0
+      real(DP),parameter ::a12=1.d0
+      !     --- 2nd order BDF ---
+      real(DP),parameter ::a21= 4.d0/3.d0
+      real(DP),parameter ::a22=-1.d0/3.d0
+      real(DP),parameter ::a23= 2.d0/3.d0
+      !     --- 5th order BDF ---
+      real(DP),parameter ::a51= 48.d0/25.d0
+      real(DP),parameter ::a52=-36.d0/25.d0
+      real(DP),parameter ::a53= 16.d0/25.d0
+      real(DP),parameter ::a54=- 3.d0/25.d0
+      real(DP),parameter ::a55= 12.d0/25.d0
 
 
-      parameter (       ee=1.602176462d-19    )
-      parameter (     eps0=8.854187817d-12    )
-      parameter (    amass=1.66053886d-27     )
-      parameter (       pi=3.14159265358979d0 )
-      parameter (    twopi=6.28318530717959d0 )
-      parameter (    sqrt2=sqrt(2.d0)         )
-      parameter (       kb=1.3806504d-23      )
-      parameter (     eekb=1.160450595d+04    )
-      parameter ( sigma_sb=5.670400d-08       )
       logical :: finalcheck=.true.
 !
 !     ------------------------------------------------------------------
@@ -95,7 +90,7 @@
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
       real(DP):: start_time ! start time  of simulation
-      real(DP):: cdt   ! factor for solver time step (dt)
+!      real(DP):: cdt   ! factor for solver time step (dt)
       ! temp
       real(DP):: cero     ! erosion velocity
       real(DP):: cero_min
@@ -106,15 +101,19 @@
       real(DP):: tramp0=0
       real(DP):: tramp1=0
 
-      real(DP):: tspc=0
-      real(DP):: tstr=0
-      real(DP):: ttm=0
+      ! parameters controlling data dumping
+      real(DP):: dump_space_dt=0
+      real(DP):: dump_time_dt=0
+      real(DP):: dump_restart_dt=0
+      logical:: dump_space=.true.
+      logical:: dump_time=.true.
+      logical:: dump_restart=.true.
 
       real(DP):: nucut=0
       real(DP):: delta=0
 
       integer:: iter_solver=0 ! #of solver iterations at each time step
-      integer::iteration
+      integer::iteration=0
       integer:: order_solver
 !     ------------------------------------------------------------------
 !       Save file numerations
@@ -152,8 +151,32 @@
         real(DP)         :: Ntotsrf
      end type inventories
 
+     type particle_balances
+             real(DP):: Nnet,Ninflux,Noutflux
+     end type particle_balances
+
+    type outgassing_fluxes
+        real(DP)         :: Gdes
+        real(DP)         :: min_Gdes
+        real(DP)         :: max_Gdes
+        real(DP)         :: ave_Gdes    ! ave deviation of Gdes over FACE run
+        real(DP)         :: sig_Gdes   ! sdt deviation of Gdes over FACE run
+        real(DP)         :: Gpermeation ! =Gdes_r
+    end type outgassing_fluxes
+
+     type wall_temperatures
+        real(DP)         :: sfr_temp_l,sfr_temp_r
+        real(DP)         :: mean_temp
+        real(DP)         :: max_temp
+        real(DP)         :: min_temp
+    end type wall_temperatures
+
      type(inventories),allocatable :: init_inventory(:)
      type(inventories),allocatable :: final_inventory(:)
+     type(particle_balances):: particle_balance
+     type(outgassing_fluxes):: outgassing_flux
+     type(wall_temperatures):: init_wall_temp
+      type(wall_temperatures)::final_wall_temp
 
 !
 !     ------------------------------------------------------------------

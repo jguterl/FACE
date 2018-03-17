@@ -117,11 +117,11 @@ contains
         call get_keyword_value('temp_ramp_stop_time', tramp1)
         call get_keyword_value('end_time', end_time)
         call get_keyword_value('min_dt', dtmin)
-        call get_keyword_value('timestep_factor', cdt)
+!        call get_keyword_value('timestep_factor', cdt)
         call get_keyword_value('filter_freq', nucut)
-        call get_keyword_value('dump_space_dt', tspc)
-        call get_keyword_value('dump_time_dt', ttm)
-        call get_keyword_value('dump_restart_dt', tstr)
+        call get_keyword_value('dump_space_dt', dump_space_dt)
+        call get_keyword_value('dump_time_dt', dump_time_dt)
+        call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
         call get_keyword_value('solve_heat_equation', solve_heat_eq)
         call get_keyword_value('n_species', nspc)
@@ -203,11 +203,11 @@ contains
         call write_input_log_keyword('temp_ramp_stop_time', tramp1)
 
         call write_input_log_keyword('min_dt', dtmin)
-        call write_input_log_keyword('timestep_factor', cdt)
+!        call write_input_log_keyword('timestep_factor', cdt)
         call write_input_log_keyword('filter_freq', nucut)
-        call write_input_log_keyword('dump_space_dt', tspc)
-        call write_input_log_keyword('dump_time_dt', ttm)
-        call write_input_log_keyword('dump_restart_dt', tstr)
+        call write_input_log_keyword('dump_space_dt', dump_space_dt)
+        call write_input_log_keyword('dump_time_dt', dump_time_dt)
+        call write_input_log_keyword('dump_restart_dt', dump_restart_dt)
         call write_input_log_keyword('temp_ramp_filename', framp)
         call write_input_log_keyword('solve_heat_equation', solve_heat_eq)
         call write_input_log_keyword('n_species', nspc)
@@ -394,11 +394,11 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
         call init_zero(tramp1)
         call init_zero(end_time)
         call init_zero(dtmin)
-        call init_zero(cdt)
+!        call init_zero(cdt)
         call init_zero(nucut)
-        call init_zero(tspc)
-        call init_zero(ttm)
-        call init_zero(tstr)
+        call init_zero(dump_time_dt)
+        call init_zero(dump_space_dt)
+        call init_zero(dump_restart_dt)
         call init_zero(framp)
         call init_zero(solve_heat_eq)
         call init_zero(cero_min)
@@ -507,26 +507,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
 
 
-    subroutine get_input(face_input)
-        type(face_inputs):: face_input
-        !if (.not.allocated(input_lines)) then
-        !write(iout,*) 'check 0'
-        !else
-         !write(iout,*) 'check 0: allocated'
-        !endif
-        call init_input()
-        if (face_input%read_input_file) then
-            call read_inputfile(face_input%input_filename)
-        else
-            call set_input_parameters()
-        endif
 
-        if (face_input%couple_fluidcode) then
-        call fluidcode2FACE(face_input%fluidcode_input)
-        endif
-
-        call write_input_log
-    end subroutine get_input
 
     subroutine set_input_parameters
     write(iout,*) "ERROR: set_input_parameters no implemented yet..."

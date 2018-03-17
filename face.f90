@@ -4,17 +4,18 @@
       use modFACE_interface
       implicit none
       type(FACE_inputs)::face_input
+      type(FACE_outputs)::face_output
       type(fluidcode_inputs)::fluidcode_input
-      logical:: couple_test=.true.
-!     ******************************************************************
-!     * 1-dimensional First wAll simulation CodE "FACE"                *
-!     * for modeling of particle transport in the first wall           *
-!     * of fusion devices                                              *
-!     *                                                                *
-!     * Authors: Roman D. Smirnov and Jerome Guterl                                      *
-!     * E-mail: rsmirnov@ucsd.edu; rosmirnov@yahoo.com                 *
-!     *                                                                *
-!     ******************************************************************
+
+      !     ******************************************************************
+      !     * 1-dimensional First wAll simulation CodE "FACE"                *
+      !     * for modeling of particle transport in the first wall           *
+      !     * of fusion devices                                              *
+      !     *                                                                *
+      !     * Authors: Roman D. Smirnov and Jerome Guterl                                      *
+      !     * E-mail: rsmirnov@ucsd.edu; rosmirnov@yahoo.com                 *
+      !     *                                                                *
+      !     ******************************************************************
 
       ! selecting input mode:
       ! - couple_test: as if called by fluid code
@@ -23,14 +24,19 @@
 
 
 
-      if (couple_test) then
-      call set_fluidcode_input(fluidcode_input)
-      call wrapper_FACE(face_input,fluidcode_input)
+       couple_fluidcode=.false.
+      if (couple_fluidcode) then
+          write(*,*) 'testing the coupling mode'
+          call set_fluidcode_input(fluidcode_input)
+          call wrapper_FACE(face_input,fluidcode_input)
       else
-      call read_arguments(face_input)
+          call read_arguments(face_input)
       endif
 
       ! main call to FACE
-      call FACE_main(face_input)
+      call FACE_main(face_input,face_output)
 
-      end program FACE
+
+  end program FACE
+
+

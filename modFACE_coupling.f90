@@ -2,6 +2,7 @@ module modFACE_coupling
 use modFACE_header
 use modFACE_interface
 use modFACE_error
+implicit none
 contains
 
 !    subroutine write_fluid2wallcode_data(ifile)
@@ -30,21 +31,32 @@ contains
 !
 !    end subroutine FACE2fluidcode
 
- subroutine FACE2fluidcode
- ! send out outgassing flux to fluid code: which one? average over FACE time (tstart to tstop) or final outgassing flux?
- ! should it be steady-state? dt_fluid should be small enough.... to avoid strong variation of jflux out
-!if (couple_wallcode) then
-!! ?
-!endif
-!call compute_trace_outgassing(face_output%trace_outgassing)
-!call
-
+ subroutine FACE2fluidcode(fluidcode_output)
+ type(fluidcode_outputs), intent(out) :: fluidcode_output
+ ! setup output info for fluid code
+fluidcode_output%nspc_face=nspc
+    allocate(fluidcode_output%init_inventory(fluidcode_output%nspc_face))
+    allocate(fluidcode_output%final_inventory(fluidcode_output%nspc_face))
+    fluidcode_output%final_inventory(1:nspc)=final_inventory(1:nspc)
+    fluidcode_output%init_inventory(1:nspc)=init_inventory(1:nspc)
+    fluidcode_output%particle_balance=particle_balance
+    ! the statement below assumes that only type of species come form the fludi code (species kk=1 <=> species k=1).
+    ! But latter we have two populations of H coming from the fluid code
+     fluidcode_output%outgassing_flux=outgassing_flux
+    fluidcode_output%init_wall_temp=init_wall_temp
+    fluidcode_output%final_wall_temp=final_wall_temp
  end subroutine FACE2fluidcode
 
 subroutine fluidcode2FACE(fluidcode_input)
 ! overwrite some input parameters from the input file read by FACE with input from the fluid code:
 integer kk,k
 type(fluidcode_inputs), intent(in) :: fluidcode_input
+! for the moment, only one type of species (free H) is assumed to be implanted in the wall from fluid code.
+! That can be changed in the future but it requires some udpates of the FACE code.
+if (fluidcode_input%nspc_fluid.gt.1) then
+call face_error(" This current version of FACE does not allow more than one incoming species",&
+ "from the fluid code. Update FACE to allow multi-species implantation")
+endif
 
 if (verbose_couple) write(iout,*) '---- overwriting fluid code input:'
 
@@ -63,6 +75,30 @@ if (verbose_couple) write(iout,*) '- end time overwritten   : ', end_time
 ! end time
 dt_face=start_time+fluidcode_input%dt_face
 if (verbose_couple) write(iout,*) '- dt_face overwritten   : ', dt_face
+
+! ** setting data dumping parameters
+! space
+if (fluidcode_input%Ndump_space.le.0) then
+    dump_space=.false.
+elseif(fluidcode_input%Ndump_space.gt.2) then ! if dumping more than 2 times, then we dump N-2 times since we dump automaticallty at start_time annd end_time
+    dump_space_dt=(end_time-start_time)/real(fluidcode_input%Ndump_space-2,DP)
+else ! if dumping 1 or 2 times, then we start at start_time and end_time
+    dump_space_dt=1d99
+endif
+! time
+if (fluidcode_input%Ndump_time.le.0) then
+    dump_time=.false.
+elseif(fluidcode_input%Ndump_time.gt.2) then
+    dump_time_dt=(end_time-start_time)/real(fluidcode_input%Ndump_time-2,DP)
+else ! if dumping 1 or 2 times, then we start at start_time and end_time
+    dump_time_dt=1d99
+endif
+! restart
+! no restart file in coupling mode (we assume that we restart from beginning of fluid code timestep which is beginning of a FACE simulation.)
+dump_restart=.false.
+
+
+
 ! state_files
 restore_state_file=fluidcode_input%restore_state_file
 if (verbose_couple) write(iout,*) '- final_state_file overwritten :', final_state_file
@@ -76,12 +112,11 @@ if (verbose_couple) write(iout,*) '- restore_state_file overwritten :', restore_
 ! check if species name in FACE input file matches impigning species name from fluid code input
 ! but first check if the numbers of species between fluide code and FACe is consistent:
 
-if (fluidcode_input%nspc.gt.nspc) then
+if (fluidcode_input%nspc_fluid.gt.nspc) then
 call face_error("N species in fluid code input must be <= to N species in FACE")
 endif
-
 if (verbose_couple) write(iout,*) '- checking if impinging species from fluide codes are the same than the ones set in FACE :'
-do kk=1,fluidcode_input%nspc
+do kk=1,fluidcode_input%nspc_fluid
 k=fluidcode_input%indexspc(kk)
 if (fluidcode_input%namespc(kk).ne.namespc(k)) then
 write(iout,*) 'Mismatch in species names between FACE and fluid code'
@@ -114,7 +149,7 @@ endif
  endif
   ! ** Overwritting inflx_in with input from fluid code.
 
- do kk=1,fluidcode_input%nspc
+ do kk=1,fluidcode_input%nspc_fluid
 k=fluidcode_input%indexspc(kk)
 inflx_in(k)=fluidcode_input%inflx_in(kk)
 ! check if the value of the influx is not negative

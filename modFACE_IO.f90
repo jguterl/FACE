@@ -202,28 +202,42 @@ do k=1,nspc
 
 
 
-subroutine save
-    real(DP)::tmp
-    !     --- saving time file ---
-    tmp=2.d0*abs(time-ttm*nint(time/ttm))
-    if (tmp .lt. dt_face.or.time.eq.0.0d0) then
-        call save_timedata
+    subroutine save
+        real(DP)::tmp
 
-    endif
+        ! dump time data
+        if (dump_space_dt.gt.0d0) then
+            tmp=2.d0*abs(time-dump_time_dt*nint(time/dump_time_dt))
+        else
+            tmp=1d99
+        endif
+        if (dump_space.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+            call save_timedata
+        endif
 
-    tmp=2.d0*abs(time-tspc*nint(time/tspc))
-    if (tmp .lt. dt_face.or.time.eq.0.0d0) then
-        call save_voldata
-        call save_srfdata
-        call save_heatdata
-    endif
+        ! dump space data
+        if (dump_space_dt.gt.0d0) then
+            tmp=2.d0*abs(time-dump_space_dt*nint(time/dump_space_dt))
+        else
+            tmp=1d99
+        endif
+        if (dump_time.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+            call save_voldata
+            call save_srfdata
+            call save_heatdata
+        endif
 
-    !     --- saving restart file ---
-    tmp=2.d0*abs(time-tstr*nint(time/tstr))
-    if ((tmp .lt. dt_face) .and. (time .ne. 0.d0)) then
-    call store_restart(trim(restart_filename))
-endif
-end subroutine save
+        ! dump restart file
+        if (dump_restart_dt.gt.0d0) then
+            tmp=2.d0*abs(time-dump_restart_dt*nint(time/dump_restart_dt))
+        else
+            tmp=1d99
+        endif
+        if (dump_restart.and.((tmp .lt. dt_face.and.time.gt.start_time).or.(time.ge.end_time))) then
+            call store_restart(trim(restart_filename))
+        endif
+
+    end subroutine save
 
 subroutine save_timedata
     integer::j,k
@@ -482,25 +496,14 @@ subroutine store_final_state
 end subroutine store_final_state
 
 subroutine close_log()
-    if (iout.ne.6) then
+   ! close log if connected to an open unit
+    if (iout.ge.10) then
         close(iout)
     endif
 end subroutine close_log
 
-subroutine print_summary()
-write(iout,*) 'Successful execution of FACE !'
-write(iout,*) '***************Summary***************'
-write(iout,*) '# iteration =', iteration -1
-write(iout,'("cpu time of execution= ",f6.3," seconds.")') tcpufinish-tcpustart
-write(iout,*) '*************************************'
-end subroutine print_summary
 
- subroutine finalize()
-        call close_timedata_files
-        call deallocate_variables()
-        call close_log
-        write(iout,*) 'Quitting FACE after complete normal execution...'
-    end subroutine finalize
+
 
 
 subroutine write_header_log
@@ -517,7 +520,18 @@ subroutine print_milestone(str)
 character(*)::str
 write(iout,"(a)") " "
 write(iout,"('--- ',a,' ---')") str
+write(iout,"(a)") " "
 end subroutine print_milestone
+
+subroutine print_timestep_info
+character(string_length)::myfmt
+
+if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
+write(myfmt,*) "('iter=', 1I6,' time=', es12.4, ' s;   T_l=',es12.4, ' K;   T_r=',es12.4, ' K;"&
+ ,"dt=', es12.4, ' s, |f|=',es12.4)"
+ write (iout, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf
+endif
+end subroutine print_timestep_info
 
 
 

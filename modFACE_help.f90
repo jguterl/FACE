@@ -78,8 +78,8 @@ contains
         call set_help('min_dt','Minimal time step','[s]','mandatory',"1.00e-03")
         call set_help('timestep_factor','Time step factor','none','non-mandatory',"1")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
-        call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"1.00e-00")
-        call set_help('dump_time_dt','Temporal parameters saving time interval','[s]','non-mandatory',"1.00e-00")
+        call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
+        call set_help('dump_time_dt','Temporal parameters saving time interval','[s]','non-mandatory',"0.00e-00")
         call set_help('dump_restart_dt','Restart file saving time interval','[s]','non-mandatory',"1")
         call set_help('steady_state','Steady state yes|no','none','non-mandatory',"no")
         call set_help('temp_ramp_filename','Temperature ramp data file (ramp.dat) used if .ne. 0','none','non-mandatory',"none")
@@ -304,10 +304,10 @@ contains
 
                 if (.not.(help(i)%species)) then
                  write(fmt,*)'(a45,a80,a23,a12,a)'
-                 write(idefault,fmt) adjustl(str_tmp),str_def,str_status,str_units,str_default
+                 write(idefault,fmt) adjustl(str_tmp),str_def,str_status,str_units,trim(str_default)
                 else
                 write(fmt,*)'(a75,a80,a23,a12,a)'
-                write(idefault,fmt) (adjustl(str_tmp)),str_def,str_status,str_units,str_default
+                write(idefault,fmt) (adjustl(str_tmp)),str_def,str_status,str_units,trim(str_default)
 !
 !
 !                    !BUG INTEL FORT below
