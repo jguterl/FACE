@@ -91,8 +91,8 @@ contains
         call set_help('n_species','Number of species','none','mandatory',"3")
         call set_help('species_name','Name of species','none','mandatory',"D H+Tr1 Tr1","species")
         call set_help('n0_profile','Initial density profile is Gaussian (G), step(S), linear(L),peak(P),flat(F)','none'&
-            ,'non-mandatory',"F F F","species")
-        call set_help('n0_max','Initial density n0','[m^-3]','non-mandatory',"1.00e+10 1.00e+10 1.00e+10","species")
+            ,'non-mandatory',"G G G","species")
+        call set_help('n0','Initial density n0','[m^-3]','non-mandatory',"1.00e+10 1.00e+10 1.00e+10","species")
         call set_help('n0_xmax','Position of maximum of Gaussian profile','[m]','non-mandatory',&
         "0.00e-00 0.00e-00 0.00e-00","species")
         call set_help('n0_width','Standard deviation of Gaussian profile','[m]','non-mandatory',&
@@ -133,7 +133,7 @@ contains
         "0.00e+00 0.00e+00 0.00e+00","species")
         call set_help('Gamma_in','External flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
-        call set_help('Gamma_max','Maximal external flux of ionized species','[m^-2 s^-1]','non-mandatory',&
+        call set_help('Gamma_in_max','Maximal external flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
         call set_help('pressure_neutral','External pressure of neutral species','[Pa]','non-mandatory',&
         "0.00e-00 0.00e+00 0.00e+00","species")

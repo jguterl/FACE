@@ -145,6 +145,14 @@ contains
                     face_input%run_mode="print_default_input"
                     k=k+1
                 endif
+            elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
+                    verbose_input=.true.
+                    k=k+1
+
+                    elseif (arg.eq."-vp" .or. arg.eq."--verbose_parser") then
+                    verbose_parser=.true.
+                    k=k+1
+
 
             ! help
             elseif (arg.eq."-h" .or. arg.eq."--help") then

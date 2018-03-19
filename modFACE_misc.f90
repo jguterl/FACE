@@ -72,40 +72,43 @@ function compare_string(str1,str2) result(match)
       logical::match
             integer::N,lstr1,lstr2,i
       match=.true.
-     lstr2=len (trim(str2))
-      lstr1=len (trim(str1))
+     lstr2=len_trim(str2)
+      lstr1=len_trim(str1)
       !write(iout,*) 'L1=',lstr1, 'L2=',lstr2
       N=min(lstr1,lstr2)
       if (N.le.0) then
-      match=.false.
+          match=.false.
       else
-      do i=1,N
-      if(str1(i:i).ne.str2(i:i)) then
-         match=.false.
+          do i=1,N
+              if(str1(i:i).ne.str2(i:i)) then
+                  match=.false.
+              endif
+
+          enddo
       endif
 
-   enddo
- endif
+if (lstr1.ne.lstr2) then
+match=.false.
+endif
+! if (len(str1).gt.N) then
+!     do i=N+1,len(str1)
+!         if (str1(i:i).ne.0) then
+!             match=.false.
+!         endif
+!     enddo
+! endif
+! !write(iout,*) 'match2=',match
+! !
+! !
+! if (len(str2).gt.N) then
+!     do i=N+1,len(str2)
+!         if (str2(i:i).eq.) then
+!             match=.false.
+!         endif
+!     enddo
+! endif
+ !write(iout,*) 'match3=',match
+ return
 
-!if (len(str1).gt.N) then
-!    do i=N+1,len(str1)
-!        if (ichar(str1(i:i)).ne.0) then
-!            match=.false.
-!        endif
-!    enddo
-!endif
-!write(iout,*) 'match2=',match
-!
-!
-!if (len(str2).gt.N) then
-!    do i=N+1,len(str2)
-!        if (ichar(str2(i:i)).ne.0) then
-!            match=.false.
-!        endif
-!    enddo
-!endif
-!write(iout,*) 'match3=',match
-          return
-
-      end function
-      end module modFACE_misc
+ end function
+ end module modFACE_misc

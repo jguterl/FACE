@@ -145,25 +145,31 @@ contains
         write(inputval%status,*) adjustl(help(idx_help)%status)
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
             call face_error('mandatory keyword "', keyword ,'" not found in the inputfile')
-        else if (idx.ne.-1) then
-            write(str0,*) help(idx_help)%default
+        elseif (idx.ne.-1) then
+            write(str0,*) input_lines(idx)%data
             do k=1,nspc
-
                 call get_multiple_data(str0,str1,delimdata)
                 if (typeval.eq."r") then
-                    read(str0,*) inputval%r(k)
+                    read(str0,*)  inputval%r(k)
                 elseif (typeval.eq."i") then
                     read(str0,*) inputval%i(k)
                 elseif (typeval.eq."s") then
-                    inputval%s(k)=str0
+                inputval%s(k)=trim(str0)
                 endif
-                str0=str1
-
+                str0=trim(str1)
             enddo
 
+if (verbose_parser) then
+if (typeval.eq."r") then
+                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%r(k),k=1,nspc)
+                elseif (typeval.eq."i") then
+                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%i(k),k=1,nspc)
+                elseif (typeval.eq."s") then
+                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%s(k),k=1,nspc)
+                endif
+endif
         else
             ! setting default value for keyword
-            str0=''
             write(str0,*) help(idx_help)%default
             do k=1,nspc
                 call get_multiple_data(str0,str1,delimdata)

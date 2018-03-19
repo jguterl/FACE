@@ -325,7 +325,7 @@
         write(iout,*) 'Opening of temperature ramp file "', framp ,'" : FAIL '
         stop
         endif
-        write(iout,*) 'Opening of temperature ramp file "', framp ,'" : DONE '
+        write(iout,*) 'Opening of temperature ramp file "', trim(framp) ,'" : DONE '
 
         read (ifile_Tramp, '(i4)') nramp
         allocate(rtime(nramp))
@@ -334,7 +334,7 @@
          read (20, *) rtime(i), rtemp(i)
         enddo
         close(ifile_Tramp)
-        write(iout,*) 'Reading of temperature ramp file "', framp ,'" : DONE '
+        write(iout,*) 'Reading of temperature ramp file "', trim(framp) ,'" : DONE '
         end subroutine read_Tramp_file
 
 
@@ -395,7 +395,7 @@
 
       integer:: i,j,k
       do k=1,nspc
-      write(iout,*) 'initial profile of density:',gprof(k)
+      if (verbose_init) write(iout,*) 'initial profile of density : ',gprof(k)
        do j=0,ngrd
         do i=1,ndt
          flx (i,j,k)=0.d0
@@ -406,9 +406,9 @@
           dens(i,j,k)=dens0(k)
          elseif(gprof(k) .eq. 'G') then
           dens(i,j,k)=dens0(k) *exp(-0.5d0*abs((x(j)-gxmax(k))/gsigm(k))**2.d0)
+          write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
          else
-         write(iout,*) 'ERROR: unknow option for n0_profile (k=',k,'):', gprof(k)
-         stop
+         call face_error('unknow option for n0_profile: gprof(k)=', gprof(k),' k=',k)
          endif
          if (dens(i,j,k) .lt. 1.d0) then
           dens(i,j,k)=1.d0

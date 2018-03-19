@@ -127,7 +127,7 @@ contains
         call get_keyword_value('n_species', nspc)
 
         call get_keyword_value('species_name', namespc)
-        call get_keyword_value('n0_max', dens0)
+        call get_keyword_value('n0', dens0)
         call get_keyword_value('n0_profile', gprof)
         call get_keyword_value('n0_xmax', gxmax)
         call get_keyword_value('n0_width', gsigm)
@@ -212,7 +212,7 @@ contains
         call write_input_log_keyword('solve_heat_equation', solve_heat_eq)
         call write_input_log_keyword('n_species', nspc)
         call write_input_log_keyword('species_name', namespc)
-        call write_input_log_keyword('n0_max', dens0)
+        call write_input_log_keyword('n0', dens0)
         call write_input_log_keyword('n0_profile', gprof)
         call write_input_log_keyword('n0_xmax', gxmax)
         call write_input_log_keyword('n0_width', gsigm)
@@ -330,10 +330,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading int:',keyword
+        if (verbose_input) write(*,*) 'reading int:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'i')
         variable=inputval%i
-        if (verbose_input) write(iout,*) 'int:',keyword,'=',(variable(k),k=1,nspc) ,' : ' ,inputval%status
+        if (verbose_input) write(iout,*) 'int:',trim(keyword),'=',(variable(k),k=1,nspc) ,' : ' ,trim(inputval%status)
         call check_value_input(keyword)
 
         deallocate(inputval%s)
@@ -352,10 +352,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading real:',keyword
+        if (verbose_input) write(*,*) 'reading real:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'r')
         variable=inputval%r
-        if (verbose_input) write(iout,*) 'real:',keyword,'=',(variable(k),k=1,nspc)  ,' : ' ,inputval%status
+        if (verbose_input) write(iout,*) 'real:',trim(keyword),'=',(variable(k),k=1,nspc)  ,' : ' ,trim(inputval%status)
         call check_value_input(keyword)
         deallocate(inputval%s)
         deallocate(inputval%r)
@@ -372,10 +372,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading real:',keyword
+        if (verbose_input) write(*,*) 'reading real:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'s')
         variable=inputval%s
-if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : ' ,inputval%status
+if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc) ,' : ' ,trim(inputval%status)
         deallocate(inputval%s)
         deallocate(inputval%r)
         deallocate(inputval%i)
