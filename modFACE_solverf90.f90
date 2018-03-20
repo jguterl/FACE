@@ -1,16 +1,14 @@
 
-      module modFACE_solverf90
-       use modFACE_precision
-      use modFACE_header
-      use modFACE_functions
-      use modFACE_output
-      use modFACE_error
-      use modFACE_compute
-       implicit none
-
-       contains
-
-
+module modFACE_solverf90
+    use modFACE_precision
+    use modFACE_header
+    use modFACE_functions
+    use modFACE_output
+    use modFACE_error
+    use modFACE_compute
+    use modFACE_maths
+    implicit none
+contains
     subroutine jac(u,f,fdot,norm)
         integer i, j
         real(DP):: u(neq), um(neq), up(neq)
@@ -53,13 +51,14 @@
             enddo
             if (amax .eq. 0.d0) then
                 write (iout,*) '***warning: underflow in Jacobian raw ', i
+                call which_eq(i)
                 fdot(i,i)=-1.d+99
             endif
         enddo
 
     end subroutine jac
 
-        subroutine build_vector(u,du)
+    subroutine build_vector(u,du)
 
         real(DP):: u(:), du(:)
         integer i,k,j
@@ -86,13 +85,12 @@
             enddo
         endif
         if (i.ne.neq) then
-            write(iout,*)" ERROR: mismatch in vector size: neq=",neq, 'size(vec)=',i
-            stop
+            call face_error("mismatch in vector size: neq=",neq, 'size(vec)=',i)
+
         endif
     end subroutine build_vector
 
-
- subroutine dsolve(du,u,f,fdot)
+    subroutine dsolve(du,u,f,fdot)
 
         real(DP)::  du(neq), u(neq), f(neq), fdot(neq,neq)
         real(DP):: a(neq,neq), b(neq)
@@ -141,4 +139,4 @@
     !!!      enddo
 
     end subroutine dsolve
-    end module modFACE_solverf90
+end module modFACE_solverf90

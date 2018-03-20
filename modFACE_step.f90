@@ -9,22 +9,24 @@
       contains
 
 
-      subroutine step()
-      call shift_array()
+          subroutine step()
 
-      time=time+dt_face
-      delta=1.d0/(1.d0+2.d0*pi*nucut*dt_face)
+              call shift_array()
 
-      call compute_source
-      call compute_temperature
+              time=time+dt_face
+              delta=1.d0/(1.d0+2.d0*pi*nucut*dt_face)
 
-      call newton_solver
+              call compute_source
 
-      call check_positivity_max
+              call compute_temperature
 
-      call compute_trace_flux
+              call newton_solver
 
-      end subroutine step
+              call check_positivity_max
+
+              call compute_trace_flux
+
+          end subroutine step
 
 
     subroutine shift_array

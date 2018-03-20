@@ -25,11 +25,14 @@ contains
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
                     f(i)=f(i)-a12*Gsrf_l (ndt  ,k)*dt_face
+
                 !     --- 2nd order BDF ---
                 elseif (order_solver.eq.2) then
                     f(i)=u(i)-a21*dsrfl(ndt-1,k) &
                         -a22*dsrfl(ndt-2,k)
+                    !write(iout,'(a,i3,a,es12.3)',advance="no") "i=",i,"; f(i)=",f(i)
                     f(i)=f(i)-a23*Gsrf_l (ndt  ,k)*dt_face
+                    !write(iout,'(a,es12.3)') " Gsrf_l (ndt  ,k)*dt_face =",Gsrf_l (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfl(ndt-1,k)&
@@ -106,6 +109,7 @@ contains
                         -a53*dsrfr(ndt-3,k)&
                         -a54*dsrfr(ndt-4,k)
                     f(i)=f(i)-a55*Gsrf_r (ndt  ,k)*dt_face
+
                 else
                     call face_error("ERROR: order of solver not implemented. order=",order_solver)
                 endif
@@ -317,44 +321,62 @@ subroutine compute_source_rate(k)
     end subroutine compute_source_rate
 
         subroutine compute_surface_flx(k)
-        integer k
-        real(DP) tmp
+        integer::k
+        real(DP):: tmp
         !     --- surface ---
+
         ! reducing qch when close to surface saturation
         tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
         qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
         tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
         qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
-
         ! calculate rates of surface processes
         ! - left surface
+         if (left_surface_model(k).eq."S") then
+
         Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-eekb* echl(k)/temp(ndt,   0))
         Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*eekb*(echl(k)+qchtl(k))/temp(ndt,   0))
         Kb_l(k)=        K0b_l(k)  *exp(-     eekb*(ebl (k)+qchtl(k))/temp(ndt,   0))
         Kads_l(k)=      K0ads_l(k)*exp(-     eekb*(ebl (k)-esl  (k))/temp(ndt,   0))
-
+        elseif (left_surface_model(k).eq."N") then
+        Kabs_l(k)=min_rate_surface
+        Kdes_l(k)=min_rate_surface
+        Kb_l(k)=min_rate_surface
+        Kads_l(k)=min_rate_surface
+        else
+        call face_error("unknown left surface model:",left_surface_model(k))
+        endif
         ! - right surface
+        if (right_surface_model(k).eq."S") then
+
         Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* echr(k)          /temp(ndt,ngrd))
         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(echr(k)+qchtr(k))/temp(ndt,ngrd))
         Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(ebr (k)+qchtr(k))/temp(ndt,ngrd))
         Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(ebr (k)-esr  (k))/temp(ndt,ngrd))
+        elseif (right_surface_model(k).eq."N") then
+        Kabs_l(k)=min_rate_surface
+        Kdes_l(k)=min_rate_surface
+        Kb_l(k)=min_rate_surface
+        Kads_l(k)=min_rate_surface
+        else
+        call face_error("unknown right surface model:",right_surface_model(k))
+        endif
 
         ! calculate surface fluxes using rates and density
         ! - left surface
         Gabs_l (ndt,k)=Kabs_l(k)
         Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)*dsrfl(ndt,k)
-       ! write(*,*) "echl(k)+qchtl(k)",echl(k)+qchtl(k)
-       ! write(*,*) "dsrfl(ndt,k)=",dsrfl(ndt,k)
         Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
         Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
         ! - right surface
         Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
-        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)*dsrfr(ndt,k) ! Gdesorp=K*ns^2
+        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)*dsrfr(ndt,k)          ! Gdesorp=K*ns^2
         Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
         Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
 
         ! apply cap factor to mimic effects of saturation
         call compute_cap_factor_surface(k,ndt)
+
 
         ! calculate effective desorptiopn and heat fluxes
         if (solve_heat_eq .eq. "yes") then
@@ -465,12 +487,12 @@ subroutine compute_source_rate(k)
         ! - left surface
         Gabs_l (i,k)=Gabs_l (i,k) *cabs_l
         Gdes_l (i,k)=Gdes_l (i,k) *cdes_l
-        Gb_l (i,k)=Gb_l (i,k)     *cb_l
+        Gb_l (i,k)  =Gb_l (i,k)   *cb_l
         Gads_l (i,k)=Gads_l (i,k) *cads_l
         ! - right surface
         Gabs_r (i,k)=Gabs_r (i,k) *cabs_r
         Gdes_r (i,k)=Gdes_r (i,k) *cdes_r
-        Gb_r (i,k)=Gb_r (i,k)     *cb_r
+        Gb_r (i,k)  =Gb_r (i,k)   *cb_r
         Gads_r (i,k)=Gads_r (i,k) *cads_r
 
       end subroutine compute_cap_factor_surface

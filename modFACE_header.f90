@@ -35,6 +35,7 @@
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
     logical :: verbose_restore=.false.
+     logical :: verbose_maths=.true.
     logical:: enforce_error=.true.
 !      integer ngrdm, nspcm, ndt, nrampm
       integer::ngrd
@@ -44,7 +45,7 @@
     integer:: iout=6
       real :: tcpustart, tcpufinish
      integer :: Nprint_run_info=2 ! print info on current run every Nprint_run_info steps
-
+     real(DP),parameter :: min_rate_surface=1d-20
       ! **  Some physical and mathematical constants
       real(DP),parameter ::ee=1.602176462d-19
       real(DP),parameter ::eps0=8.854187817d-12
@@ -211,6 +212,9 @@
 !     ------------------------------------------------------------------
 !
       character(lname),allocatable::namespc(:)
+      character(lname),allocatable::left_surface_model(:)
+      character(lname),allocatable::right_surface_model(:)
+
 !      Volumetric species terms
       real(DP),allocatable::dens0(:)
       real(DP),allocatable::gxmax(:)

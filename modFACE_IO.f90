@@ -8,7 +8,7 @@ module modFACE_IO
     save
     integer,allocatable::ifile_timedata(:)
 contains
-
+! ** time data
     subroutine open_timedata_files()
         integer:: ios,k
         character(string_length)::filename
@@ -22,20 +22,27 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (ifile_timedata(k), '(14a13)')&
+            write (ifile_timedata(k), '(17a13)')&
                 'time',&
-                'temp',&
+                'tempL',&
+                'tempR',&
                 'densL',&
                 'densR',&
                 'NsrfL',&
                 'NsrfR',&
-                'GdesL',&
-                'GdesR',&
+                'Gabs_l',&
+                'Gabs_r',&
+                'Gdes_l',&
+                'Gdes_r',&
+                'Gb_l',&
+                'Gb_r',&
+                'Gads_l',&
+                'Gads_r',&
                 'Qnty',&
                 'Src',&
                 'Rct',&
                 'rate_d',&
-                'inflx1',&
+                'inflx',&
                 'qrad'
         enddo
     end subroutine open_timedata_files
@@ -53,6 +60,54 @@ do k=1,nspc
           deallocate(ifile_timedata)
     end subroutine close_timedata_files
 
+subroutine save_timedata
+    integer::j,k
+    real(DP):: qnty,frmn,rctn
+    character*256  myfmt1,myfmt2
+
+    write(myfmt1,*) &
+        "('+', ' time=', es12.4e3, ' s; T_l=', es12.3,' K; dt=', es12.3, ' s; number of iterations ', i3)"
+    write(myfmt2,*) "(17es13.3)"
+    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
+
+    do k=1,nspc
+        qnty=0.d0
+        frmn=0.d0
+        rctn=0.d0
+        do j=0,ngrd-1
+            qnty=qnty+0.5d0*(dens(ndt,j,k)+dens(ndt,j+1,k))*dx(j)
+            frmn=frmn+0.5d0*(src (ndt,j,k)+src (ndt,j+1,k))*dx(j)
+            rctn=rctn+0.5d0*(rct (ndt,j,k)+rct (ndt,j+1,k))*dx(j)
+        enddo
+
+        write (ifile_timedata(k),myfmt2)&
+            time, &
+            temp (ndt,0),&
+            temp (ndt,ngrd),&
+            dens (ndt,0,   k),&
+            dens (ndt,ngrd,k),&
+            dsrfl(ndt,     k),&
+            dsrfr(ndt,     k),&
+            Gabs_l(ndt,k),&
+            Gabs_r(ndt,k),&
+            Gdes_l(ndt,k),&
+            Gdes_r(ndt,k),&
+            Gb_l(ndt,k),&
+            Gb_r(ndt,k),&
+            Gads_l(ndt,k),&
+            Gads_r(ndt,k),&
+            qnty,&
+            frmn,&
+            rctn,&
+            rate_d  (ndt,0,k),&
+            inflx(k),&
+            rad
+    enddo
+
+end subroutine save_timedata
+
+! ** volume data
+
     subroutine save_voldata()
 
         integer j, k,ios
@@ -62,7 +117,7 @@ do k=1,nspc
 
         write(myfmt1,*)    "(a, 1pe13.4e2, a)"
         write(myfmt2,*) "(9a13)"
-        write(myfmt3,*) "(i13.4, 8(1pe13.4e2))"
+        write(myfmt3,*) "(i13.4, 8es13.4)"
 
         do k=1,nspc
             write (filename, '(a,a, i2.2, a, i3.3, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
@@ -102,9 +157,9 @@ do k=1,nspc
                 write (iout, '(2a)') ' *** error saving ', trim(filename)
 
             endif
-            sfln_voldata=sfln_voldata+1
-        enddo
 
+        enddo
+        sfln_voldata=sfln_voldata+1
     end subroutine save_voldata
 
 
@@ -239,44 +294,7 @@ do k=1,nspc
 
     end subroutine save
 
-subroutine save_timedata
-    integer::j,k
-    real(DP):: qnty,frmn,rctn
-    character*256  myfmt1,myfmt2
 
-    write(myfmt1,*) &
-        "('+', ' time=', 1pe13.4e2, ' s; T_l=', 1pe13.4e2,' K; dt=', 1pe13.4e2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(14(1pe13.4e2))"
-    if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
-
-    do k=1,nspc
-        qnty=0.d0
-        frmn=0.d0
-        rctn=0.d0
-        do j=0,ngrd-1
-            qnty=qnty+0.5d0*(dens(ndt,j,k)+dens(ndt,j+1,k))*dx(j)
-            frmn=frmn+0.5d0*(src (ndt,j,k)+src (ndt,j+1,k))*dx(j)
-            rctn=rctn+0.5d0*(rct (ndt,j,k)+rct (ndt,j+1,k))*dx(j)
-        enddo
-
-        write (ifile_timedata(k),myfmt2)&
-            time, &
-            temp (ndt,0),&
-            dens (ndt,0,   k),&
-            dens (ndt,ngrd,k),&
-            dsrfl(ndt,     k),&
-            dsrfr(ndt,     k),&
-            Gdes_l  (ndt,     k),&
-            Gdes_r  (ndt,     k),&
-            qnty,&
-            frmn,&
-            rctn,&
-            rate_d  (ndt,0,k),&
-            inflx(1),&
-            rad
-    enddo
-
-end subroutine save_timedata
 
 
 

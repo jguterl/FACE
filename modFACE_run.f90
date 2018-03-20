@@ -92,10 +92,16 @@ subroutine run_FACE(face_input,face_output)
       particle_balance%Ninflux=trace_flux(1)%sum_inflx
       particle_balance%Nnet=0d0
       particle_balance%Noutflux=0d0
-      do k=1,nspc,2
+
+      particle_balance%Nnet=particle_balance%Nnet+final_inventory(1)%Nnetbulk+final_inventory(1)%Nnetsrf
+      particle_balance%Noutflux=particle_balance%Noutflux+trace_flux(1)%sum_Gdes_l+trace_flux(1)%sum_Gdes_r
+
+      if (nspc.gt.2) then
+      do k=3,nspc,2
       particle_balance%Nnet=particle_balance%Nnet+final_inventory(k)%Nnetbulk+final_inventory(k)%Nnetsrf
       particle_balance%Noutflux=particle_balance%Noutflux+trace_flux(k)%sum_Gdes_l+trace_flux(k)%sum_Gdes_r
       enddo
+      endif
 
 
 
@@ -134,8 +140,9 @@ subroutine run_FACE(face_input,face_output)
     ! we add a verifiction to throw an error if desorption of H occurs as desorption of filled traps.
     ! Filled traps usually do not diffuse in material but this check might be eased if necessary...
     do k=2,nspc
-    if (trace_flux(k)%max_Gdes_l.gt.0d0.or.trace_flux(k)%max_Gdes_r.gt.0d0) then
-    call face_error('Desorption of filled of emptry traps occurs. Please check consistancy of results, input and code')
+    if (trace_flux(k)%max_Gdes_l.gt.1d-4*trace_flux(1)%max_Gdes_l) then
+    call face_error('Desorption of traps occurs and is larger than 0.1% of H desorption.Check consistancy(k)='&
+    ,trace_flux(k)%max_Gdes_l,"Gdes_l(1)=",trace_flux(1)%max_Gdes_l)
     endif
     enddo
 
@@ -209,14 +216,14 @@ write(iout,'("cpu time of execution= ",es12.3," seconds.")') tcpufinish-tcpustar
 write(iout,*) '*************************************'
 
 do k=1,nspc
-write(iout,'(a,i2,a,e9.2,a,e9.2)') "Final inventory k=",k ,"; bulk/surface:",final_inventory(k)%Nnetbulk,' / ',&
+write(iout,'(a,i2,a,e9.2,a,e9.2)') "Final net inventory k=",k ,"; bulk/surface:",final_inventory(k)%Nnetbulk,' / ',&
  final_inventory(k)%Nnetsrf
 enddo
 write(iout,*) " "
       write(iout,*) " *** Particle balance ***"
       write(iout,'(a,es12.3,a,es12.3,a,es12.3)') " * Ninflux=",particle_balance%Ninflux,"; Nnet_material=",particle_balance%Nnet,&
       "; Noutflux=",particle_balance%Noutflux
-      write(iout,'(a,es12.3)') " * Ninflux-Noutflux+Nnet=",particle_balance%Ninflux-particle_balance%Noutflux+particle_balance%Nnet
+      write(iout,'(a,es12.3)') " * Ninflux-Noutflux-Nnet=",particle_balance%Ninflux-particle_balance%Noutflux-particle_balance%Nnet
       write(iout,*) " *** "
 end subroutine print_summary
 

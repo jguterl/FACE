@@ -1,4 +1,10 @@
-    ! ***************************************************************
+ module modFACE_maths
+    use modFACE_precision
+    use modFACE_header
+     use modFACE_error
+    implicit none
+    contains
+        ! ***************************************************************
     ! * Given an N x N matrix A, this routine replaces it by the LU *
     ! * decomposition of a rowwise permutation of itself. A and N *
     ! * are input. INDX is an output vector which records the row *
@@ -19,7 +25,7 @@
      integer, intent(out), dimension(N) :: INDX
      !f2py depend(N) A, indx
 
-     real*8 :: AMAX, DUM, SUMM, VV(NMAX)
+     real(DP) :: AMAX, DUM, SUMM, VV(NMAX)
      INTEGER :: i, j, k, imax
 
      D=1; CODE=0
@@ -31,7 +37,7 @@
        END DO ! j loop
        IF(AMAX.EQ.0.d0) THEN
          CODE = 1
-         write(*,*) i, amax
+         write(iout,*) i, amax
          RETURN
 
        END IF
@@ -72,7 +78,8 @@
 
        INDX(J) = IMAX
        IF(A(J,J).EQ.0.d0) THEN
-         write(*,*) 'Warning: Newton direction is not precise', j
+         if (verbose_maths) write(iout,*) 'Warning: Newton direction is not precise', j
+         if (verbose_maths) call which_eq(j)
          A(J,J) = TINY
        END IF
 
@@ -100,12 +107,13 @@ END subroutine DLUDCMP
 ! ******************************************************************
  Subroutine DLUBKSB(A, N, INDX, B)
  integer, intent(in) :: N
- real*8, intent(in), dimension(N,N) :: A
+ real(DP), intent(in), dimension(N,N) :: A
  integer, intent(in), dimension(N) :: INDX
- real*8, intent(inout), dimension(N) :: B
+ real(DP), intent(inout), dimension(N) :: B
+ integer :: I,J,II,LL
  !f2py depend(N) A, INDX, B
 
- real*8 SUMM
+ real(DP) SUMM
 
  II = 0
 
@@ -135,3 +143,51 @@ END subroutine DLUDCMP
 
  RETURN
 END subroutine DLUBKSB
+
+subroutine which_eq(j_eq)
+
+        integer,intent(in):: j_eq
+        integer j_idx,k_idx
+
+        if (solve_heat_eq .eq. "yes") then
+
+            if (j_eq.ge.neq-ngrd+1.and.j_eq.le.neq) then
+
+                j_idx=ngrd+1-(neq-j_eq)
+                write(iout,*) "eq: heat eq at j=",j_idx
+
+            elseif (j_eq.lt.neq-ngrd+1) then
+
+
+                k_idx=floor(real(j_eq)/real(ngrd+3))
+                j_idx=j_eq-k_idx*(ngrd+3)+1
+                if  (j_idx.eq.1) then
+                    write(iout,*) "eq: spc k = ",k_idx," at left surface "
+                elseif  (j_idx.eq.ngrd+3) then
+                    write(iout,*) "eq: spc k = ",k_idx," at right surface"
+                elseif (j_idx.lt.ngrd+3.and.j_idx.gt.1) then
+                    write(iout,*) "eq: volume spc k = ",k_idx," at j = ",j_idx-1
+                else
+                    call face_error("cannot find the equation ",j_eq)
+                endif
+            endif
+
+            elseif (solve_heat_eq .eq. "no") then
+
+                k_idx=floor(real(j_eq)/real(ngrd+3))
+                j_idx=j_eq-k_idx*(ngrd+3)+1
+                if  (j_idx.eq.1) then
+                    write(iout,*) "eq: spc k = ",k_idx," at left surface "
+                elseif  (j_idx.eq.ngrd+3) then
+                    write(iout,*) "eq: spc k = ",k_idx," at right surface"
+                elseif (j_idx.lt.ngrd+3.and.j_idx.gt.1) then
+                    write(iout,*) "eq: volume spc k = ",k_idx," at j = ",j_idx-1
+                else
+                    call face_error("cannot find the equation ;", j_eq,"/",neq,"; jdix=",j_idx)
+                endif
+            else
+
+                call face_error("j_eq too large j_eq=",j_eq,"; neq= ",neq)
+            endif
+    end subroutine which_eq
+   end module modFACE_maths

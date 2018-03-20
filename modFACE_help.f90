@@ -105,7 +105,11 @@ contains
         call set_help('Etr', 'Activation energy of trapping of species'  , '[eV]' , 'non-mandatory' ,"0.00 1.00 0.00","species")
 
         call set_help('# ********* Parameters for surface model and species ******************* ')
-        call set_help('surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2','[m^-2]','mandatory',"S S S","species")
+        call set_help('left_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
+        'mandatory',"S N N","species")
+        call set_help('right_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
+        'mandatory',"S N N","species")
+
         call set_help('ns0_left','Initial left surface density of species','[m^-2]','non-mandatory',&
             "1.00e+19 0.00e+19 0.00e+19","species")
         call set_help('ns0_right','Initial right surface density of species','[m^-2]','non-mandatory',&

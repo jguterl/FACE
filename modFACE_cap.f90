@@ -1,5 +1,6 @@
 module modFACE_cap
 use modFACE_header
+implicit none
 contains
 !    linear cap function to model saturation of total H
       real(DP) function cspcs(i,j,k)
@@ -113,7 +114,7 @@ contains
         endif
 
         if (dsrfr(i,k) .gt. 0.d0) then
-            cdesr=1.d0
+            cdes_r=1.d0
         else
             cdes_r=0.d0
         endif

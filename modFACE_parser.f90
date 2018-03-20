@@ -98,26 +98,28 @@ contains
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
         if (idx_help.eq.-1) then
-            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
+            call face_error('Unknown keyword "', trim(keyword) ,&
+            '" (see module help for list of keywords or run Face with -keywords')
         endif
-        if (verbose_parser) write(iout,*) 'keyword:',keyword,' idx=',idx,' idx_help=',idx_help
+        if (verbose_parser) write(iout,*) 'keyword:',trim(keyword),' idx=',idx,' idx_help=',idx_help
         write(inputval%status,*) adjustl(help(idx_help)%status)
 
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
-            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
+            call face_error('Unknown keyword "', trim(keyword) ,&
+            '" (see module help for list of keywords or run Face with -keywords')
         else if (idx.ne.-1) then
             ! seems that an extra blank is added when writing in string, leading to seg fault if size of receiving string is not incremeted by +1
             write(str0,*) input_lines(idx)%data
-            if (verbose_parser) write(iout,*) 'getting data from string:',str0
+            if (verbose_parser) write(iout,*) 'getting data from string:',trim(str0)
             call get_single_data(str0,delimdata)
 
         else
             ! setting default value for keyword
             write(str0,*) help(idx_help)%default
-            if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,keyword,'"'
+            if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,trim(keyword),'"'
         endif
 
-        if (verbose_parser) write(iout,*) 'get data for keyword:',keyword
+        if (verbose_parser) write(iout,*) 'get data for keyword:',trim(keyword)
 
         if (typeval.eq."r") then
             read(str0,*) inputval%r
@@ -126,7 +128,16 @@ contains
         elseif (typeval.eq."s") then
             inputval%s=trim(str0)
         endif
-
+if (verbose_parser) then
+if (typeval.eq."r") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",inputval%r
+                elseif (typeval.eq."i") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",inputval%i
+                elseif (typeval.eq."s") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",trim(inputval%s)
+                endif
+                 write(iout,*) ' '
+endif
         return
     end subroutine assign_keyword_value
 
@@ -146,9 +157,12 @@ contains
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
             call face_error('mandatory keyword "', keyword ,'" not found in the inputfile')
         elseif (idx.ne.-1) then
-            write(str0,*) input_lines(idx)%data
+            str0=trim(input_lines(idx)%data)
+            write(iout,*) "str0=",trim(str0)
+
             do k=1,nspc
                 call get_multiple_data(str0,str1,delimdata)
+                write(iout,*) "str0=",trim(str0),"; str1=",str1
                 if (typeval.eq."r") then
                     read(str0,*)  inputval%r(k)
                 elseif (typeval.eq."i") then
@@ -161,12 +175,14 @@ contains
 
 if (verbose_parser) then
 if (typeval.eq."r") then
-                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%r(k),k=1,nspc)
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(inputval%r(k),k=1,nspc)
                 elseif (typeval.eq."i") then
-                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%i(k),k=1,nspc)
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(inputval%i(k),k=1,nspc)
                 elseif (typeval.eq."s") then
-                write(iout,*) "keyword:",trim(keyword), "; values=",(inputval%s(k),k=1,nspc)
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(trim(inputval%s(k)),k=1,nspc)
+
                 endif
+                write(iout,*) ' '
 endif
         else
             ! setting default value for keyword
@@ -183,6 +199,7 @@ endif
                 str0=str1
             enddo
             if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,keyword,'"'
+
         endif
         return
 
@@ -248,8 +265,8 @@ endif
             input_lines(i)%data=trim(str3)
             input_lines(i)%comment=trim(str4)
 
-            if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',input_lines(i)%keyword, '" data="',input_lines(i)%data,&
-                '" comment="',input_lines(i)%comment,'"'
+            if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',trim(input_lines(i)%keyword), &
+            '" data="',trim(input_lines(i)%data),'" comment="',trim(input_lines(i)%comment),'"'
         enddo
 
     end subroutine get_inputlines

@@ -137,8 +137,8 @@ contains
         call get_keyword_value('ED', edif)
         call get_keyword_value('Etr', etr )
         call get_keyword_value('Edt', edtr)
-
-        call get_keyword_value('ns_max', dsrfm)
+        call get_keyword_value('left_surface_model', left_surface_model)
+        call get_keyword_value('right_surface_model', right_surface_model)
         call get_keyword_value('ns0_left', dsrfl0)
         call get_keyword_value('ns0_right', dsrfr0)
         call get_keyword_value('Ech_left', echl )
@@ -320,7 +320,8 @@ contains
     str=str0
     endif
     end subroutine set_str
-    !read keyward values for species
+
+    !read keyword values for species
     subroutine get_keyword_value_species_i(keyword,variable)
         character(*)::keyword
         type(input_valsp)::inputval

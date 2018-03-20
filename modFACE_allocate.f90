@@ -543,7 +543,10 @@
 
           allocate(edtr   (nspc))
           call init_zero(edtr)
-
+          allocate(left_surface_model(nspc))
+          call init_zero(left_surface_model)
+          allocate(right_surface_model(nspc))
+          call init_zero(right_surface_model)
           allocate(dsrfm(nspc))
           call init_zero(dsrfm)
 
@@ -642,6 +645,8 @@ subroutine deallocate_variables()
       deallocate(jout)
       deallocate(src)
 
+      deallocate(right_surface_model)
+      deallocate(left_surface_model)
 
       deallocate(Kabs_l)
       deallocate(Kdes_l)

@@ -39,11 +39,14 @@ contains
     INTEGER :: indexx
 
     call StripFrontSpaces(string)
-    strout=string
-    indexx = INDEX(trim(string),delim)
+
+    strout=trim(string)
+
+    indexx = INDEX(trim(string)," ")
     if (indexx>0) then
+
+    strout = trim(string(indexx+1:))
     string = trim(string(1:indexx-1))
-    strout= trim(string(indexx+1:))
     endif
      return
      end subroutine
