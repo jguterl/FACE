@@ -1,10 +1,8 @@
 module modFACE_main
     use modFACE_header
- !   use modFACE_parser
-    use modFACE_output
     use modFACE_help
     use modFACE_IO
-    use modFACE_interface
+
     use modFACE_run
     implicit none
 
@@ -20,37 +18,38 @@ contains
         !  Execute requested run mode
         face_mode:select case(face_input%run_mode)
 
-            case("help")
-                call display_help
+            case ("help")
+                call print_help
 
             case ("version")
-                call write_version
+                call print_version
 
+            case ("list-keyword")
+                call print_version
+                call print_list_keyword
             case ("print_default_input")
-                call write_version()
+                call print_version()
                 call write_default_inputfile(default_inputfile,"H+Tr")
 
             case ("default_H") ! default modes-> print out default input file then read file
-                call write_version()
+                call print_version()
                 call write_default_inputfile(default_inputfile,"H")
                 call write_header_log()
                 call run_FACE(face_input,face_output)
 
             case ("default_H+Tr") ! default modes-> print out default input file then read file
-                call write_version()
+                call print_version()
                 call write_default_inputfile(default_inputfile,"H+Tr")
                 call write_header_log()
                 call run_FACE(face_input,face_output)
 
             case default ! all other modes which request reading of input file
-                call write_short_version()
                 call write_header_log()
                 call run_FACE(face_input,face_output)
 
         end select face_mode
 
         call finalization_main
-        stop
     end    subroutine FACE_main
 
 

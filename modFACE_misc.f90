@@ -42,7 +42,7 @@ contains
 
     strout=trim(string)
 
-    indexx = INDEX(trim(string)," ")
+    indexx = INDEX(trim(string),delim)
     if (indexx>0) then
 
     strout = trim(string(indexx+1:))

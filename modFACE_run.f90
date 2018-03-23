@@ -1,8 +1,8 @@
 module modFACE_run
 use modFACE_header
-use modFACE_interface
  use modFACE_input
 use modFACE_init
+    use modFACE_coupling
 implicit none
 contains
 subroutine run_FACE(face_input,face_output)
@@ -17,6 +17,7 @@ subroutine run_FACE(face_input,face_output)
     type(FACE_outputs),intent(out) :: face_output
         ! get time at beginning of run
         call cpu_time(tcpustart)
+        call print_headline('Start FACE run')
         !read input
         call input_run(face_input)
         ! initialize variables
@@ -45,6 +46,8 @@ subroutine run_FACE(face_input,face_output)
         call cpu_time(tcpufinish)
         ! generate output for FACE
         call output_run(face_output)
+
+        call print_headline('FACE run completed')
         ! print summary of the run
         call print_summary
 
@@ -103,7 +106,13 @@ subroutine run_FACE(face_input,face_output)
       enddo
       endif
 
-
+      particle_balance%p_net=particle_balance%Ninflux-particle_balance%Noutflux-particle_balance%Nnet
+      particle_balance%p_max=max(max(abs(particle_balance%Ninflux),abs(particle_balance%Noutflux)),abs(particle_balance%Nnet))
+      if (particle_balance%p_max.ne.0d0) then
+      particle_balance%f_lost=abs(particle_balance%p_net)/particle_balance%p_max
+      else
+      particle_balance%f_lost=1d99
+      endif
 
     end subroutine compute_particle_balance
 
@@ -111,8 +120,16 @@ subroutine run_FACE(face_input,face_output)
     type(FACE_outputs),intent(out) :: face_output
     face_output%cpu_runtime=tcpufinish-tcpustart
     face_output%error_status=error_status
+    face_output%nspc=nspc
 
-    call FACE2fluidcode(face_output%fluidcode_output)
+    allocate(FACE_output%init_inventory(face_output%nspc))
+    allocate(FACE_output%final_inventory(face_output%nspc))
+    FACE_output%final_inventory=final_inventory
+    FACE_output%init_inventory=init_inventory
+    FACE_output%particle_balance=particle_balance
+    FACE_output%outgassing_flux=outgassing_flux
+    FACE_output%init_wall_temp=init_wall_temp
+    FACE_output%final_wall_temp=final_wall_temp
 
     end subroutine output_run
 
@@ -141,7 +158,7 @@ subroutine run_FACE(face_input,face_output)
     ! Filled traps usually do not diffuse in material but this check might be eased if necessary...
     do k=2,nspc
     if (trace_flux(k)%max_Gdes_l.gt.1d-4*trace_flux(1)%max_Gdes_l) then
-    call face_error('Desorption of traps occurs and is larger than 0.1% of H desorption.Check consistancy(k)='&
+    call face_warning('Desorption of traps occurs and is larger than 0.1% of H desorption.Check consistancy(k)='&
     ,trace_flux(k)%max_Gdes_l,"Gdes_l(1)=",trace_flux(1)%max_Gdes_l)
     endif
     enddo
@@ -180,10 +197,10 @@ subroutine run_FACE(face_input,face_output)
 
 
 
-        call write_input_log
 
-        if (couple_fluidcode) then
-        call fluidcode2FACE(face_input%fluidcode_input)
+
+        if (face_input%couple_fluidcode) then
+        call input_fluidcode(face_input%fluidcode_input)
         endif
 
     end subroutine input_run
@@ -209,29 +226,44 @@ subroutine time_loop
 
     subroutine print_summary()
 integer ::k
-write(iout,*) 'Successful run of FACE !'
-write(iout,*) '***************Summary***************'
-write(iout,*) '# iteration = ', iteration
-write(iout,'("cpu time of execution= ",es12.3," seconds.")') tcpufinish-tcpustart
-write(iout,*) '*************************************'
+character(string_length) :: str
 
+call print_section('Summary')
+write(str,*) '# iteration = ', iteration
+call print_line(str)
+write(str,'("cpu time of execution= ",es12.3," seconds.")') tcpufinish-tcpustart
+call print_line(str)
+call print_end_section('Summary')
+call print_section('Final inventory')
 do k=1,nspc
-write(iout,'(a,i2,a,e9.2,a,e9.2)') "Final net inventory k=",k ,"; bulk/surface:",final_inventory(k)%Nnetbulk,' / ',&
- final_inventory(k)%Nnetsrf
+ write(str,'(a,i2,a,e12.3)') "Final net inventory k= ",k    ," - bulk    : ",final_inventory(k)%Nnetbulk
+ call print_line(str)
+ write(str,'(a,a,a,e12.3)') "                       ","  " ," - surface : ", final_inventory(k)%Nnetsrf
+call print_line(str)
+write(str,*) " "
+call print_line(str)
 enddo
-write(iout,*) " "
-      write(iout,*) " *** Particle balance ***"
-      write(iout,'(a,es12.3,a,es12.3,a,es12.3)') " * Ninflux=",particle_balance%Ninflux,"; Nnet_material=",particle_balance%Nnet,&
+call print_end_section('Final inventory')
+call print_section('Particle balance')
+      write(str,'(a,es12.3,a,es12.3,a,es12.3)') "Ninflux=",particle_balance%Ninflux,"; Nnet_material=",particle_balance%Nnet,&
       "; Noutflux=",particle_balance%Noutflux
-      write(iout,'(a,es12.3)') " * Ninflux-Noutflux-Nnet=",particle_balance%Ninflux-particle_balance%Noutflux-particle_balance%Nnet
-      write(iout,*) " *** "
+     call print_line(str)
+      write(str,'(a,es12.3)') "Ninflux-Noutflux-Nnet=",particle_balance%p_net
+      call print_line(str)
+      write(str,'(a,es12.3)') "Fraction of numerically lost particles =",particle_balance%f_lost
+call print_line(str)
+call print_end_section('Particle balance')
 end subroutine print_summary
 
     subroutine print_info_run
-call print_milestone('info run')
-write(iout,'(a,es12.3,a,es12.3,a,es12.3)') "start_time=",start_time,"; end_time=",end_time," ;dt_face=",dt_face
-write(iout,'(a,i5)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
-write(iout,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq
-write(iout,*) ''
+    character(string_length)::str
+call print_section('Run features')
+write(str,'(a,es12.3,a,es12.3,a,es12.3)') "start_time=",start_time,"; end_time=",end_time," ;dt_face=",dt_face
+call print_line(str)
+write(str,'(a,i5)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
+call print_line(str)
+write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq
+call print_line(str)
+call print_end_section('Run features')
 end subroutine print_info_run
 end module modFACE_run

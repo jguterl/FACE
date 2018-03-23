@@ -2,9 +2,7 @@ module modFACE_input
     use modface_header
     use modFACE_output
     use modFACE_parser
-    use modFACE_interface
     use modFACE_allocate
-    use modFACE_coupling
     implicit none
     save
 
@@ -38,12 +36,14 @@ contains
         call get_inputlines()
 
         close(iuinput)
-        write(iout,*) 'Reading of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Reading of input file "', trim(filename) ,'" : DONE '
         ! init input values
         call init_input_single
-        call parse_keywords()
+        call check_keywords
+        call parse_keywords
+         call write_input_log
         deallocate(input_lines)
-         write(iout,*) 'Parsing of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Parsing of input file "', trim(filename) ,'" : DONE '
     end subroutine read_inputfile
 
 
@@ -68,7 +68,7 @@ contains
                 call face_error("order of the solver must be 1 2 or 5. current order : ", order_solver)
             else
             ndt=order_solver+1
-            write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
+            if (verbose_init) write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
             endif
 
 
@@ -104,6 +104,19 @@ contains
 
     end subroutine check_value_input
 
+    subroutine check_keywords
+    integer :: i
+    character(string_length) :: str
+    do i=1,nlines
+    str=input_lines(i)%keyword
+    call StripFrontSpaces(str)
+        if (find_keyword_help(trim(str)).eq.-1.and.str(1:1).ne.'#') then
+            call face_error('Unknown keyword "', trim(input_lines(i)%keyword) ,'"at line=',i,&
+            ' (see list of keywords --list-keywords or -lk)')
+        endif
+    enddo
+    end subroutine check_keywords
+
 
     subroutine parse_keywords()
         if (verbose_input) write(iout,*) "Parsing keyword"
@@ -116,7 +129,7 @@ contains
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
         call get_keyword_value('end_time', end_time)
-        call get_keyword_value('min_dt', dtmin)
+        call get_keyword_value('dt', dt0_face)
 !        call get_keyword_value('timestep_factor', cdt)
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
@@ -141,15 +154,19 @@ contains
         call get_keyword_value('right_surface_model', right_surface_model)
         call get_keyword_value('ns0_left', dsrfl0)
         call get_keyword_value('ns0_right', dsrfr0)
-        call get_keyword_value('Ech_left', echl )
-        call get_keyword_value('Ech_right', echr)
-        call get_keyword_value('Q_ch_left', qchl)
-        call get_keyword_value('Q_ch_right', qchr)
-        call get_keyword_value('Eab_left', ebl)
-        call get_keyword_value('Eab_right', ebr )
-        call get_keyword_value('Es_left', esl)
-        call get_keyword_value('Es_right', esr)
+        call get_keyword_value('ns_max', dsrfm)
+        call get_keyword_value('Eabs_left', Eabs_l )
+        call get_keyword_value('Eabs_right', Eabs_r)
+        call get_keyword_value('Edes_left', Edes_l)
+        call get_keyword_value('Edes_right', Edes_r)
+        call get_keyword_value('Eb_left', Eb_l)
+        call get_keyword_value('Eb_right', Eb_r )
+        call get_keyword_value('Eads_left', Eads_l)
+        call get_keyword_value('Eads_right', Eads_r)
         call get_keyword_value('nu0', nu)
+        call get_keyword_value('implantation_model', implantation_model)
+        call get_keyword_value('implantation_depth', implantation_depth)
+        call get_keyword_value('implantation_width', implantation_width)
         call get_keyword_value('Eimpact_ion', enrg)
         call get_keyword_value('Gamma_in', inflx_in)
         call get_keyword_value('Gamma_in_max', inflx_in_max)
@@ -180,92 +197,30 @@ contains
         call get_keyword_value('second_ramp_end_time', t3)
         call get_keyword_value('pulsed_flux', pulsed_flux)
         call get_keyword_value('pulse_period', tpulse)
+        call get_keyword_value('iter_solver_max', iter_solver_max)
+        call get_keyword_value('Nprint_run_info', Nprint_run_info)
+        call get_keyword_value('solver_eps',solver_eps)
+        call get_keyword_value('solver_udspl',solver_udspl)
+        call get_keyword_value('solver_fdspl',solver_fdspl)
+        call get_keyword_value('solver_gdspl',solver_gdspl)
+        call get_keyword_value('solver_fstp',solver_fstp)
+
         if (verbose_input) write(iout,*) "Parsing keyword: DONE"
     end subroutine parse_keywords
 
    subroutine write_input_log()
-        character(200)::filename
-        integer::ios
-        call set_ifile(ifile_inputlog)
-        write (filename, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'_input.face'
-        open (ifile_inputlog, file=trim(filename),status='replace', iostat=ios)
+        character(string_length)::filename
+        integer::ios,i
+        call set_unit(unit_inputlog)
+        filename= trim(path_folder)//trim(casename)//'_input.log'
+        open (unit_inputlog, file=trim(filename),status='replace', iostat=ios)
         if (ios.ne.0) then
         call face_error('Cannot open file ', trim(filename))
         else
-        call write_input_log_keyword('order_solver',order_solver)
-        call write_input_log_keyword('read_restart_file',read_restart_file)
-        call write_input_log_keyword('read_state_file',read_state_file)
-        call write_input_log_keyword('wall_thickness',length)
-        call write_input_log_keyword('steady_state', steady_state)
-        call write_input_log_keyword('start_time', start_time)
-        call write_input_log_keyword('end_time', end_time)
-        call write_input_log_keyword('temp_ramp_start_time', tramp0)
-        call write_input_log_keyword('temp_ramp_stop_time', tramp1)
-
-        call write_input_log_keyword('min_dt', dtmin)
-!        call write_input_log_keyword('timestep_factor', cdt)
-        call write_input_log_keyword('filter_freq', nucut)
-        call write_input_log_keyword('dump_space_dt', dump_space_dt)
-        call write_input_log_keyword('dump_time_dt', dump_time_dt)
-        call write_input_log_keyword('dump_restart_dt', dump_restart_dt)
-        call write_input_log_keyword('temp_ramp_filename', framp)
-        call write_input_log_keyword('solve_heat_equation', solve_heat_eq)
-        call write_input_log_keyword('n_species', nspc)
-        call write_input_log_keyword('species_name', namespc)
-        call write_input_log_keyword('n0', dens0)
-        call write_input_log_keyword('n0_profile', gprof)
-        call write_input_log_keyword('n0_xmax', gxmax)
-        call write_input_log_keyword('n0_width', gsigm)
-        call write_input_log_keyword('n_max', densm)
-
-        call write_input_log_keyword('D0', cdif0)
-        call write_input_log_keyword('ED', edif)
-        call write_input_log_keyword('Etr', etr )
-        call write_input_log_keyword('Edt', edtr)
-
-        call write_input_log_keyword('ns_max', dsrfm)
-        call write_input_log_keyword('ns0_left', dsrfl0)
-        call write_input_log_keyword('ns0_right', dsrfr0)
-        call write_input_log_keyword('Ech_left', echl )
-        call write_input_log_keyword('Ech_right', echr)
-        call write_input_log_keyword('Q_ch_left', qchl)
-        call write_input_log_keyword('Q_ch_right', qchr)
-        call write_input_log_keyword('Eab_left', ebl)
-        call write_input_log_keyword('Eab_right', ebr )
-        call write_input_log_keyword('Es_left', esl)
-        call write_input_log_keyword('Es_right', esr)
-        call write_input_log_keyword('nu0', nu)
-        call write_input_log_keyword('Eimpact_ion', enrg)
-        call write_input_log_keyword('Gamma_in', inflx_in)
-        call write_input_log_keyword('Gamma_in_max', inflx_in_max)
-        call write_input_log_keyword('pressure_neutral', gas_pressure)
-        call write_input_log_keyword('temp_neutral', gas_temp)
-        call write_input_log_keyword('mass', mass)
-
-        call write_input_log_keyword('min_ablation_velocity', cero_min)
-        call write_input_log_keyword('max_ablation_velocity', cero_max)
-        call write_input_log_keyword('sputtering_yield', gamero)
-        call write_input_log_keyword('mat_temp_ramp_start', temp0)
-        call write_input_log_keyword('mat_temp_ramp_stop', temp1)
-        call write_input_log_keyword('lattice_constant', lambda)
-        call write_input_log_keyword('cristal_volume_factor', cvlm)
-        call write_input_log_keyword('cristal_surface', csrf)
-        call write_input_log_keyword('lattice_length_factor', clng)
-        call write_input_log_keyword('n_cells', ngrd)
-        call write_input_log_keyword('cell_scaling_factor', alpha)
-        call write_input_log_keyword('thermal_conductivity', thcond)
-        call write_input_log_keyword('heat_capacity', cp)
-        call write_input_log_keyword('density', rho)
-        call write_input_log_keyword('emissivity', emiss)
-        call write_input_log_keyword('heat_formation', qform)
-        call write_input_log_keyword('min_radiation_power', rad_min)
-        call write_input_log_keyword('max_radiation_power', rad_max)
-        call write_input_log_keyword('first_ramp_end_time', t1)
-        call write_input_log_keyword('second_ramp_start_time', t2)
-        call write_input_log_keyword('second_ramp_end_time', t3)
-        call write_input_log_keyword('pulsed_flux', pulsed_flux)
-        call write_input_log_keyword('pulse_period', tpulse)
-        close(ifile_inputlog)
+        do i=1,nlines!
+        write(unit_inputlog, '(a50,a3,a120)') adjustl(trim(input_lines(i)%keyword)),' : ',adjustl(trim(input_lines(i)%data))
+        enddo
+        close(unit_inputlog)
   endif
     end subroutine write_input_log
 
@@ -394,7 +349,7 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(tramp0)
         call init_zero(tramp1)
         call init_zero(end_time)
-        call init_zero(dtmin)
+        call init_zero(dt0_face)
 !        call init_zero(cdt)
         call init_zero(nucut)
         call init_zero(dump_time_dt)

@@ -8,7 +8,7 @@ module modFACE_init
     use modFACE_IO
     use modFACE_error
     implicit none
-    integer ::ifile_Tramp=200
+    integer ::unit_Tramp=200
 !  real(DP)::K0abs_l(nspc)
 contains
     subroutine initialize()
@@ -33,19 +33,15 @@ contains
         call init_boundary
         call init_reactions
 
-        call print_milestone('initialization done')
+        if (verbose_init) call print_milestone('initialization done')
     end subroutine initialize
 
     subroutine init_misc()
         integer k
-        ! default restart filename
-        restart_filename=trim(path_folder)//"dsave.rst"
-        final_state_file=trim(path_folder)//casename//".state"
+
 
         ! some material constants
-        lambda1c=lambda*clng
-        lambda2c=lambda*lambda*csrf
-        lambda3c=lambda*lambda*lambda*cvlm
+
 
         rhocp=rho*cp
 
@@ -130,7 +126,7 @@ contains
     subroutine init_time()
 
         !      time step initialization
-        dt_face=dtmin
+        dt_face=dt0_face
         !      dt=cdt*ttm
         time=start_time
         if (verbose_init) write(iout,*) "Initialization time parameters: DONE"
@@ -138,7 +134,7 @@ contains
 
 
     subroutine init_grid()
-        integer:: j,ngrd2
+        integer:: j,ngrd2,k
         real(DP)::dx0
 
         !      initialization of grid arrays
@@ -181,6 +177,18 @@ contains
             endif
             dx (ngrd)=dx(ngrd-1)
         endif
+        ! find index of depth
+        do k=1,nspc
+        j_implantation_depth(k)=ngrd
+        do j=0,ngrd
+        if (x(j).gt.implantation_depth(k)+x(0)) then
+        j_implantation_depth(k)=j-1
+        exit
+        endif
+        enddo
+        if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
+        enddo
+        call write_grid
         if (verbose_init) write(iout,*) " -- Initialization x grid completed"
     end subroutine init_grid
 
@@ -226,52 +234,70 @@ contains
 
     subroutine init_boundary()
         integer ::i,k
-        real(DP)::tmp
+        real(DP)::tmp, Edes_lc,Edes_rc
 
-        !      boundary parameters
+        !      surface parameters
         if (verbose_init) write(iout,*) "Initialization boundary variables"
         do k=1,nspc
             K0abs_l(k)=1.d0
-            K0des_l(k)=nu(k)*lambda2c
+            K0des_l(k)=nu(k)*lambda*lambda*csrf
             K0b_l(k)=nu(k)
-            K0ads_l(k)=nu(k)*lambda1c
+            K0ads_l(k)=nu(k)*lambda*clng
             K0abs_r(k)=1.d0
-            K0des_r(k)=nu(k)*lambda2c
+            K0des_r(k)=nu(k)*lambda*lambda*csrf
             K0b_r(k)=nu(k)
-            K0ads_r(k)=nu(k)*lambda1c
+            K0ads_r(k)=nu(k)*lambda*clng
+
             if (mass(k)*gas_temp(k) .ne. 0.d0) then
                 j0(k)=j0(k)+gas_pressure(k)/sqrt(twopi*mass(k)*ee*gas_temp(k))
             endif
 
             ! left
             tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
-            qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
+            Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
             tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
-            qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
+            Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
             if (left_surface_model(k).eq."S") then
-            Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-     ee* echl(k)          /(kb*temp(ndt,   0)))
-            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*ee*(echl(k)+qchtl(k))/(kb*temp(ndt,   0)))
-            Kb_l(k)=      K0b_l(k) *exp(-     ee*(ebl (k)+qchtl(k))/(kb*temp(ndt,   0)))
-            Kads_l(k)=      K0ads_l(k) *exp(-     ee*(ebl (k)-esl  (k))/(kb*temp(ndt,   0)))
+
+            Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
+            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+            Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
+            Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
 elseif (left_surface_model(k).eq."N") then
+        K0abs_l(k)=min_rate_surface
+            K0des_l(k)=min_rate_surface
+            K0b_l(k)=min_rate_surface
+            K0ads_l(k)=min_rate_surface
+
         Kabs_l(k)=min_rate_surface
         Kdes_l(k)=min_rate_surface
         Kb_l(k)=min_rate_surface
         Kads_l(k)=min_rate_surface
         else
-        call face_error("unknown left surface model:",left_surface_model(k))
+        call face_error("Unknown left surface model:",left_surface_model(k))
         endif
+
             !right
             if (right_surface_model(k).eq."S") then
-            Kabs_r(k)=j0(k)*K0abs_r(k) *exp(-     ee* echr(k)          /(kb*temp(ndt,ngrd)))
-            Kdes_r(k)=2.d0 *K0des_r(k) *exp(-2.d0*ee*(echr(k)+qchtr(k))/(kb*temp(ndt,ngrd)))
-            Kb_r(k)=      K0b_r(k)*exp(-     ee*(ebr (k)+qchtr(k))/(kb*temp(ndt,ngrd)))
-            Kads_r(k)=      K0ads_r(k) *exp(-     ee*(ebr (k)-esr  (k))/(kb*temp(ndt,ngrd)))
+!                Kabs_r(k)=j0(k)*K0abs_r(k) *exp(-     ee* Eabs_r(k)          /(kb*temp(ndt,ngrd)))
+!                Kdes_r(k)=2.d0 *K0des_r(k) *exp(-2.d0*ee*(Eabs_r(k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
+!                Kb_r(k)=      K0b_r(k)*exp(-     ee*(Eb_r (k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
+!                Kads_r(k)=      K0ads_r(k) *exp(-     ee*(Eb_r (k)-Eads_r  (k))/(kb*temp(ndt,ngrd)))
+
+            Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
+            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+
 elseif (right_surface_model(k).eq."N") then
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=min_rate_surface
-        Kb_l(k)=min_rate_surface
-        Kads_l(k)=min_rate_surface
+        Kabs_r(k)=min_rate_surface
+        Kdes_r(k)=min_rate_surface
+        Kb_r(k)=min_rate_surface
+        Kads_r(k)=min_rate_surface
+            K0abs_r(k)=min_rate_surface
+            K0des_r(k)=min_rate_surface
+            K0b_r(k)=min_rate_surface
+            K0ads_r(k)=min_rate_surface
         else
         call face_error("unknown right surface model:",right_surface_model(k))
         endif
@@ -312,26 +338,26 @@ elseif (right_surface_model(k).eq."N") then
 
             enddo
         enddo
-        write(iout,*) "Initialize boundary: DONE"
+        if (verbose_init) write(iout,*) "Initialize boundary: DONE"
     end subroutine init_boundary
 
     subroutine read_Tramp_file
         integer ios,i
 
-        open(unit=ifile_Tramp, file=trim(framp), iostat=ios,action='read',status='old')
+        open(unit=unit_Tramp, file=trim(framp), iostat=ios,action='read',status='old')
         if ( ios /= 0 ) then
             write(iout,*) 'Opening of temperature ramp file "', framp ,'" : FAIL '
             stop
         endif
-        write(iout,*) 'Opening of temperature ramp file "', trim(framp) ,'" : DONE '
+        if (verbose_init)  write(iout,*) 'Opening of temperature ramp file "', trim(framp) ,'" : DONE '
 
-        read (ifile_Tramp, '(i4)') nramp
+        read (unit_Tramp, '(i4)') nramp
         allocate(rtime(nramp))
         allocate(rtemp(nramp))
         do i=1,nramp
             read (20, *) rtime(i), rtemp(i)
         enddo
-        close(ifile_Tramp)
+        close(unit_Tramp)
         write(iout,*) 'Reading of temperature ramp file "', trim(framp) ,'" : DONE '
     end subroutine read_Tramp_file
 
@@ -383,10 +409,10 @@ elseif (right_surface_model(k).eq."N") then
                 enddo
             enddo
         else
-            write(iout,*) "ERROR: Unknown option for solve_heat_eq:", solve_heat_eq
-            stop
+            call face_error ("Unknown option for solve_heat_eq:", solve_heat_eq)
+
         endif
-        write(iout,*) 'Initialization of temperature : DONE '
+        if (verbose_init)  write(iout,*) 'Initialization of temperature : DONE '
     end subroutine init_temp
 
     subroutine init_volume_species()
@@ -404,12 +430,12 @@ elseif (right_surface_model(k).eq."N") then
                         dens(i,j,k)=dens0(k)
                     elseif(gprof(k) .eq. 'G') then
                         dens(i,j,k)=dens0(k) *exp(-0.5d0*abs((x(j)-gxmax(k))/gsigm(k))**2.d0)
-                        write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
+                      !  if (verbose_init) write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
                     else
                         call face_error('unknow option for n0_profile: gprof(k)=', gprof(k),' k=',k)
                     endif
-                    if (dens(i,j,k) .lt. 1.d0) then
-                        dens(i,j,k)=1.d0
+                    if (dens(i,j,k) .lt. 1.d5) then
+                        dens(i,j,k)=1.d5
                     endif
                 enddo
             enddo
@@ -434,7 +460,7 @@ elseif (right_surface_model(k).eq."N") then
 
         character(*)::path
         character(30)::name
-        integer ios,ifile_testpath
+        integer ios,unit_testpath
 
         name='test.path'
         path_folder=trim(path)
@@ -444,13 +470,15 @@ elseif (right_surface_model(k).eq."N") then
         dat_folder=trim(path_folder)//trim(casename)//'_dat'
         call system('mkdir -p '//dat_folder)
 
-        call set_ifile(ifile_testpath)
-        open (unit=ifile_testpath, file=trim(path_folder)//name,status='replace', form='unformatted', iostat=ios)
+        call set_unit(unit_testpath)
+        open (unit=unit_testpath, file=trim(path_folder)//name,status='replace', form='unformatted', iostat=ios)
         if (ios.ne.0) then
             call face_error('cannot write in the folder : ', trim(path_folder)//name)
         endif
-        close(ifile_testpath)
-
+        close(unit_testpath)
+         ! default restart filename
+        restart_filename=trim(path_folder)//"dsave.rst"
+        final_state_file=trim(path_folder)//trim(casename)//".state"
     end subroutine init_path
 
 

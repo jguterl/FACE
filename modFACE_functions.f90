@@ -8,28 +8,102 @@
 !
       module modFACE_functions
       use modFACE_header
+      use modFACE_error
       implicit none
 
       contains
 
-      real(DP) function source(j,k)
-      ! Source rate of incoming species
-      integer j, k, n
+          real(DP) function source(j,k)
+              ! Source rate of incoming species
+              integer j, k
+              real(DP) :: source_rate
+              source=0.d0
+              source_rate=srate(k)
+              if (source_rate.gt.0d0) then
 
-      source=0.d0
-      if (k .eq. 1) then
-       source=srate(1)*exp(-0.5d0*abs((x(j)-rdpth(1))/sigma(1))**2.d0)
-       return
-      endif
-      ! create empty traps
-      do n=2,nspc-1,2
-       if (k .eq. n) then
-        source=srate(n)*(1.d0-erf((x(j)-rdpth(n))/(sqrt2*sigma(n))))
-       return
-       endif
-      enddo
-      return
-      end
+                  if (implantation_model(k).eq.'G'.and.implantation_width(k).ne.0d0) then
+
+                      source=source_rate*exp(-0.5d0*abs((x(j)-implantation_depth(k))/implantation_width(k))**2.d0)
+                      return
+
+                  elseif  (implantation_model(k).eq.'S') then
+
+                      if (j.le.j_implantation_depth(k)) then
+                          source=source_rate
+                      else
+                          source=0d0
+                      endif
+                      return
+
+                  elseif  (implantation_model(k).eq.'E'.and.implantation_width(k).ne.0d0) then
+
+                      source=source_rate*(1.d0-erf((x(j)-implantation_depth(k))/(sqrt2*implantation_width(k))))
+                      return
+
+                  else
+
+                      if (implantation_width(k).eq.0d0) then
+                          call face_error("implantation_width(k)=0 with gaussian-like implantation model: k=",k)
+                      else
+                          call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
+                      endif
+
+                  endif
+
+              elseif (source_rate.lt.0d0) then
+
+                  call face_error("source rate < 0 for k=",k," ; srate(k)=",srate(k))
+              endif
+
+              return
+
+          end function source
+
+               ! implantation rate
+          real(DP) function srate(k)
+              integer k
+              real(DP) r, sig
+              !      data crsc /3.d-20/
+
+              srate=0.0
+              if (inflx(k).gt.0d0) then
+
+                  if (implantation_model(k).eq.'G'.and.implantation_width(k).ne.0d0) then
+
+                      r  =implantation_depth(k)
+                      sig=sqrt2*implantation_width(k)
+                      srate=inflx(k)/(0.5d0*sqrt(pi)*(1.d0+erf(r/sig))*sig)
+                      return
+
+                  elseif (implantation_model(k).eq.'E'.and.implantation_width(k).ne.0d0) then
+
+                      call face_error("implentation model E required proper normalization in FACE source code")
+                      srate=inflx(k)
+                      return
+
+                  elseif  (implantation_model(k).eq.'S') then
+
+                      if (j_implantation_depth(k).gt.0) then
+                          srate=inflx(k)/(x(j_implantation_depth(k))-x(0))
+                      else
+                      srate=0d0
+                      endif
+                      return
+
+                  else
+                      call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
+                  endif
+
+              elseif (inflx(k).lt.0d0) then
+
+                  call face_error("inflx(k) < 0 : k=",k," ;inflx(k)=",inflx(k))
+
+              endif
+
+
+              return
+          end function srate
+
 
 
       real(DP) function srcbin(j,k,l)
@@ -45,8 +119,8 @@
       srcbin=0.d0
       do n=3,nspc,2
        if (l .eq. n) then
-        s=crsc*inflx(1)
-        rs=s*(1.d0-erf((x(j)-rdpth(n))/(sqrt2*sigma(n))))
+        s=crsc*inflx(n)
+        rs=s*(1.d0-erf((x(j)-implantation_depth(n))/(sqrt2*implantation_width(n))))
        if ((k .eq. 1) .or. (k .eq. n-1)) then
         srcbin=+rs ! detrap from n -> create 1 free H
         srcbin=+rs ! detrap from n -> create n-1 empty trap
@@ -65,48 +139,6 @@
 
 
 
-      ! implantation rate
-      real(DP) function srate(k)
-      integer k, n
-      real(DP) r, sig, crsc
-!      data crsc /3.d-20/
-       crsc=0.d0
-
-       srate=0.0
-
-        if (k .eq. 1) then
-         r  =rdpth(1)
-         sig=sqrt2*sigma(1)
-         srate=inflx(1)/(0.5d0*sqrt(pi)*(1.d0+erf(r/sig))*sig)
-         return
-        endif
-        ! create empty traps
-        do n=2,nspc-1,2
-         if (k .eq. n) then
-          srate=crsc*inflx(1)/lambda3c
-          return
-          endif
-        enddo
-
-      return
-      end
-
-
-     ! implantation depth
-     ! TODO use gsigma and gaussian def
-      real(DP) function rdpth(k)
-      integer k
-      rdpth=1.d-8
-      return
-      end
-
-
-     ! sigma of implantation profile
-      real(DP) function sigma(k)
-      integer k
-      sigma=3.d-9
-      return
-      end
 
       ! pre-expoential factor of trapping process
       ! H + n->n+1
@@ -117,11 +149,11 @@
         if(m.eq.1) then
        if (l.eq.n) then
        if ((k.eq.1).or.(k.eq.n)) then
-        kbinar=-nu(n)*lambda3c
-        kbinar=-nu(n)*lambda3c
+        kbinar=-nu(n)*lambda**3*cvlm
+        kbinar=-nu(n)*lambda**3*cvlm
         return
         elseif (k.eq.n+1) then
-        kbinar=+nu(n)*lambda3c
+        kbinar=+nu(n)*lambda**3*cvlm
         return
         endif
 ! this if for multiple H in traps

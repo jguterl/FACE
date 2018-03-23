@@ -3,9 +3,8 @@
       use modFACE_main
       use modFACE_interface
       implicit none
-      type(FACE_inputs)::face_input
-      type(FACE_outputs)::face_output
-      type(fluidcode_inputs)::fluidcode_input
+
+      logical:: couple_fluidcode=.false.
 
       !     ******************************************************************
       !     * 1-dimensional First wAll simulation CodE "FACE"                *
@@ -18,23 +17,23 @@
       !     ******************************************************************
 
       ! selecting input mode:
-      ! - couple_test: as if called by fluid code
+      ! - couple_fluid_code: as if called by fluid code
       ! - otherwise: normal execution with reading of arguments
 
 
 
 
-       couple_fluidcode=.false.
+       couple_fluidcode=.true.
       if (couple_fluidcode) then
-          write(*,*) 'testing the coupling mode'
-          call set_fluidcode_input(fluidcode_input)
-          call wrapper_FACE(face_input,fluidcode_input)
+         ! test of coupling mode'
+         call FACE_from_fluidcode
+
       else
-          call read_arguments(face_input)
+          call FACE_standalone
       endif
 
       ! main call to FACE
-      call FACE_main(face_input,face_output)
+
 
 
   end program FACE

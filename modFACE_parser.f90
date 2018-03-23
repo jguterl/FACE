@@ -33,18 +33,6 @@ module modFACE_parser
     type(string), allocatable :: input_lines(:)
 
 
-
-
-    interface write_input_log_keyword
-        module procedure write_input_log_keyword_r
-        module procedure write_input_log_keyword_s
-        module procedure write_input_log_keyword_i
-        module procedure write_input_log_keyword_species_r
-        module procedure write_input_log_keyword_species_s
-        module procedure write_input_log_keyword_species_i
-    end interface write_input_log_keyword
-
-
 contains
 
 
@@ -158,11 +146,11 @@ endif
             call face_error('mandatory keyword "', keyword ,'" not found in the inputfile')
         elseif (idx.ne.-1) then
             str0=trim(input_lines(idx)%data)
-            write(iout,*) "str0=",trim(str0)
+            !write(iout,*) "str0=",trim(str0)
 
             do k=1,nspc
                 call get_multiple_data(str0,str1,delimdata)
-                write(iout,*) "str0=",trim(str0),"; str1=",str1
+                !write(iout,*) "str0=",trim(str0),"; str1=",str1
                 if (typeval.eq."r") then
                     read(str0,*)  inputval%r(k)
                 elseif (typeval.eq."i") then
@@ -213,11 +201,11 @@ endif
 
         open(unit=iuinput, file=trim(filename), iostat=ios,action='read')
         if ( ios /= 0 ) then
-            write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
+            if (verbose_input) write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
             stop
 
         endif
-        write(iout,*) 'Opening of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Opening of input file "', trim(filename) ,'" : DONE '
     end subroutine open_inputfile
 
 
@@ -254,17 +242,23 @@ endif
         str3=''
         str4=''
         do i=1,nlines
+        if (verbose_parser) write(iout,*) "Reading line: " ,i
             read(iuinput, '(A)', iostat=ios) str0
+            if (verbose_parser) write(iout,*) "str0: " ,str0
             call StripFrontSpaces(str0)
+            if (verbose_parser) write(iout,*) "str0: " ,str0
             call SplitString(trim(str0), str1, str2," ")
-
+              if (verbose_parser) write(iout,*) "str1: " ,str1
             call SplitString(str2, str3, str4,"!")
+            if (verbose_parser) write(iout,*) "str3: " ,str3
             ! BUG REPORTED WITH CLANG compiler on MACOS for this following line
             !input_lines(i)=string(trim(str1),trim(str3),trim(str4))
             input_lines(i)%keyword=trim(str1)
+            if (verbose_parser) write(iout,*) "str2: " ,str2
             input_lines(i)%data=trim(str3)
-            input_lines(i)%comment=trim(str4)
 
+            input_lines(i)%comment=trim(str4)
+if (verbose_parser) write(iout,*) "str3: " ,str3
             if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',trim(input_lines(i)%keyword), &
             '" data="',trim(input_lines(i)%data),'" comment="',trim(input_lines(i)%comment),'"'
         enddo
@@ -295,67 +289,6 @@ endif
 
     end function find_keyword_help
 
-
-    subroutine write_input_log_keyword_r(keyword,variable)
-
-        character(*)::keyword
-        real(DP)::variable
-
-        write(ifile_inputlog,'(a60,f8.3)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_r
-
-
-    subroutine write_input_log_keyword_i(keyword,variable)
-
-        character(*)::keyword
-        integer::variable
-
-        write(ifile_inputlog,'(a60,i6.3)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_i
-
-
-    subroutine write_input_log_keyword_s(keyword,variable)
-
-        character(*)::keyword
-        character(*)::variable
-        write(ifile_inputlog,'(a60,a60)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_s
-
-
-    subroutine write_input_log_keyword_species_r(keyword,variable)
-
-        character(*)::keyword
-        real(DP)::variable(:)
-        integer::k
-
-        !write(myfmt,*)'(a60, ,',nspc,'(f6.3))'
-        write(ifile_inputlog,*) adjustl(keyword),(variable(k),k=1,nspc)
-
-    end subroutine write_input_log_keyword_species_r
-
-
-    subroutine write_input_log_keyword_species_i(keyword,variable)
-
-        character(*)::keyword
-        integer::variable(:)
-        integer::k
-
-        write(ifile_inputlog,*) adjustl(keyword),(variable(k),k=1,nspc)
-    end subroutine write_input_log_keyword_species_i
-
-
-    subroutine write_input_log_keyword_species_s(keyword,variable)
-
-        character(*)::keyword
-        character(*)::variable(:)
-        integer::k
-
-        write(ifile_inputlog,*)adjustl(keyword),(variable(k),k=1,nspc)
-
-    end subroutine write_input_log_keyword_species_s
 
 
 end module modFACE_parser

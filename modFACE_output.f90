@@ -4,10 +4,8 @@
      implicit none
      save
 
-    integer:: ifile_heatdata
-    integer :: ifile_voldata
-    integer:: ifile_surfdata
-    integer:: ifile_inputlog
+
+    integer:: unit_inputlog
     integer::current_ifile=10
 
     public::iout,timestring
@@ -20,14 +18,14 @@
             if (logfile_.eq."no") then
                 iout=6 !default output unit
             elseif (logfile_.eq."yes") then
-                call set_ifile(iout)
+                call set_unit(iout)
                 filename=trim(path_folder)//trim(casename)//'.log'
                 open (iout, file=trim(filename), status='replace', iostat=ios)
                 if (ios.ne.0) then
                     call face_error('Cannot open log file:',trim(filename))
                 endif
             else
-                call set_ifile(iout)
+                call set_unit(iout)
                 open (iout, file=trim(logfile_), status='replace', iostat=ios)
                 if (ios.ne.0) then
                     call face_error('Cannot open log file:', trim(logfile_))
@@ -36,7 +34,7 @@
             if(verbose_init) write(iout,*) "iout=",iout
         end subroutine init_log
 
-subroutine set_ifile(ifile)
+subroutine set_unit(ifile)
       integer ifile
       logical unit_open
       unit_open = .true.
@@ -55,7 +53,7 @@ subroutine set_ifile(ifile)
       return
 
 
-   end subroutine set_ifile
+   end subroutine set_unit
 
 
 
@@ -182,8 +180,8 @@ subroutine open_timedata_file
 !       '           04:densR',&
 !       '           05:NsrfL',&
 !       '           06:NsrfR',&
-!       '           07:GdesL',&
-!       '           08:GdesR',&
+!       '           07:GdEads_l',&
+!       '           08:GdEads_r',&
 !       '            09:Qnty',&
 !       '             10:Src',&
 !       '             11:Rct',&

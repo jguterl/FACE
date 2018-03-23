@@ -5,11 +5,11 @@ module modFACE_help
 
     !      use modFACE_parser,only:input_line,nlines
     implicit none
-    integer,save:: ihelp=1,Nhelp
+    integer,save:: ihelp,Nhelp
     integer,parameter::nlines_max_help=100
 
     type helper
-        character(100):: keyword
+        character(100)::keyword
         character(200)::def
         character(100)::units
         character(100)::status
@@ -25,21 +25,23 @@ module modFACE_help
     end interface
 contains
 
-    subroutine write_version
+    subroutine print_version
+      if (verbose_version) then
         write(iout,*) '###################################'
         call write_short_version
-        write(iout,*) '#  Last modified: 15  March 2018  #'
+        write(iout,*) '#  Last modified: 23  March 2018  #'
         write(iout,*) '#  R.D. Smirnov & J. Guterl       #'
         write(iout,*) '#  email: rsmirnov@eng.ucsd.edu   #'
         write(iout,*) '#  email: guterlj@fusion.gat.com  #'
         write(iout,*) '###################################'
-    end subroutine write_version
+      endif
+    end subroutine print_version
 
     subroutine write_short_version
-        write(iout,*) '#        FACE version 2.1         #'
+        write(iout,*) '#  --->  FACE version 2.1   <----  #'
     end subroutine write_short_version
 
-    subroutine display_help()
+    subroutine print_help()
         character(30) str1
         character(70) str2
         character(20) str3
@@ -62,9 +64,26 @@ contains
             write (str5, '(A15)') help(i)%default
             write(iout,'(A5,A30,A70,A20,A15)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
         enddo
-    end subroutine display_help
+    end subroutine print_help
+
+        subroutine print_list_keyword
+
+        integer i
+        write(iout,*) ' '
+        write(iout,*) ' *** List of keywords for FACE input file ***'
+        do i=1,nlines_max_help
+             if (help(i)%keyword.ne."none") then
+            write (iout, '(a,a)')  ' - ', adjustl(trim(help(i)%keyword))
+           endif
+           enddo
+    end subroutine print_list_keyword
 
     subroutine init_help()
+        integer i
+         do i=1,nlines_max_help
+         help(i)=helper('none','none','none','none','none',.false.,.false.)
+        enddo
+        ihelp=1
         call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"2")
         call set_help('read_restart_file','read Restart file: yes|no|filename (yes:default "dsave.rst")',&
         'none','non-mandatory',"no")
@@ -75,7 +94,7 @@ contains
         call set_help('temp_ramp_start_time','Temperature ramp start time','[s]','non-mandatory',"0")
         call set_help('temp_ramp_stop_time ','Temperature ramp stop time','[s]','non-mandatory',"0")
         call set_help('end_time','Simulation time','[s]','mandatory',"1.00e+01")
-        call set_help('min_dt','Minimal time step','[s]','mandatory',"1.00e-03")
+        call set_help('dt','Time step','[s]','mandatory',"1.00e-03")
         call set_help('timestep_factor','Time step factor','none','non-mandatory',"1")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
@@ -115,24 +134,27 @@ contains
         call set_help('ns0_right','Initial right surface density of species','[m^-2]','non-mandatory',&
             "1.00e+19 0.00e+19 0.00e+19","species")
         call set_help('ns_max','Maximum surface density of species','[m^-2]','non-mandatory',"1.00e+19 1.00e+19 1.00e+19","species")
-        call set_help('Ech_left'  ,'Activation energy of chemisorption of species at left surface','[eV]','non-mandatory'&
+        call set_help('Eabs_left'  ,'Energy of absorption (vacuum->surface)','[eV]','non-mandatory'&
             ,"0.10 0.00 0.00","species")
-        call set_help('Ech_right' ,'Activation energy of chemisorption of species at right surface','[eV]','non-mandatory'&
+        call set_help('Eabs_right' ,'Energy of absorption (vacuum->surface)','[eV]','non-mandatory'&
             ,"0.10 0.00 0.00","species")
-        call set_help('Q_ch_left' ,'Heat of chemisorption of species at left surface','[eV]','mandatory',&
+        call set_help('Edes_left' ,'Energy of desorption (surface->vacuum)','[eV]','mandatory',&
         "1000 0.00 0.00","species")
-        call set_help('Q_ch_right','Heat of chemisorption of species ast right surface','[eV]','mandatory',&
+        call set_help('Edes_right','Energy of desorption (surface->vacuum)','[eV]','mandatory',&
         "1000 0.00 0.00","species")
-        call set_help('Eab_left'  ,'Activation energy of absorption of species at left surface','[eV]','mandatory'&
+        call set_help('Eb_left'  ,'Energy of bulk absortion (surface->bulk)','[eV]','mandatory'&
         ,"2.00 0.00 0.00","species")
-        call set_help('Eab_right' ,'Activation energy of absorption of species at right surface','[eV]','mandatory'&
+        call set_help('Eb_right' ,'Energy of bulk absortion (surface->bulk)','[eV]','mandatory'&
             ,"2.00 0.00 0.00","species")
-        call set_help('Es_left','Energy of solution of species at left surface','[eV]','mandatory',"1.00 0.00 0.00","species")
-        call set_help('Es_right','Energy of solution of species at right surface','[eV]','mandatory',"1.00 0.00 0.00","species")
+        call set_help('Eads_left','Energy of adsorption (bulk->surface)','[eV]','mandatory',"1.00 0.00 0.00","species")
+        call set_help('Eads_right','Energy of adsorption (bulk->surface)','[eV]','mandatory',"1.00 0.00 0.00","species")
         call set_help('nu0','Transition attempt frequency of species','[s^-1]','non-mandatory'&
         ,"1.00e+13 1.00e+13 1.00e+13","species")
         call set_help('# ********* Parameters for implantation model ************************** ')
-        call set_help('implantation_model','S: Step E: ERFC T:Trim','none','non-mandatory',"S","species")
+        call set_help('implantation_model','G: gaussian S:Step E: ERFC ','none','non-mandatory',"S S S","species")
+        call set_help('implantation_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
+        call set_help('implantation_width' ,'implentation width' ,'[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
+
         call set_help('Eimpact_ion','Impact energy of ionized species','[eV]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
         call set_help('Gamma_in','External flux of ionized species','[m^-2 s^-1]','non-mandatory',&
@@ -180,17 +202,23 @@ contains
         call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")
         call set_help('fluid-interface','yes|no','none','non-mandatory',"no")
         call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
+        call set_help('Nprint_run_info','print info on current run every Nprint_run_info steps','none','non-mandatory',"100")
         call set_help('solver_eps','solver: precision norm (norm<eps:exit','none','non-mandatory',"3.d-3")
         call set_help('solver_udspl','solver: displacement min vector u','none','non-mandatory',"9.d-1")
         call set_help('solver_fdspl','solver: displacement min function f(u)','none','non-mandatory',"9.d0")
         call set_help('solver_gdspl','solver: displacement min grad u','none','non-mandatory',"1.d-3")
         call set_help('solver_fstp','solver: step reduction for function f(u)','none','non-mandatory',"1.d-1")
-        if (verbose_init) call print_milestone('initialization help completed')
+        if (ihelp-1.gt.nlines_max_help) then
+        call face_error("Extend size of help array in help module: nlines_max_help=",nlines_max_help)
+        endif
+        if (verbose_help) call print_milestone('initialization help completed')
+
     end subroutine init_help
 
     subroutine  set_help_single(keyword,def,units,status,default)
         character(*):: keyword,def,units,status,default
         help(ihelp)%keyword=trim(keyword)
+        if (verbose_help) write(iout,*) "ihelp=",ihelp,"keyword=",keyword
         help(ihelp)%def=trim(def)
         help(ihelp)%units=trim(units)
         help(ihelp)%status=trim(status)
@@ -213,6 +241,7 @@ contains
     subroutine  set_help_species(keyword,def,units,status,default,species)
         character(*):: keyword,def,units,status,default,species
         help(ihelp)%keyword=trim(keyword)
+        if (verbose_help) write(iout,*) "ihelp=",ihelp,"keyword=",keyword
         help(ihelp)%def=trim(def)
         help(ihelp)%units=trim(units)
         help(ihelp)%status=trim(status)
@@ -242,7 +271,7 @@ contains
         character(l)::strtmp(3)
         integer::i,j,idefault,ios
 
-        call set_ifile(idefault)
+        call set_unit(idefault)
         open(unit=idefault, file=trim(filename), iostat=ios,action='write')
         if ( ios /= 0 ) then
             call face_error('Cannot write into default input file ', trim(filename))

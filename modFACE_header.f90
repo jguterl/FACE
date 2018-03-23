@@ -35,9 +35,14 @@
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
     logical :: verbose_restore=.false.
-     logical :: verbose_maths=.true.
+     logical :: verbose_maths=.false.
+     logical :: verbose_interface=.false.
+     logical :: verbose_help=.false.
+     logical :: verbose_version=.false.
+          logical :: verbose_header=.false.
     logical:: enforce_error=.true.
-!      integer ngrdm, nspcm, ndt, nrampm
+
+
       integer::ngrd
       integer::nspc
       integer::neq
@@ -72,9 +77,15 @@
       real(DP),parameter ::a54=- 3.d0/25.d0
       real(DP),parameter ::a55= 12.d0/25.d0
 
-
+      real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3
+      real(DP) ::solver_fstp=1.d-1
+      integer :: iter_solver_max=100
       logical :: finalcheck=.true.
+
+      character(string_length) :: default_inputfile="default_inputfile.face"
 !
+
+
 !     ------------------------------------------------------------------
 !      Spatial and temporal parameters
 !     ------------------------------------------------------------------
@@ -87,7 +98,7 @@
       real(DP) ::alpha
       ! time
       real(DP):: dt_face    !>@var current solver time step
-      real(DP):: dtmin ! minimun dt
+      real(DP):: dt0_face ! dt
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
       real(DP):: start_time ! start time  of simulation
@@ -116,9 +127,8 @@
       integer:: iter_solver=0 ! #of solver iterations at each time step
       integer::iteration=0
       integer:: order_solver
-!     ------------------------------------------------------------------
+
 !       Save file numerations
-!     ------------------------------------------------------------------
       integer :: max_ifile
       parameter(max_ifile=10000)
       integer:: sfln_voldata=0
@@ -126,10 +136,9 @@
       integer:: sfln_heatdata=0
       real(DP):: normf=0.d0
       character(string_length)::restart_filename
-!
-!     ------------------------------------------------------------------
+
+
 !       Flags
-!     ------------------------------------------------------------------
       logical:: read_input_file=.true.
       logical:: restore_state_temp=.true.
       integer::avr
@@ -141,7 +150,6 @@
       character(string_length):: framp
       character(string_length):: solve_heat_eq
       character(string_length):: final_state_file
-      character(string_length):: restore_state_file
       character(string_length):: casename
       character(string_length):: pulsed_flux
 
@@ -153,7 +161,7 @@
      end type inventories
 
      type particle_balances
-             real(DP):: Nnet,Ninflux,Noutflux
+             real(DP):: Nnet=0,Ninflux=0,Noutflux=0,p_net=0,p_max=0,f_lost=0
      end type particle_balances
 
     type outgassing_fluxes
@@ -184,18 +192,20 @@
 !       Material parameters
 !     ------------------------------------------------------------------
 
-      real(DP):: temp0=0
-      real(DP):: temp1=0
-      real(DP):: dtemp=0
-      real(DP):: lambda=0
-      real(DP):: cvlm=0
-      real(DP):: csrf=0
-      real(DP):: clng=0
-      real(DP):: lambda1c=0
-      real(DP):: lambda2c=0
-      real(DP):: lambda3c=0
+      real(DP):: temp0=300d0
+      real(DP):: temp1=300d0
+      real(DP):: dtemp=0d0
+      real(DP):: lambda=0d0
+      !
+      real(DP):: cvlm=1d0
+      real(DP):: csrf=1d0
+      real(DP):: clng=1d0
 
-!     species parameters
+!     implantation parameters
+      character(lname),allocatable::implantation_model(:)
+      real(DP),allocatable::implantation_depth(:)
+      integer,allocatable::j_implantation_depth(:)
+      real(DP),allocatable::implantation_width(:)
       real(DP),allocatable::enrg(:)
       real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
       real(DP),allocatable::inflx_in_max(:) ! max influx of particles
@@ -238,14 +248,16 @@
 
 
 !     Boundary species parameters
-      real(DP),allocatable::echl(:)
-      real(DP),allocatable::qchl(:)
-      real(DP),allocatable::ebl(:)
-      real(DP),allocatable::esl(:)
-      real(DP),allocatable::echr(:)
-      real(DP),allocatable::qchr(:)
-      real(DP),allocatable::ebr(:)
-      real(DP),allocatable::esr(:)
+      real(DP),allocatable::Eabs_l(:)
+      real(DP),allocatable::Edes_l(:)
+      real(DP),allocatable::Eb_l(:)
+      real(DP),allocatable::Eads_l(:)
+
+      real(DP),allocatable::Eabs_r(:)
+      real(DP),allocatable::Edes_r(:)
+      real(DP),allocatable::Eb_r(:)
+      real(DP),allocatable::Eads_r(:)
+
       real(DP),allocatable::Kabs_l(:)
       real(DP),allocatable::Kdes_l(:)
       real(DP),allocatable::Kb_l(:)
@@ -254,16 +266,18 @@
       real(DP),allocatable::Kdes_r(:)
       real(DP),allocatable::Kb_r(:)
       real(DP),allocatable::Kads_r(:)
+
+
       real(DP),allocatable::K0abs_l(:)
       real(DP),allocatable::K0des_l(:)
       real(DP),allocatable::K0b_l(:)
       real(DP),allocatable::K0ads_l(:)
+
       real(DP),allocatable::K0abs_r(:)
       real(DP),allocatable::K0des_r(:)
       real(DP),allocatable::K0b_r(:)
       real(DP),allocatable::K0ads_r(:)
-      real(DP),allocatable::qchtl(:)
-      real(DP),allocatable::qchtr(:)
+
       real(DP),allocatable::nu (:)
       real(DP),allocatable::j0 (:)
       real(DP),allocatable::dens(:,:,:)
@@ -347,6 +361,66 @@
 !     ------------------------------------------------------------------
       character(string_length) path_folder ! top folder where simulations files anf folders are written in
       character(string_length) dat_folder ! top folder where vol,srf and heat data files are written in
+
+type fluidcode_inputs
+         integer                     :: wall_idx            ! Index of the wall stratum
+        integer                      :: iter                ! Fluid code iteration
+        integer                      :: Ndump_space         ! # space data files to be dumped
+        integer                      :: Ndump_time          !  # of times time data are dumped
+        logical                      :: append              ! append mode for dumping data
+        real(DP)                     :: time                ! Fluid code time
+        real(DP)                     :: dt                  ! Time step of the fluid
+        real(DP)                     :: dt0_face             ! Time step of FACE
+        integer                      :: nspc_fluid                 ! Number of incoming species from fluid code
+        integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
+        character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
+        real(DP),allocatable         :: inflx_in(:)      ! Particle flux'
+        real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
+        real(DP)                     :: qflx_in                 ! Heat flux from fluid code
+        character(string_length)     :: read_state_file  ! restart from this staste file
+        character(string_length)     :: final_state_file    ! store final state in this state file
+        real(DP)                     :: tempwall            ! temperature of the wall from fluid code
+        character(15)                :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        character(string_length)      ::casename            ! casename (see below)
+        character(string_length)      ::casename_base       ! base to form casename=casename_base_iteration_idx_wall
+        character(string_length)      ::input_file            ! casename
+        character(string_length)      ::log_file            ! casename
+        character(string_length)      ::path            ! casename
+    end type fluidcode_inputs
+
+        type fluidcode_outputs
+        integer              :: nspc_fluid                 ! Number of incoming species from fluid code
+        integer              :: nspc_face                 ! Number of incoming species from fluid code
+        integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
+             type(outgassing_fluxes):: outgassing_flux
+             type(wall_temperatures) :: init_wall_temp,final_wall_temp
+             type(particle_balances)  :: particle_balance
+             type(inventories),allocatable       :: init_inventory(:),final_inventory(:)
+
+           end type fluidcode_outputs
+
+
+    type FACE_inputs
+        character(string_length):: run_mode
+        character(string_length):: input_filename
+        logical   :: read_input_file=.true.
+        character(string_length)::logfile
+        logical :: couple_fluidcode
+        type(fluidcode_inputs) :: fluidcode_input
+        character(string_length)::path
+        character(string_length)::casename
+    end type FACE_inputs
+
+    type FACE_outputs
+        real(DP) :: cpu_runtime
+        integer :: error_status
+         integer :: nspc
+        type(outgassing_fluxes):: outgassing_flux
+             type(wall_temperatures) :: init_wall_temp,final_wall_temp
+             type(particle_balances)  :: particle_balance
+             type(inventories),allocatable       :: init_inventory(:),final_inventory(:)
+
+    end type FACE_outputs
 
 
 

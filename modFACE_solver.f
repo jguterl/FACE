@@ -14,16 +14,11 @@
 
             subroutine newton_solver
       integer i,ii
-      integer iter_solver_max, cntl, idx
+      integer  cntl, idx
 
-      real(DP) eps, udspl, fdspl, gdspl, fstp
       real(DP):: u(neq), du(neq), f(neq), fdot(neq,neq)
       real(DP)  unew(neq), unorm(neq)
       real(DP) norm, normnew
-
-      parameter (iter_solver_max=100)
-      parameter (eps=3.d-3, fstp=1.d-1)
-      parameter (udspl=9.d-1, fdspl=9.d0, gdspl=1.d-3)
 
        iter_solver=0
 
@@ -53,14 +48,14 @@ c       if (abs(unorm(i)) .lt. 1.d-30) then
 c        write (*,*) '***warning: displacement vector is too small at '
 c     +              , i
 c       endif
-       if ((-unorm(i) .gt. udspl) .or.
-     +     ( unorm(i) .gt. 1.d0/(1.d0-udspl))) then
+       if ((-unorm(i) .gt. solver_udspl) .or.
+     +     ( unorm(i) .gt. 1.d0/(1.d0-solver_udspl))) then
         idx=i
        endif
       enddo
       if (idx .ne. 0) then
        do i=1,neq
-        du(i)=fstp*du(i)
+        du(i)=solver_fstp*du(i)
        enddo
        cntl=cntl+1
        if (verbose_step)write (*,*) cntl, ' var step reduction',
@@ -68,9 +63,9 @@ c       endif
        goto 5198
       endif
       normnew=compute_fnorm(unew)
-      if ((normnew/norm-1.d0) .gt. fdspl) then
+      if ((normnew/norm-1.d0) .gt. solver_fdspl) then
        do i=1,neq
-        du(i)=fstp*du(i)
+        du(i)=solver_fstp*du(i)
        enddo
        cntl=cntl+1
 c       write (*,*) cntl, ' norm step reduction', normnew
@@ -92,7 +87,7 @@ c     --- check convergence ---
      +' norm ', norm
       endif
 
-       if (norm .gt. eps) then
+       if (norm .gt. solver_eps) then
        goto 5199
       endif
        ! if norm<eps then do nothing and exit if at line 107

@@ -75,6 +75,7 @@ contains
                             -a53*dens(ndt-3,j,k)&
                             -a54*dens(ndt-4,j,k)
                         f(i)=f(i)-a55*rate_d (ndt  ,j,k)*dt_face
+
                     else
                         call face_error("ERROR: order of solver not implemented. order=",order_solver)
                     endif
@@ -101,7 +102,9 @@ contains
                 elseif (order_solver.eq.2) then
                     f(i)=u(i)-a21*dsrfr(ndt-1,k)&
                         -a22*dsrfr(ndt-2,k)
+                     !   write(iout,'(a,i3,a,es12.3)',advance="no") "i=",i,"; f(i)=",f(i)
                     f(i)=f(i)-a23*Gsrf_r (ndt  ,k)*dt_face
+                    ! write(iout,'(a,es12.3)') " Gsrf_r (ndt  ,k)*dt_face =",Gsrf_r (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfr(ndt-1,k)&
@@ -322,22 +325,23 @@ subroutine compute_source_rate(k)
 
         subroutine compute_surface_flx(k)
         integer::k
-        real(DP):: tmp
+        real(DP):: tmp,Edes_rc,Edes_lc
         !     --- surface ---
 
         ! reducing qch when close to surface saturation
         tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
-        qchtl(k)=qchl(k)*0.5d0*(1.d0-erf(tmp))
+        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
         tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
-        qchtr(k)=qchr(k)*0.5d0*(1.d0-erf(tmp))
+        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
         ! calculate rates of surface processes
         ! - left surface
          if (left_surface_model(k).eq."S") then
 
-        Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-eekb* echl(k)/temp(ndt,   0))
-        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-2.d0*eekb*(echl(k)+qchtl(k))/temp(ndt,   0))
-        Kb_l(k)=        K0b_l(k)  *exp(-     eekb*(ebl (k)+qchtl(k))/temp(ndt,   0))
-        Kads_l(k)=      K0ads_l(k)*exp(-     eekb*(ebl (k)-esl  (k))/temp(ndt,   0))
+        Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
+        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+        Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
+       Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
+
         elseif (left_surface_model(k).eq."N") then
         Kabs_l(k)=min_rate_surface
         Kdes_l(k)=min_rate_surface
@@ -349,10 +353,15 @@ subroutine compute_source_rate(k)
         ! - right surface
         if (right_surface_model(k).eq."S") then
 
-        Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* echr(k)          /temp(ndt,ngrd))
-        Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(echr(k)+qchtr(k))/temp(ndt,ngrd))
-        Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(ebr (k)+qchtr(k))/temp(ndt,ngrd))
-        Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(ebr (k)-esr  (k))/temp(ndt,ngrd))
+!        Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* Eabs_r(k)          /temp(ndt,ngrd))
+!        Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(Eabs_r(k)+Edes_r(k))/temp(ndt,ngrd))
+!        Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(Eb_r (k)+Edes_r(k))/temp(ndt,ngrd))
+!        Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(Eb_r (k)-Eads_r  (k))/temp(ndt,ngrd))
+
+          Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
+            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
         elseif (right_surface_model(k).eq."N") then
         Kabs_l(k)=min_rate_surface
         Kdes_l(k)=min_rate_surface
@@ -381,7 +390,7 @@ subroutine compute_source_rate(k)
         ! calculate effective desorptiopn and heat fluxes
         if (solve_heat_eq .eq. "yes") then
             jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
-            qflx_in=qflx_in+jout(ndt,k)*(ee*esl(k)-2.d0*kb*temp(ndt,0))
+            qflx_in=qflx_in+jout(ndt,k)*(ee*Eads_l(k)-2.d0*kb*temp(ndt,0))
         endif
 
         ! - net flux onto surface
@@ -546,16 +555,17 @@ subroutine compute_source_rate(k)
         call face_error("Unknown mode for pulsed_flux")
         endif
 
-        cero=cero+gamero*inflx(1)*lambda3c ! sputtering
+        if (gamero.ne.0d0) cero=cero+gamero*inflx(1)*(lambda**3*cvlm) ! sputtering
 
         ! TODO modif Q flux here
         qflx_in=0.d0
         do k=1,nspc
             qflx_in=qflx_in+ee*enrg(k)*inflx(k)
         enddo
-        qflx_in=qflx_in+rad
-        qflx_in=qflx_in-cero*ee*qform/lambda3c
-        qflx_in=qflx_in-emiss*sigma_sb*(temp(ndt,0)**4.d0-temp(ndt,ngrd)**4.d0)
+        if (rad.ne.0d0)  qflx_in=qflx_in+rad
+
+        if (cero.ne.0d0)  qflx_in=qflx_in-cero*ee*qform/(lambda**3*cvlm)
+        if (emiss.ne.0d0) qflx_in=qflx_in-emiss*sigma_sb*(temp(ndt,0)**4.d0-temp(ndt,ngrd)**4.d0)
 
     end subroutine compute_inflx
 
@@ -679,6 +689,13 @@ subroutine compute_source_rate(k)
 call face_error("left srf dens <0 for species k= ",k," dsrfl=",dsrfl(ndt,k),"previous step: dsrfl(ndt-1)=",dsrfl(ndt-1,k))
             endif
 
+            if (dsrfl(ndt,k) .gt. dsrfm(k)) then
+                call face_error("left srf dens >max for species k= ",k," dsrfl=",dsrfl(ndt,k),"dsrfm=",dsrfm(k))
+            endif
+
+            if (dsrfr(ndt,k) .gt. dsrfm(k)) then
+                call face_error("right srf dens >max for species k= ",k," dsrfr=",dsrfr(ndt,k),"dsrfm=",dsrfm(k))
+            endif
 
             if (dsrfr(ndt,k) .lt. 0.d0) then
 call face_error("right srf dens <0 for species k= ",k," dsrfr=",dsrfr(ndt,k),"previous step: dsfr(ndt-1)=",dsrfr(ndt-1,k))
@@ -735,6 +752,8 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
        enddo
        i=i+1
        dsrfr(ndt,k)=u(i)
+       !write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
+
       enddo
       if (solve_heat_eq .eq. "yes") then
        do j=0,ngrd
@@ -749,11 +768,15 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
     subroutine compute_trace_flux
     ! sum up the outgassing flux left and right over time to estimate the average outgassing flux over the simulation
     ! end verify if <Gdes_l>\approx Gdes_l(end)
-
-    integer k
+    real(DP):: int_src
+    integer k,j
 
     do k=1,nspc
-    trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+inflx(k)*dt_face
+    int_src=0d0
+    do j=0,ngrd
+    int_src=int_src+source(j,k)*dx(j)
+    enddo
+    trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+int_src*dt_face
     trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
     trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
     trace_flux(k)%sig_Gdes_l=trace_flux(k)%sig_Gdes_l+Gdes_l(ndt,k)**2
