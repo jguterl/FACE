@@ -243,7 +243,7 @@ contains
 
     subroutine  set_help_comment(comment)
         character(*):: comment
-        call StripFrontSpaces(comment)
+        !call StripFrontSpaces(comment)
         help(ihelp)%def=trim(comment)
         help(ihelp)%comment=.true.
         ihelp=ihelp+1
