@@ -8,6 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -27,7 +28,7 @@ all: FACE2.0
 # Tool invocations
 FACE2.0: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
-	@echo 'Invoking: MacOS X Fortran Linker'
+	@echo 'Invoking: GNU Fortran Linker'
 	/usr/local/bin/gfortran  -o "FACE2.0" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '

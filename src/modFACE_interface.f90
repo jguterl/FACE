@@ -225,12 +225,12 @@ integer:: iter
         ! solps time step
 
         ! time step FACE
-        fluidcode_input%dt0_face=1e-7
+        fluidcode_input%dt0_face=1e-5
 
         ! input file FACE
         fluidcode_input%input_file="test_solpsiter.face"
         !  iteration
-        do iter=1,3
+        do iter=1,10
         write(iout,*) "SOLPS: iteration =", iter
         fluidcode_input%iter=iter
 
@@ -242,14 +242,14 @@ integer:: iter
         fluidcode_input%final_state_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//"_final.state"
 
         !Gamma in
-        if (iter.ne.2) then
+        if (mod(iter,2).eq.0) then
         fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e21
         fluidcode_input%tempwall=800        ! temperature of the wall from fluid code
-        fluidcode_input%dt=1e-2
+        fluidcode_input%dt=1e-3
         else
         fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e20
         fluidcode_input%tempwall=500        ! temperature of the wall from fluid code
-        fluidcode_input%dt=1e-3
+        fluidcode_input%dt=1e-2
 
         endif
         ! solps time
@@ -258,7 +258,6 @@ integer:: iter
 
         fluidcode_input%qflx_in=0           ! Heat flux from fluid code
 
-        fluidcode_input%tempwall=700        ! temperature of the wall from fluid code
         fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%log_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//".log"
 fluidcode_input%log_file="no"

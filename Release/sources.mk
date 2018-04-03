@@ -10,8 +10,8 @@ ASM_SRCS :=
 F77_SRCS := 
 F90_SRCS := 
 F08_SRCS := 
-O_SRCS := 
 S_UPPER_SRCS := 
+O_SRCS := 
 FTN_SRCS := 
 OBJ_SRCS := 
 F_SRCS := 
@@ -23,5 +23,5 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-. \
+src \
 
