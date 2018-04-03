@@ -6,14 +6,14 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=100
+    integer,parameter::nlines_max_help=120
 
     type helper
-        character(100)::keyword
-        character(200)::def
-        character(100)::units
-        character(100)::status
-        character(80)::default
+        character(string_length)::keyword
+        character(string_length)::def
+        character(string_length)::units
+        character(string_length)::status
+        character(string_length)::default
         logical::comment
         logical:: species
     end type helper
