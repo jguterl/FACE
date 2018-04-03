@@ -197,6 +197,7 @@ contains
         call set_help('pulsed_flux','pulse incoming plasma flux: yes|no','none','non-mandatory',"no")
         call set_help('pulse_period','Pulse period','[s]','non-mandatory',"1.0e+99")
           call set_help('# ********* Miscelleneaous *********************************************')
+        call set_help('active_cap','yes|no','none','non-mandatory',"yes")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
         call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
         call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")

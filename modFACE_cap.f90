@@ -5,10 +5,14 @@ contains
 !    linear cap function to model saturation of total H
       real(DP) function cspcs(i,j,k)
       integer i, j, k
+      if (active_cap) then
       if (dens(i,j,k) .lt. densm(k)) then
        cspcs=1.d0-dens(i,j,k)/densm(k)
       else
        cspcs=0.d0
+      endif
+      else
+      cspcs=1.d0
       endif
       return
       end
@@ -20,7 +24,7 @@ contains
       real(DP) function csours(i,j,k)
       integer i, j, k, n
       csours=1.0
-
+      if (active_cap) then
       if (k .eq. 1) then
        csours=cspcs(i,j,1)
       endif
@@ -30,6 +34,7 @@ contains
         csours=(1.d0-(dens(i,j,n)+dens(i,j,n+1))/(densm(n)+densm(n+1)))
        endif
       enddo
+      endif
       return
       end
 
@@ -40,6 +45,7 @@ contains
       real(DP) function csrbin(i,j,k,l)
       integer i, j, k, l, n
       csrbin=1.0
+      if (active_cap) then
       do n=3,nspc,2
        if (l.eq.n) then
        if ((k.eq.1).or.(k.eq.n-1).or.(k.eq.n)) then
@@ -47,6 +53,7 @@ contains
        endif
        endif
       enddo
+      endif
       return
       end
 
@@ -79,12 +86,14 @@ contains
       integer i, j, k, l, n
 
       ctherm=1.d0
+      if (active_cap) then
+          do n=3,nspc,2
+              if (l .eq. n) then
+                  ctherm=cspcs(i,j,1)
+              endif
+          enddo
+      endif
 
-      do n=3,nspc,2
-       if (l .eq. n) then
-        ctherm=cspcs(i,j,1)
-       endif
-      enddo
       return
       end
 

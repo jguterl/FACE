@@ -98,6 +98,16 @@ contains
             endif
        enddo
        enddo
+
+       ! set active_cap (true or false)
+        case('active_cap')
+         if(active_cap_string.eq."yes") then
+         active_cap=.true.
+         elseif (active_cap_string.eq."no") then
+         active_cap=.false.
+         else
+         call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
+         endif
        end select
 
 
@@ -173,7 +183,7 @@ contains
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
-
+        call get_keyword_value('active_cap', active_cap_string)
         call get_keyword_value('min_ablation_velocity', cero_min)
         call get_keyword_value('max_ablation_velocity', cero_max)
         call get_keyword_value('sputtering_yield', gamero)

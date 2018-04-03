@@ -334,7 +334,8 @@
       real(DP):: max_Gdes_r
       end type trace_fluxes
       type(trace_fluxes),allocatable :: trace_flux(:)
-!
+      logical :: active_cap=.true.
+      character(string_length)::active_cap_string
 !     ------------------------------------------------------------------
 !       Thermal variables
 !     ------------------------------------------------------------------

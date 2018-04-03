@@ -220,10 +220,10 @@ integer:: iter
         fluidcode_input%indexspc(1:fluidcode_input%nspc_fluid)=1
         ! index of wall element
         fluidcode_input%wall_idx=1
-        fluidcode_input%Ndump_space=10
-        fluidcode_input%Ndump_time=10
+        fluidcode_input%Ndump_space=100
+        fluidcode_input%Ndump_time=100
         ! solps time step
-        fluidcode_input%dt=1e-4
+
         ! time step FACE
         fluidcode_input%dt0_face=1e-7
 
@@ -242,7 +242,16 @@ integer:: iter
         fluidcode_input%final_state_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//"_final.state"
 
         !Gamma in
+        if (iter.ne.2) then
+        fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e21
+        fluidcode_input%tempwall=800        ! temperature of the wall from fluid code
+        fluidcode_input%dt=1e-2
+        else
         fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e20
+        fluidcode_input%tempwall=500        ! temperature of the wall from fluid code
+        fluidcode_input%dt=1e-3
+
+        endif
         ! solps time
         fluidcode_input%time=(fluidcode_input%iter-1)*fluidcode_input%dt
 
