@@ -80,6 +80,7 @@ contains
 
     subroutine init_help()
         integer i
+        character(string_length) :: comment_str
          do i=1,nlines_max_help
          help(i)=helper('none','none','none','none','none',.false.,.false.)
         enddo
@@ -103,10 +104,12 @@ contains
         call set_help('steady_state','Steady state yes|no','none','non-mandatory',"no")
         call set_help('temp_ramp_filename','Temperature ramp data file (ramp.dat) used if .ne. 0','none','non-mandatory',"none")
         call set_help('solve_heat_equation','yes|no :solve heat equation','none','non-mandatory',"no")
-        call set_help('# ********* Grid parameters ********************************************')
+        comment_str='# ********* Grid parameters ********************************************'
+        call set_help(comment_str)
         call set_help('n_cells','Number of cells','none','mandatory',"100")
         call set_help('cell_scaling_factor','Cell width scaling factor','none','mandatory',"1.15305056")
-        call set_help('# ********* Parameters for volumetric model and species *************** ')
+        comment_str='# ********* Parameters for volumetric model and species ***************'
+        call set_help(comment_str)
         call set_help('n_species','Number of species','none','mandatory',"3")
         call set_help('species_name','Name of species','none','mandatory',"D H+Tr1 Tr1","species")
         call set_help('n0_profile','Initial density profile is Gaussian (G), step(S), linear(L),peak(P),flat(F)','none'&
@@ -123,7 +126,8 @@ contains
         call set_help('Edt', 'Activation energy of detrapping of species', '[eV]' , 'non-mandatory' ,"0.00 0.00 1.40","species")
         call set_help('Etr', 'Activation energy of trapping of species'  , '[eV]' , 'non-mandatory' ,"0.00 1.00 0.00","species")
 
-        call set_help('# ********* Parameters for surface model and species ******************* ')
+        comment_str='# ********* Parameters for surface model and species ******************* '
+        call set_help(comment_str)
         call set_help('left_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
         'mandatory',"S N N","species")
         call set_help('right_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
@@ -150,7 +154,8 @@ contains
         call set_help('Eads_right','Energy of adsorption (bulk->surface)','[eV]','mandatory',"1.00 0.00 0.00","species")
         call set_help('nu0','Transition attempt frequency of species','[s^-1]','non-mandatory'&
         ,"1.00e+13 1.00e+13 1.00e+13","species")
-        call set_help('# ********* Parameters for implantation model ************************** ')
+        comment_str='# ********* Parameters for implantation model ************************** '
+        call set_help(comment_str)
         call set_help('implantation_model','G: gaussian S:Step E: ERFC ','none','non-mandatory',"S S S","species")
         call set_help('implantation_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
         call set_help('implantation_width' ,'implentation width' ,'[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
@@ -166,18 +171,22 @@ contains
         call set_help('temp_neutral','External temperature of neutral species','[eV]','non-mandatory',&
         "0.00e-00 0.00e+00 0.00e+00","species")
         call set_help('mass','Mass of species','[kg]','non-mandatory',"3.343e-27 0.00e+00 0.00e+00","species")
-        call set_help('# ********* Parameters for abliation model ****************************** ')
+        comment_str='# ********* Parameters for abliation model ****************************** '
+        call set_help(comment_str)
         call set_help('min_ablation_velocity','min ablation speed in addition to sputtering','[m s^-1]','non-mandatory'&
             ,"0.00e-00")
         call set_help('max_ablation_velocity','max ablation speed in addition to sputtering','[m s^-1]','non-mandatory'&
             ,"0.00e-00 ")
         call set_help('sputtering_yield','Sputtering yield','none','non-mandatory',"0")
-        call set_help('# ********* Parameters for temperature ********************************** ')
+
+        comment_str='# ********* Parameters for temperature ********************************** '
+        call set_help(comment_str)
         call set_help('mat_temp_ramp_start','Material temperature at ramp start (initial at left boundary)','[K]'&
             ,'non-mandatory',"373")
         call set_help('mat_temp_ramp_stop','Material temperature at ramp stop  (initial at right boundary)','[K]',&
            'non-mandatory',"373")
-           call set_help('# ********* Material parameters ************************************** ')
+           comment_str='# ********* Material parameters ************************************** '
+        call set_help(comment_str)
         call set_help('lattice_constant','Lattice constant of material','[m]','mandatory',"1.00e-10")
         call set_help('cristal_volume_factor','Cristal cell volume factor','none','non-mandatory',"1")
         call set_help('cristal_surface','Surface cell area factor','none','non-mandatory',"1")
@@ -196,7 +205,9 @@ contains
         call set_help('second_ramp_end_time','End of second ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('pulsed_flux','pulse incoming plasma flux: yes|no','none','non-mandatory',"no")
         call set_help('pulse_period','Pulse period','[s]','non-mandatory',"1.0e+99")
-          call set_help('# ********* Miscelleneaous *********************************************')
+
+          comment_str='# ********* Miscelleneaous *********************************************'
+        call set_help(comment_str)
         call set_help('active_cap','yes|no','none','non-mandatory',"yes")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
         call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
