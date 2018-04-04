@@ -1,4 +1,5 @@
 module modFACE_run
+!$     use omp_lib 
 use modFACE_header
  use modFACE_input
 use modFACE_init
@@ -19,6 +20,7 @@ subroutine run_FACE(face_input,face_output)
         call cpu_time(tcpustart)
         walltime_start=tcpustart
         !$ walltime_start = omp_get_wtime ( )
+        
         call print_headline('Start FACE run')
         !read input
         call input_run(face_input)
@@ -46,9 +48,10 @@ subroutine run_FACE(face_input,face_output)
         call compute_outgassing_flux
         ! get time at end of run
         call cpu_time(tcpufinish)
-        walltime_end=tcpufinish
+        !walltime_end=tcpufinish
         !$ walltime_end = omp_get_wtime ( )
-        ! generate output for FACE
+       
+! generate output for FACE
         call output_run(face_output)
 
         call print_headline('FACE run completed')
@@ -229,7 +232,7 @@ subroutine time_loop
     end subroutine time_loop
 
     subroutine print_summary()
-integer ::k
+integer ::k,nthreads
 character(string_length) :: str
 
 call print_section('Summary')
@@ -239,6 +242,11 @@ write(str,'("cpu time of execution= ",es12.3," seconds.")') tcpufinish-tcpustart
 call print_line(str)
 write(str,'("wall time of execution= ",es12.3," seconds.")') walltime_end-walltime_start
 call print_line(str)
+nthreads=1
+!$nthreads = OMP_GET_NUM_THREADS();
+write(str,*) "nthreads  = ",nthreads 
+call print_line(str)
+
 call print_end_section('Summary')
 call print_section('Final inventory')
 do k=1,nspc

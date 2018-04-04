@@ -14,7 +14,7 @@ OBJDIR=$(BUILDDIR)
 
 
 # compile flags
-FFLAGS = -qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons -fbounds-check
+FFLAGS = #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons -fbounds-check
 DBGFLAGS = -g -O0   -fbacktrace 
 RLSFLAGS = -O3 
 
@@ -54,16 +54,16 @@ debug_exe: $(DBGOBJECTS_f) $(DBGOBJECTS_f90)
 # release rules
 
 $(RLSOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC)   $(FFLAGS) $(RLSFLAGS) -c $< -o $@
+	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
 
 
 $(RLSOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC)  $(FFLAGS) $(RLSFLAGS) -c $< -o $@
+	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
 
 release: prep release_exe
 
 release_exe: $(RLSOBJECTS_f) $(RLSOBJECTS_f90)
-	$(FC)  $(FFLAGS) $(RLSFLAGS) -o $(BINDIR)/$(EXE_RELEASE) $^
+	$(FC) -qopenmp  $(FFLAGS) $(RLSFLAGS) -mkl -o $(BINDIR)/$(EXE_RELEASE) $^
 
 # default
 default: release

@@ -48,7 +48,7 @@
       integer::neq
       integer:: nramp
     integer:: iout=6
-      real :: tcpustart, tcpufinish,walltime_start,walltime_end
+      real(DP) :: tcpustart, tcpufinish,walltime_start,walltime_end
      integer :: Nprint_run_info=2 ! print info on current run every Nprint_run_info steps
      real(DP),parameter :: min_rate_surface=1d-20
       ! **  Some physical and mathematical constants
