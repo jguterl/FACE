@@ -98,7 +98,12 @@
       real(DP) ::alpha
       ! time
       real(DP):: dt_face    !>@var current solver time step
-      real(DP):: dt0_face ! dt
+      real(DP):: min_dt_face   !>@var current solver time step
+      real(DP):: dt0_face ! nominal time step
+      real(DP) :: reduction_factor_dt=1d0
+      integer:: Nstep_increase_dt=10
+      integer :: solver_step_count=0
+
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
       real(DP):: start_time ! start time  of simulation
@@ -356,6 +361,7 @@
       real(DP),allocatable::rate_t(:,:)
       real(DP),allocatable::qflx(:,:)
       real(DP),allocatable::ero_qflx(:,:)
+
 !
 !     ------------------------------------------------------------------
 !       Environment variables

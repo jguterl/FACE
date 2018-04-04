@@ -490,6 +490,7 @@ subroutine compute_source_rate(k)
       integer,intent(in)::k,i
       real(DP) :: cabs_l, cdes_l, cb_l, cads_l
       real(DP) :: cabs_r, cdes_r, cb_r, cads_r
+      if (active_cap) then
        call cap_srf_flx(k,i,cabs_l, cdes_l, cb_l, cads_l,cabs_r, cdes_r, cb_r, cads_r)
 
         ! multiply surfaces fluxes by cap factors
@@ -503,7 +504,7 @@ subroutine compute_source_rate(k)
         Gdes_r (i,k)=Gdes_r (i,k) *cdes_r
         Gb_r (i,k)  =Gb_r (i,k)   *cb_r
         Gads_r (i,k)=Gads_r (i,k) *cads_r
-
+      endif
       end subroutine compute_cap_factor_surface
 
     subroutine compute_inflx()

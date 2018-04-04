@@ -225,7 +225,7 @@ integer:: iter
         ! solps time step
 
         ! time step FACE
-        fluidcode_input%dt0_face=1e-5
+        fluidcode_input%dt0_face=1e-4
 
         ! input file FACE
         fluidcode_input%input_file="test_solpsiter.face"

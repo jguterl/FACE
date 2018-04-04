@@ -12,13 +12,16 @@
        contains
 
 
-            subroutine newton_solver
+            subroutine newton_solver(quick_convergence)
       integer i,ii
       integer  cntl, idx
-
+      logical:: quick_convergence
       real(DP):: u(neq), du(neq), f(neq), fdot(neq,neq)
       real(DP)  unew(neq), unorm(neq)
       real(DP) norm, normnew
+c      solver_status: 0: solver step not completed
+c                   : -1: solver step completed with iter_solver=max
+c                   : 1 : solver step completed iwht iter_solver<ideal
 
        iter_solver=0
 
@@ -99,8 +102,14 @@ c     --- check convergence ---
       endif
 
       endif
+      ! update values of densities and temperature only if we are happy with the convergence...
+      if (iter_solver.lt.iter_solver_max) then
+      quick_convergence=.true.
+      endif
 
+      if (quick_convergence) then
       call get_density_values(u)
+      endif
       normf=norm
       end subroutine newton_solver
 

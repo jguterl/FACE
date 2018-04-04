@@ -9,15 +9,15 @@ module modFACE_parser
     type input_valsp
         real(DP),allocatable:: r(:)
         integer,allocatable :: i(:)
-        character(string_length),allocatable::s(:)
-        character(string_length)::status
+        character(string_length+1),allocatable::s(:)
+        character(string_length+1)::status
     end type input_valsp
 
     type input_val
         real(DP):: r
         integer :: i
-        character(string_length)::s
-        character(string_length)::status
+        character(string_length+1)::s
+        character(string_length+1)::status
     end type input_val
 
     character, allocatable :: input_line(:)

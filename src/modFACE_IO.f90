@@ -2,7 +2,7 @@ module modFACE_IO
     use modFACE_header
     use modFACE_error
     use modFACE_allocate
-    use modFACE_step
+    use modFACE_compute
     implicit none
     save
     integer,allocatable::unit_timedata(:)
@@ -615,6 +615,17 @@ write(myfmt,*) "('iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es
   call print_formatted(str)
 endif
 end subroutine print_timestep_info
+
+subroutine print_reduction_timestep_info
+character(string_length)::myfmt,str
+
+
+write(myfmt,*) "('dt REDUCTION: iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
+ ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3)"
+ write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver
+  call print_formatted(str)
+
+end subroutine print_reduction_timestep_info
 
 subroutine print_milestone(str)
 character(*)::str

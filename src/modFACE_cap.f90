@@ -2,20 +2,20 @@ module modFACE_cap
 use modFACE_header
 implicit none
 contains
-!    linear cap function to model saturation of total H
-      real(DP) function cspcs(i,j,k)
-      integer i, j, k
-      if (active_cap) then
-      if (dens(i,j,k) .lt. densm(k)) then
-       cspcs=1.d0-dens(i,j,k)/densm(k)
-      else
-       cspcs=0.d0
-      endif
-      else
-      cspcs=1.d0
-      endif
-      return
-      end
+    !    linear cap function to model saturation of total H
+    real(DP) function cspcs(i,j,k)
+        integer i, j, k
+        if (active_cap) then
+            if (dens(i,j,k) .lt. densm(k)) then
+                cspcs=1.d0-dens(i,j,k)/densm(k)
+            else
+                cspcs=0.d0
+            endif
+        else
+            cspcs=1.d0
+        endif
+        return
+    end
 
       ! linear cap function to model saturation of material with traps or H
       ! i= index time step
