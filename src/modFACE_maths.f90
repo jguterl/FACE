@@ -57,7 +57,9 @@
 !                has been completed, but the factor U is exactly
 !                singular, so the solution could not be computed.
     !call DLUDCMP(a,n,indx,d,code)
+    if (DP.ne.8) call face_error("dgsev solver for double precision only")
     call dgesv(n, 1, a, n, indx, b, n, code)
+
         if (code .ne. 0) then
             call face_error("Singular Jacobian! code=",code)
         endif

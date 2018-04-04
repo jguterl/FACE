@@ -17,6 +17,8 @@ subroutine run_FACE(face_input,face_output)
     type(FACE_outputs),intent(out) :: face_output
         ! get time at beginning of run
         call cpu_time(tcpustart)
+        walltime_start=tcpustart
+        !$ walltime_start = omp_get_wtime ( )
         call print_headline('Start FACE run')
         !read input
         call input_run(face_input)
@@ -44,6 +46,8 @@ subroutine run_FACE(face_input,face_output)
         call compute_outgassing_flux
         ! get time at end of run
         call cpu_time(tcpufinish)
+        walltime_end=tcpufinish
+        !$ walltime_end = omp_get_wtime ( )
         ! generate output for FACE
         call output_run(face_output)
 
@@ -232,6 +236,8 @@ call print_section('Summary')
 write(str,*) '# iteration = ', iteration
 call print_line(str)
 write(str,'("cpu time of execution= ",es12.3," seconds.")') tcpufinish-tcpustart
+call print_line(str)
+write(str,'("wall time of execution= ",es12.3," seconds.")') walltime_end-walltime_start
 call print_line(str)
 call print_end_section('Summary')
 call print_section('Final inventory')
