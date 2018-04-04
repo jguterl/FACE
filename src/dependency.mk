@@ -1,6 +1,6 @@
 $(OBJDIR)/face.o:  $(OBJDIR)/modFACE_interface.o $(OBJDIR)/modFACE_main.o
 
-$(OBJDIR)/modFACE_IO.o:  $(OBJDIR)/modFACE_allocate.o $(OBJDIR)/modFACE_error.o $(OBJDIR)/modFACE_header.o $(OBJDIR)/modFACE_step.o
+$(OBJDIR)/modFACE_IO.o:  $(OBJDIR)/modFACE_allocate.o $(OBJDIR)/modFACE_error.o $(OBJDIR)/modFACE_header.o 
 
 $(OBJDIR)/modFACE_allocate.o:  $(OBJDIR)/modFACE_header.o $(OBJDIR)/modFACE_output.o
 
@@ -40,6 +40,6 @@ $(OBJDIR)/modFACE_solver.o:  $(OBJDIR)/modFACE_compute.o $(OBJDIR)/modFACE_error
 
 $(OBJDIR)/modFACE_solverf90.o:  $(OBJDIR)/modFACE_compute.o $(OBJDIR)/modFACE_error.o $(OBJDIR)/modFACE_functions.o $(OBJDIR)/modFACE_header.o $(OBJDIR)/modFACE_maths.o $(OBJDIR)/modFACE_output.o $(OBJDIR)/modFACE_precision.o
 
-$(OBJDIR)/modFACE_step.o:  $(OBJDIR)/modFACE_compute.o $(OBJDIR)/modFACE_functions.o $(OBJDIR)/modFACE_header.o $(OBJDIR)/modFACE_output.o $(OBJDIR)/modFACE_solver.o
+$(OBJDIR)/modFACE_step.o:  $(OBJDIR)/modFACE_compute.o $(OBJDIR)/modFACE_functions.o $(OBJDIR)/modFACE_header.o $(OBJDIR)/modFACE_output.o $(OBJDIR)/modFACE_solver.o $(OBJDIR)/modFACE_IO.o
 
 

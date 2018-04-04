@@ -1,6 +1,6 @@
 # makefile for FACE20
 # compiler
-FC     = gfortran
+FC     = ifort
 
 # PROGRAM NAME: FACE
 PROGRAM = FACE20
@@ -14,7 +14,7 @@ OBJDIR=$(BUILDDIR)
 
 
 # compile flags
-FFLAGS = #-Wall -Werror -Wextra -fno-align-commons -fbounds-check
+FFLAGS = -qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons -fbounds-check
 DBGFLAGS = -g -O0   -fbacktrace 
 RLSFLAGS = -O3 
 
