@@ -105,14 +105,8 @@ contains
                 a(i,j)=fdot(i,j)
             enddo
         enddo
-
-        call DLUDCMP(a,n,indx,d,code)
-        if (code .ne. 1) then
-            call DLUBKSB(a,n,indx,b)
-        else
-            write (*,*) '***error: singular Jacobian!'
-            stop
-        endif
+        ! solve A.X=B where A (N,N), B(N) X(N). Result is returned as b
+        call solve_linear_system(a,b,n)
 
         do i=1,neq
             if (u(i) .gt. 1.d-10) then
