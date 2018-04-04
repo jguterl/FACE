@@ -108,10 +108,13 @@ contains
          else
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
-       end select
 
-
-
+! check that the reduction factor is >0 and lt 1
+case('reduction_factor_dt')
+if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
+call face_error("reduction factor dt cannot be <=0 and >1: reduction factor dt=",reduction_factor_dt)
+endif
+end select
     end subroutine check_value_input
 
     subroutine check_keywords
@@ -140,7 +143,7 @@ contains
         call get_keyword_value('temp_ramp_stop_time', tramp1)
         call get_keyword_value('end_time', end_time)
         call get_keyword_value('dt', dt0_face)
-!        call get_keyword_value('timestep_factor', cdt)
+        call get_keyword_value('min_dt', min_dt_face)
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
         call get_keyword_value('dump_time_dt', dump_time_dt)
@@ -208,6 +211,9 @@ contains
         call get_keyword_value('pulsed_flux', pulsed_flux)
         call get_keyword_value('pulse_period', tpulse)
         call get_keyword_value('iter_solver_max', iter_solver_max)
+        call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
+          call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
+
         call get_keyword_value('Nprint_run_info', Nprint_run_info)
         call get_keyword_value('solver_eps',solver_eps)
         call get_keyword_value('solver_udspl',solver_udspl)
