@@ -4,6 +4,19 @@
      use modFACE_error
     implicit none
     contains
+    subroutine solve_linear_system(a,b,n)
+    integer,intent(in):: n
+    real(DP):: a(n,n)
+    real(DP),intent(inout):: b(n)
+    integer :: indx(n), d, code
+    call DLUDCMP(a,n,indx,d,code)
+        if (code .ne. 1) then
+            call DLUBKSB(a,n,indx,b)
+        else
+            call face_error("Singular Jacobian!")
+
+        endif
+    end subroutine solve_linear_system
         ! ***************************************************************
     ! * Given an N x N matrix A, this routine replaces it by the LU *
     ! * decomposition of a rowwise permutation of itself. A and N *
