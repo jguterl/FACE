@@ -63,7 +63,7 @@ contains
         end_time=start_time+fluidcode_input%dt
         if (verbose_couple) write(iout,*) '- end time overwritten   : ', end_time
         ! end time
-        dt0_face=fluidcode_input%dt0_face
+        dt0_face=fluidcode_input%dt0_face*couple_factor_dt
         if (verbose_couple) write(iout,*) '- dt_face overwritten   : ', dt_face
 
         ! ** setting data dumping parameters

@@ -242,7 +242,7 @@ integer:: iter
         fluidcode_input%final_state_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//"_final.state"
 
         !Gamma in
-        if (mod(iter,2).eq.0) then
+        if (mod(iter,5).eq.0) then
         fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e21
         fluidcode_input%tempwall=800        ! temperature of the wall from fluid code
         fluidcode_input%dt=1e-3

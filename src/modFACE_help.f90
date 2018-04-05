@@ -223,6 +223,7 @@ contains
         call set_help('solver_fdspl','solver: displacement min function f(u)','none','non-mandatory',"9.d0")
         call set_help('solver_gdspl','solver: displacement min grad u','none','non-mandatory',"1.d-3")
         call set_help('solver_fstp','solver: step reduction for function f(u)','none','non-mandatory',"1.d-1")
+   call set_help('couple_factor_dt','dt=dt_fluid*coupling_factor_dt when coupled to fluid code','none','non-mandatory',"1.d-2")
         if (ihelp-1.gt.nlines_max_help) then
         call face_error("Extend size of help array in help module: nlines_max_help=",nlines_max_help)
         endif

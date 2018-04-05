@@ -142,7 +142,7 @@
       real(DP):: normf=0.d0
       character(string_length)::restart_filename
 
-
+      real(DP):: couple_factor_dt
 !       Flags
       logical:: read_input_file=.true.
       logical:: restore_state_temp=.true.
@@ -406,7 +406,7 @@ type fluidcode_inputs
 
            end type fluidcode_outputs
 
-
+    
     type FACE_inputs
         character(string_length):: run_mode
         character(string_length):: input_filename

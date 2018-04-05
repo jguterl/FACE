@@ -252,6 +252,14 @@ call print_section('Particle balance')
       call print_line(str)
       write(str,'(a,es12.3)') "Fraction of numerically lost particles =",particle_balance%f_lost
 call print_line(str)
+write(str,'(a,es12.3)') "Rrecycling =",particle_balance%Noutflux/particle_balance%Ninflux
+call print_line(str)
+write(str,'(a,es12.3)') "+Rrecycling =",(particle_balance%Noutflux+abs(particle_balance%p_net))/(particle_balance%Ninflux-abs(particle_balance%p_net))
+call print_line(str)
+write(str,'(a,es12.3)') "-Rrecycling =",(particle_balance%Noutflux-abs(particle_balance%p_net))/(particle_balance%Ninflux+abs(particle_balance%p_net))
+call print_line(str)
+
+
 call print_end_section('Particle balance')
 end subroutine print_summary
 

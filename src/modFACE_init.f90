@@ -127,6 +127,7 @@ contains
 
         !      time step initialization
         dt_face=dt0_face
+       
         !      dt=cdt*ttm
         time=start_time
         solver_step_count=0
