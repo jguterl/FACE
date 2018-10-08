@@ -8,7 +8,7 @@
     integer,intent(in):: n
     real(DP):: a(n,n)
     real(DP),intent(inout):: b(n)
-    integer :: indx(n), d, code
+    integer :: indx(n), code
     !     Externals from the LAPACK library
       external dgesv
 !       DGESV computes the solution to a real system of linear equations
