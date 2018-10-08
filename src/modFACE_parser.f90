@@ -1,5 +1,5 @@
 module modFACE_parser
-    use modFACE_output,only:iout,verbose_parser
+    use modFACE_output
     use modFACE_header
     use modFACE_help
     use modFACE_misc
@@ -9,15 +9,15 @@ module modFACE_parser
     type input_valsp
         real(DP),allocatable:: r(:)
         integer,allocatable :: i(:)
-        character(len=lname),allocatable::s(:)
-        character(len=20)::status
+        character(string_length+1),allocatable::s(:)
+        character(string_length+1)::status
     end type input_valsp
 
     type input_val
         real(DP):: r
         integer :: i
-        character(len=:),allocatable::s
-        character(len=20)::status
+        character(string_length+1)::s
+        character(string_length+1)::status
     end type input_val
 
     character, allocatable :: input_line(:)
@@ -26,23 +26,11 @@ module modFACE_parser
     character::delimdata=' '
     integer,parameter::maxlength_input=2000
     type string
-        character(len=:), allocatable :: keyword
-        character(len=:), allocatable :: data
-        character(len=:), allocatable :: comment
+        character(string_length) :: keyword
+        character(string_length) :: data
+        character(string_length) :: comment
     end type string
     type(string), allocatable :: input_lines(:)
-
-
-
-
-    interface write_input_log_keyword
-        module procedure write_input_log_keyword_r
-        module procedure write_input_log_keyword_s
-        module procedure write_input_log_keyword_i
-        module procedure write_input_log_keyword_species_r
-        module procedure write_input_log_keyword_species_s
-        module procedure write_input_log_keyword_species_i
-    end interface write_input_log_keyword
 
 
 contains
@@ -59,11 +47,11 @@ contains
         found_str=.false.
         idx=-1
         do i=1,nlines
-            if (compare_string(keyword,(input_lines(i)%keyword))) then
+            if (compare_string(keyword,input_lines(i)%keyword)) then
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
                     write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
-                    stop 'Exiting FACE'
+                        call face_error('input_lines(i)%keyword=',input_lines(i)%keyword)
                 endif
                 idx=i
                 found_str=.true.
@@ -93,30 +81,34 @@ contains
         type(input_val) ::inputval
         character::typeval
         integer::idx,idx_help
-        character(1000)::str0
+        character(string_length+1)::str0
 
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
         if (idx_help.eq.-1) then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', trim(keyword) ,&
+            '" (see module help for list of keywords or run Face with -keywords')
         endif
-
+        if (verbose_parser) write(iout,*) 'keyword:',trim(keyword),' idx=',idx,' idx_help=',idx_help
         write(inputval%status,*) adjustl(help(idx_help)%status)
 
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', trim(keyword) ,&
+            '" (see module help for list of keywords or run Face with -keywords')
         else if (idx.ne.-1) then
-            str0=''
+            ! seems that an extra blank is added when writing in string, leading to seg fault if size of receiving string is not incremeted by +1
             write(str0,*) input_lines(idx)%data
+            if (verbose_parser) write(iout,*) 'getting data from string:',trim(str0)
             call get_single_data(str0,delimdata)
+
         else
             ! setting default value for keyword
             write(str0,*) help(idx_help)%default
-
-            if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,keyword,'"'
+            if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,trim(keyword),'"'
         endif
+
+        if (verbose_parser) write(iout,*) 'get data for keyword:',trim(keyword)
+
         if (typeval.eq."r") then
             read(str0,*) inputval%r
         elseif (typeval.eq."i") then
@@ -124,7 +116,16 @@ contains
         elseif (typeval.eq."s") then
             inputval%s=trim(str0)
         endif
-
+if (verbose_parser) then
+if (typeval.eq."r") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",inputval%r
+                elseif (typeval.eq."i") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",inputval%i
+                elseif (typeval.eq."s") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",trim(inputval%s)
+                endif
+                 write(iout,*) ' '
+endif
         return
     end subroutine assign_keyword_value
 
@@ -133,38 +134,46 @@ contains
         type(input_valsp) ::inputval
         character::typeval
         integer::idx,idx_help,k
-        character(1000)::str0,str1
+        character(string_length+1)::str0,str1
 
         idx=find_keyword(keyword)
         idx_help=find_keyword_help(keyword)
         if (idx_help.eq.-1) then
-            write(iout,*) 'ERROR: Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords)'
-            stop 'Exiting FACE...'
+            call face_error('Unknown keyword "', keyword ,'" (see module help for list of keywords or run Face with -keywords')
         endif
         write(inputval%status,*) adjustl(help(idx_help)%status)
         if (idx.eq.-1.AND.inputval%status.eq.'mandatory') then
-            write(iout,*) 'ERROR: mandatory keyword "', keyword ,'" not found in the inputfile'
-            stop 'Exiting FACE...'
-        else if (idx.ne.-1) then
-            str0=''
-            write(str0,*) help(idx_help)%default
-            do k=1,nspc
+            call face_error('mandatory keyword "', keyword ,'" not found in the inputfile')
+        elseif (idx.ne.-1) then
+            str0=trim(input_lines(idx)%data)
+            !write(iout,*) "str0=",trim(str0)
 
+            do k=1,nspc
                 call get_multiple_data(str0,str1,delimdata)
+                !write(iout,*) "str0=",trim(str0),"; str1=",str1
                 if (typeval.eq."r") then
-                    read(str0,*) inputval%r(k)
+                    read(str0,*)  inputval%r(k)
                 elseif (typeval.eq."i") then
                     read(str0,*) inputval%i(k)
                 elseif (typeval.eq."s") then
-                    inputval%s(k)=str0
+                inputval%s(k)=trim(str0)
                 endif
-                str0=str1
-
+                str0=trim(str1)
             enddo
 
+if (verbose_parser) then
+if (typeval.eq."r") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(inputval%r(k),k=1,nspc)
+                elseif (typeval.eq."i") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(inputval%i(k),k=1,nspc)
+                elseif (typeval.eq."s") then
+                write(iout,*) "keyword : ",trim(keyword), "; values=",(trim(inputval%s(k)),k=1,nspc)
+
+                endif
+                write(iout,*) ' '
+endif
         else
             ! setting default value for keyword
-            str0=''
             write(str0,*) help(idx_help)%default
             do k=1,nspc
                 call get_multiple_data(str0,str1,delimdata)
@@ -178,6 +187,7 @@ contains
                 str0=str1
             enddo
             if (verbose_parser) write(iout,*) 'Setting default value for keyword "' ,keyword,'"'
+
         endif
         return
 
@@ -191,11 +201,11 @@ contains
 
         open(unit=iuinput, file=trim(filename), iostat=ios,action='read')
         if ( ios /= 0 ) then
-            write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
+            if (verbose_input) write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
             stop
 
         endif
-        write(iout,*) 'Opening of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Opening of input file "', trim(filename) ,'" : DONE '
     end subroutine open_inputfile
 
 
@@ -232,14 +242,25 @@ contains
         str3=''
         str4=''
         do i=1,nlines
+        if (verbose_parser) write(iout,*) "Reading line: " ,i
             read(iuinput, '(A)', iostat=ios) str0
+            if (verbose_parser) write(iout,*) "str0: " ,str0
             call StripFrontSpaces(str0)
+            if (verbose_parser) write(iout,*) "str0: " ,str0
             call SplitString(trim(str0), str1, str2," ")
-
+              if (verbose_parser) write(iout,*) "str1: " ,str1
             call SplitString(str2, str3, str4,"!")
-            input_lines(i)=string(trim(str1),trim(str3),trim(str4))
-            if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',input_lines(i)%keyword, '" data="',input_lines(i)%data,&
-                '" comment="',input_lines(i)%comment,'"'
+            if (verbose_parser) write(iout,*) "str3: " ,str3
+            ! BUG REPORTED WITH CLANG compiler on MACOS for this following line
+            !input_lines(i)=string(trim(str1),trim(str3),trim(str4))
+            input_lines(i)%keyword=trim(str1)
+            if (verbose_parser) write(iout,*) "str2: " ,str2
+            input_lines(i)%data=trim(str3)
+
+            input_lines(i)%comment=trim(str4)
+if (verbose_parser) write(iout,*) "str3: " ,str3
+            if (verbose_parser) write(iout,*) "Line # " ,i,' : kw="',trim(input_lines(i)%keyword), &
+            '" data="',trim(input_lines(i)%data),'" comment="',trim(input_lines(i)%comment),'"'
         enddo
 
     end subroutine get_inputlines
@@ -253,12 +274,12 @@ contains
         logical:: found_str
         found_str=.false.
         idx_help=-1
-        do i=1,nlines
-            if (compare_string(keyword,(help(i)%keyword))) then
+        do i=1,Nhelp
+
+            if (compare_string(keyword,help(i)%keyword)) then
                 !    ! check that this keywoard only exists once in the input file
                 if (found_str) then
-                    write(iout,*) 'ERROR: keyword "', keyword ,'" found twice in the input file,idx=',i
-                    stop 'Exiting FACE'
+                    call face_error('keyword "', keyword ,'" found twice in the input file,idx=',i)
                 endif
                 idx_help=i
                 found_str=.true.
@@ -268,68 +289,6 @@ contains
 
     end function find_keyword_help
 
-
-    subroutine write_input_log_keyword_r(keyword,variable)
-
-        character(*)::keyword
-        real(DP)::variable
-
-        write(ifile_inputlog,'(a60,f8.3)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_r
-
-
-    subroutine write_input_log_keyword_i(keyword,variable)
-
-        character(*)::keyword
-        integer::variable
-
-        write(ifile_inputlog,'(a60,i6.3)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_i
-
-
-    subroutine write_input_log_keyword_s(keyword,variable)
-
-        character(*)::keyword
-        character(*)::variable
-        write(ifile_inputlog,'(a60,a60)') adjustl(keyword),variable
-
-    end subroutine write_input_log_keyword_s
-
-
-    subroutine write_input_log_keyword_species_r(keyword,variable)
-
-        character(*)::keyword
-        character*60::myfmt
-        real(DP)::variable(:)
-        integer::k
-
-        !write(myfmt,*)'(a60, ,',nspc,'(f6.3))'
-        write(ifile_inputlog,*) adjustl(keyword),(variable(k),k=1,nspc)
-
-    end subroutine write_input_log_keyword_species_r
-
-
-    subroutine write_input_log_keyword_species_i(keyword,variable)
-
-        character(*)::keyword
-        integer::variable(:)
-        integer::k
-
-        write(ifile_inputlog,*) adjustl(keyword),(variable(k),k=1,nspc)
-    end subroutine write_input_log_keyword_species_i
-
-
-    subroutine write_input_log_keyword_species_s(keyword,variable)
-
-        character(*)::keyword
-        character(*)::variable(:)
-        integer::k
-
-        write(ifile_inputlog,*)adjustl(keyword),(variable(k),k=1,nspc)
-
-    end subroutine write_input_log_keyword_species_s
 
 
 end module modFACE_parser

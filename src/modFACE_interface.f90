@@ -1,51 +1,19 @@
 module modFACE_interface
     use modFACE_precision
+    use modFACE_error
+    use modFACE_coupling
+    use modFACE_header
+    use modFACE_main
     implicit none
 
-    save
-    logical :: verbose_interface=.true.
-    character(Lfn) :: default_inputfile="default_inputfile.face"
-    type fluidcode_inputs
-        integer                  :: wall_idx            ! Index of the wall stratum
-        integer                  :: iter                ! Fluid code iteration
-        real(DP)                 :: time                ! Fluid code time
-        real(DP)                 :: dt                  ! Time step of the fluid
-        integer                 :: nspc                ! Number of incoming species from fluid code
-        character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
-        real(DP),allocatable         :: Gammain(:)      ! Particle flux'
-        real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
-        real(DP)                 :: Qin                 ! Heat flux from fluid code
-        character(Lfn)           :: history_file        ! restart from file history
-        real(DP)                 :: tempwall            ! temperature of the wall from fluid code
-        character(15)            :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
-        character(Lfn)            ::casename            ! casename
-    end type fluidcode_inputs
 
-    type fluidcode_out
-        real(DP),allocatable   :: out_flux(:)            ! outgassing flux
-        real(DP),allocatable   :: Ntot(:)                ! total species in material
-        real(DP),allocatable   :: Nnet_dt_fc(:)          ! total species added during dt_fx
-        real(DP),allocatable   :: Nnet_free_dt_fc(:)     ! total free species added during dt_fx
-        real(DP),allocatable   :: Nnet_trapped_dt_fc(:)  ! total trapped species added during dt_fx
-        real(DP),allocatable   :: Nnet_srf_dt_fc(:)      ! total species added on surface during dt_fx
-        real(DP),allocatable   :: Nnet_vol_dt_fc(:)      ! total species added in bulk during dt_fx
-    end type fluidcode_out
 
-    type FACE_inputs
-        character(Lfn):: run_mode
-        character(Lfn):: input_filename
-        logical   :: read_input_file=.true.
-        character(Lfn)::logfile
-        logical :: couple_fluidcode
-        type(fluidcode_inputs) :: fluidcode_input
-        character(Lfn)::path
-        character(Lfn)::casename
-    end type FACE_inputs
+
 
 contains
     subroutine read_arguments(face_input)
         type(FACE_inputs)::face_input
-        CHARACTER(lfn) :: arg
+        CHARACTER(string_length) :: arg
         integer narg,k
         !      running -pg --print-grid : only print the grid correspondign to the input file. No run
         !      running -ps --print-species:   dump vol and surface after reading restart file or history file if requested
@@ -63,10 +31,10 @@ contains
         face_input%path='run_FACE'
         face_input%casename='casename'
         narg=iargc()
-        write(*,*) '# arguments=',narg
+        !write(*,*) '# arguments=',narg
 
         k=1
-        DO while (k.le.narg)
+        do while (k.le.narg)
             CALL getarg(k, arg)
             if (verbose_interface) write(*,*)arg
             ! check inputfile flag -in or --inputfile
@@ -76,12 +44,10 @@ contains
                     call getarg(k,arg)
                     if (verbose_interface) write(*,*)arg
                     if (arg(1:1).eq.'-') then
-                        write(*,*) 'ERROR: Invalid input filename :',arg
-                        stop 'Exiting FACE...'
+                        call face_error('Invalid input filename :',arg)
                     endif
                 else
-                    write(*,*) 'ERROR: Missing input filename'
-                    stop 'Exiting FACE...'
+                    call facE_error('Missing input filename')
                 endif
                 face_input%input_filename=arg
                 k=k+1
@@ -107,15 +73,6 @@ contains
                     k=k+1
                 endif
 
-            elseif (arg.eq."-pg" .or. arg.eq."--print-grid") then
-                if (face_input%run_mode.ne."default") then
-                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
-                    stop 'Exiting FACE...'
-                else
-                    face_input%run_mode="print_grid"
-                    k=k+1
-                endif
-
             elseif (arg.eq."-pd" .or. arg.eq."--print-default-input") then
                 if (face_input%run_mode.ne."default") then
                     write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
@@ -124,12 +81,33 @@ contains
                     face_input%run_mode="print_default_input"
                     k=k+1
                 endif
+            elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
+                    verbose_input=.true.
+                    k=k+1
+
+                    elseif (arg.eq."-vp" .or. arg.eq."--verbose-parser") then
+                    verbose_parser=.true.
+                    k=k+1
+
+                    elseif (arg.eq."-vit" .or. arg.eq."--verbose-init") then
+                    verbose_init=.true.
+                    k=k+1
+
+                    elseif (arg.eq."-vc" .or. arg.eq."--verbose-couple") then
+                    verbose_couple=.true.
+                    k=k+1
+                    elseif (arg.eq."-vv" .or. arg.eq."--verbose-version") then
+                    verbose_version=.true.
+                    k=k+1
+                    elseif (arg.eq."-vh" .or. arg.eq."--verbose-header") then
+                    verbose_header=.true.
+                    k=k+1
+
 
             ! help
             elseif (arg.eq."-h" .or. arg.eq."--help") then
                 if (face_input%run_mode.ne."default") then
-                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
-                    stop 'Exiting FACE...'
+                    call face_error('Current flag incompatible with previous flags (current flag: ',arg,')')
                 else
                     face_input%run_mode="help"
                     k=k+1
@@ -138,10 +116,17 @@ contains
             ! version
             elseif (arg.eq."-v" .or. arg.eq."--version") then
                 if (face_input%run_mode.ne."default") then
-                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
-                    stop 'Exiting FACE...'
+                    call face_error('Current flag incompatible with previous flags (current flag: ',arg,')')
                 else
                     face_input%run_mode="version"
+                    k=k+1
+                endif
+                ! keyword_list
+                elseif (arg.eq."-lk" .or. arg.eq."--list-keyword") then
+                if (face_input%run_mode.ne."default") then
+                    call face_error('Current flag incompatible with previous flags (current flag: ',arg,')')
+                else
+                    face_input%run_mode="list-keyword"
                     k=k+1
                 endif
                  ! output folder
@@ -215,65 +200,133 @@ contains
     end subroutine read_arguments
 
 
-    subroutine set_default_mode(default_mode)
-        character(*):: default_mode
 
-        if (default_mode.eq."H") then
-        elseif (default_mode.eq."H+5traps") then
+    subroutine FACE_from_fluidcode
+
+character(string_length)::str
+integer:: iter
+        type(fluidcode_inputs)::fluidcode_input
+        type(fluidcode_outputs)::fluidcode_output
+        ! folder
+        fluidcode_input%path='solps_test'
+        ! casename
+        fluidcode_input%casename_base='solps1'
+        ! first restore state file
+        fluidcode_input%read_state_file="no"
+        ! species information and allocate
+        fluidcode_input%nspc_fluid=1
+        call alloc_fluidcode_input(fluidcode_input)
+        fluidcode_input%namespc(1:fluidcode_input%nspc_fluid)="D"
+        fluidcode_input%indexspc(1:fluidcode_input%nspc_fluid)=1
+        ! index of wall element
+        fluidcode_input%wall_idx=1
+        fluidcode_input%Ndump_space=100
+        fluidcode_input%Ndump_time=100
+        ! solps time step
+
+        ! time step FACE
+        fluidcode_input%dt0_face=1e-4
+
+        ! input file FACE
+        fluidcode_input%input_file="test_solpsiter.face"
+        !  iteration
+        do iter=1,10
+        write(iout,*) "SOLPS: iteration =", iter
+        fluidcode_input%iter=iter
+
+        write(str,'(a,a1,i0,a1,i0)') trim(fluidcode_input%casename_base),'_',(fluidcode_input%wall_idx),'_',fluidcode_input%iter
+
+        fluidcode_input%casename=trim(str)
+
+        ! save the final state in
+        fluidcode_input%final_state_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//"_final.state"
+
+        !Gamma in
+        if (mod(iter,2).eq.0) then
+        fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e21
+        fluidcode_input%tempwall=800        ! temperature of the wall from fluid code
+        fluidcode_input%dt=1e-3
+        else
+        fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e20
+        fluidcode_input%tempwall=500        ! temperature of the wall from fluid code
+        fluidcode_input%dt=1e-2
+
         endif
+        ! solps time
+        fluidcode_input%time=(fluidcode_input%iter-1)*fluidcode_input%dt
 
-    end subroutine
+
+        fluidcode_input%qflx_in=0           ! Heat flux from fluid code
+
+        fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        fluidcode_input%log_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//".log"
+fluidcode_input%log_file="no"
+        call wrapper_FACE(fluidcode_input,fluidcode_output)
+        fluidcode_input%read_state_file=fluidcode_input%final_state_file
+        enddo
+
+        call dealloc_fluidcode_input(fluidcode_input)
+        call dealloc_fluidcode_output(fluidcode_output)
+
+    end subroutine FACE_from_fluidcode
+
+    subroutine FACE_standalone
+     type(FACE_inputs)::face_input
+      type(FACE_outputs)::face_output
+
+    call read_arguments(face_input)
+    call FACE_main(face_input,face_output)
+    end subroutine FACE_standalone
 
 
-
-    subroutine wrapper_FACE(face_input,fluidcode_input)
-        type(FACE_inputs),intent(out)::face_input
+    subroutine wrapper_FACE(fluidcode_input,fluidcode_output)
+        type(FACE_inputs)::face_input
+        type(FACE_outputs)::face_output
         type(fluidcode_inputs), intent(in) :: fluidcode_input
-        face_input%logfile="no"
-        face_input%input_filename=default_inputfile
-        face_input%run_mode='default'
-        face_input%path='run_FACE'
-        face_input%casename='casename'
-        face_input%fluidcode_input=fluidcode_input
+        type(fluidcode_outputs), intent(out) :: fluidcode_output
+        call read_arguments(face_input)
+        call fluidcode2FACE(face_input,fluidcode_input)
+        call FACE_main(face_input,face_output)
+        call FACE2fluidcode(face_output,fluidcode_output)
+        !call trace_FACE_flx(fluidcode_input,fluidcode_output)
     end subroutine wrapper_FACE
 
-
-    subroutine set_fluidcode_input(fluidcode_input)
+subroutine trace_FACE_flx(fluidcode_input,fluidcode_output)
         type(fluidcode_inputs)::fluidcode_input
-        character(200)::str
-        !    type fluidcode_input
-        !        integer                  :: wall_idx        ! Index of the wall stratum
-        !        integer                  :: iter            ! Fluid code iteration
-        !        real(DP)                 :: time            ! Fluid code time
-        !        real(DP)                 :: dt              ! Time step of the fluid
-        !        real(DP)                 :: nspc            ! Number of incoming species from fluid code
-        !        character(Lname),allocatable :: namespc(:)  ! Name of the incoming species from fluid code
-        !        real(DP),allocatable     :: Gammain(:)      ! Particle flux'
-        !        real(DP),allocatable     :: Emean(:)        ! Average energy of incoming particle enrg'
-        !        real(DP)                 :: Qin_            ! Heat flux from fluid code
-        !        character(Lfn)           :: history_file    ! restart from file history
-        !        real(DP)                 :: tempwall        ! temperature of the wall from fluid code
-        !        character(15)            :: solve_heat_eq   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
-        !    end type fluidcode_input
+        type(fluidcode_outputs)::fluidcode_output
+        integer ::unit_trace_flx,proc=0,ios
+        character(string_length):: filename
 
-        fluidcode_input%wall_idx=1
-        fluidcode_input%iter=1
-        fluidcode_input%time=1e-5
-        fluidcode_input%dt=1e-2
-        fluidcode_input%nspc=1
-        allocate(fluidcode_input%namespc(fluidcode_input%nspc))
-        fluidcode_input%namespc(1:fluidcode_input%nspc)="D"
-        allocate(fluidcode_input%Gammain(fluidcode_input%nspc))
-        fluidcode_input%Gammain(1:fluidcode_input%nspc)=1e20
-        allocate(fluidcode_input%Emean(fluidcode_input%nspc))
-        fluidcode_input%Emean(1:fluidcode_input%nspc)=100
-        fluidcode_input%Qin=0           ! Heat flux from fluid code
-        fluidcode_input%history_file="no"    ! restart from file history
-        fluidcode_input%tempwall=700        ! temperature of the wall from fluid code
-        fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
-        fluidcode_input%casename='solps'
-        write(str,'(a,a,i4.4,a,i6.6)') fluidcode_input%casename,'_',fluidcode_input%wall_idx,'_',fluidcode_input%iter
-        fluidcode_input%casename=trim(str)
-    !    end type fluidcode_input
-    end subroutine set_fluidcode_input
+        call set_unit(unit_trace_flx)
+        filename=trim(fluidcode_input%path)//"/FACE.flux"
+        open (unit_trace_flx, file=trim(filename),status='old', position='APPEND',iostat=ios)
+        if (ios.ne.0) then
+        open (unit_trace_flx, file=trim(filename),status='new',iostat=ios)
+        if (ios.ne.0) then
+         call face_error('Cannot open trace_FACE file ', trim(filename))
+         else
+         write(unit_trace_flx,'(3a4,5a12)') "proc", &
+         "idx_wall", &
+         "iter_fc", &
+         "G_in", &
+         "G_des",&
+         "aveG_des",&
+         "maxG_des",&
+          "G_perm"
+        endif
+        endif
+
+           write(unit_trace_flx,'(3i4,5es12.3)') proc,&
+           fluidcode_input%wall_idx,&
+           fluidcode_input%iter,&
+           fluidcode_input%inflx_in(1),&
+           fluidcode_output%outgassing_flux%Gdes,&
+           fluidcode_output%outgassing_flux%ave_Gdes,&
+           fluidcode_output%outgassing_flux%max_Gdes,&
+           fluidcode_output%outgassing_flux%Gpermeation
+
+           close(unit_trace_flx)
+
+        end subroutine trace_FACE_flx
+
 end module modFACE_interface

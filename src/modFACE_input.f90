@@ -2,11 +2,9 @@ module modFACE_input
     use modface_header
     use modFACE_output
     use modFACE_parser
-    use modFACE_interface
     use modFACE_allocate
     implicit none
     save
-
 
     interface  get_keyword_value
         module procedure get_keyword_value_i
@@ -30,7 +28,7 @@ contains
         ! get the number of line in the file
         call get_nlines()
         ! allocate array of string
-        write(iout,*) 'call 1'
+
         if (.not.allocated(input_lines)) allocate(input_lines(nlines))
 
         rewind(iuinput)
@@ -38,77 +36,124 @@ contains
         call get_inputlines()
 
         close(iuinput)
-        write(iout,*) 'Reading of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Reading of input file "', trim(filename) ,'" : DONE '
         ! init input values
         call init_input_single
-        call parse_keywords()
+        call check_keywords
+        call parse_keywords
+         call write_input_log
         deallocate(input_lines)
-         write(iout,*) 'Parsing of input file "', trim(filename) ,'" : DONE '
+        if (verbose_input)  write(iout,*) 'Parsing of input file "', trim(filename) ,'" : DONE '
     end subroutine read_inputfile
 
 
 
     subroutine check_value_input(keyword)
-
+        integer ::k,kk
         character(*) :: keyword
 
-        if (keyword.eq.'n_species') then
+
+        select case(keyword)
+
+        case('n_species')
             if (nspc<1) then
                 write(iout,*) "ERROR: n_species must be at least equal to 1"
                 stop
             endif
             call alloc_input_species()
-        endif
 
-        if (keyword.eq.'order_solver') then
+        !check order of the numerical solver
+        case('order_solver')
             if (order_solver.ne.1.and.order_solver.ne.2.and.order_solver.ne.5) then
-                write(iout,*) "ERROR: order of the solver must be 1 2 or 5. current order : ", order_solver
-                stop 'Exiting FACE...'
+                call face_error("order of the solver must be 1 2 or 5. current order : ", order_solver)
             else
             ndt=order_solver+1
-            write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
+            if (verbose_init) write(iout,*) ' order of numerical order: ', order_solver, ' -> ndt =', ndt
             endif
 
-        endif
 
-        if (keyword.eq.'solve_heat_equation') then
+        ! solve heat equation
+        case('solve_heat_equation')
             if (solve_heat_eq.ne."no".AND.solve_heat_eq.ne."yes") then
                 write(iout,*) "ERROR: solve_heat_equation must be yes or no"
                 stop
             endif
-        endif
 
-        if (keyword.eq.'steady_state') then
-            if (stdst.ne."no".AND.stdst.ne."yes") then
+
+        ! check steady-state value
+        case('steady_state')
+            if (steady_state.ne."no".AND.steady_state.ne."yes") then
                 write(iout,*) "ERROR: steady_state must be yes or no"
                 stop
             endif
-        endif
 
+
+        ! check that name of species are unique
+        case('species_name')
+           do k=1,nspc
+             do kk=1,nspc
+                 if (k.ne.kk.and.namespc(k).eq.namespc(kk)) then
+                call face_error("two species have the same name: k=",k," and k=",kk," namespc=",namespc(k),&
+                " and namespc=",namespc(kk))
+            endif
+       enddo
+       enddo
+
+       ! set active_cap (true or false)
+        case('active_cap')
+         if(active_cap_string.eq."yes") then
+         active_cap=.true.
+         elseif (active_cap_string.eq."no") then
+         active_cap=.false.
+         else
+         call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
+         endif
+
+! check that the reduction factor is >0 and lt 1
+case('reduction_factor_dt')
+if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
+call face_error("reduction factor dt cannot be <=0 and >1: reduction factor dt=",reduction_factor_dt)
+endif
+end select
     end subroutine check_value_input
+
+    subroutine check_keywords
+    integer :: i
+    character(string_length) :: str
+    do i=1,nlines
+    str=input_lines(i)%keyword
+    call StripFrontSpaces(str)
+        if (find_keyword_help(trim(str)).eq.-1.and.str(1:1).ne.'#') then
+            call face_error('Unknown keyword "', trim(input_lines(i)%keyword) ,'"at line=',i,&
+            ' (see list of keywords --list-keywords or -lk)')
+        endif
+    enddo
+    end subroutine check_keywords
 
 
     subroutine parse_keywords()
         if (verbose_input) write(iout,*) "Parsing keyword"
         call get_keyword_value('order_solver',order_solver)
-        call get_keyword_value('restart_mode',restart_mode)
+        call get_keyword_value('read_restart_file',read_restart_file)
+        call get_keyword_value('read_state_file',read_state_file)
         call get_keyword_value('wall_thickness',length)
-        call get_keyword_value('steady_state', stdst)
-        call get_keyword_value('start_time', time0)
+        call get_keyword_value('steady_state', steady_state)
+        call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
-        call get_keyword_value('simulation_end_time', toff)
-        call get_keyword_value('min_dt', dtmin)
-        call get_keyword_value('timestep_factor', cdt)
+        call get_keyword_value('end_time', end_time)
+        call get_keyword_value('dt', dt0_face)
+        call get_keyword_value('min_dt', min_dt_face)
         call get_keyword_value('filter_freq', nucut)
-        call get_keyword_value('dump_space_dt', tspc)
-        call get_keyword_value('dump_time_dt', ttm)
-        call get_keyword_value('dump_restart_dt', tstr)
+        call get_keyword_value('dump_space_dt', dump_space_dt)
+        call get_keyword_value('dump_time_dt', dump_time_dt)
+        call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
         call get_keyword_value('solve_heat_equation', solve_heat_eq)
         call get_keyword_value('n_species', nspc)
 
-        call get_keyword_value('n0_max', dens0)
+        call get_keyword_value('species_name', namespc)
+        call get_keyword_value('n0', dens0)
         call get_keyword_value('n0_profile', gprof)
         call get_keyword_value('n0_xmax', gxmax)
         call get_keyword_value('n0_width', gsigm)
@@ -118,26 +163,30 @@ contains
         call get_keyword_value('ED', edif)
         call get_keyword_value('Etr', etr )
         call get_keyword_value('Edt', edtr)
-
-        call get_keyword_value('ns_max', dsrfm)
+        call get_keyword_value('left_surface_model', left_surface_model)
+        call get_keyword_value('right_surface_model', right_surface_model)
         call get_keyword_value('ns0_left', dsrfl0)
         call get_keyword_value('ns0_right', dsrfr0)
-        call get_keyword_value('Ech_left', echl )
-        call get_keyword_value('Ech_right', echr)
-        call get_keyword_value('Q_ch_left', qchl)
-        call get_keyword_value('Q_ch_right', qchr)
-        call get_keyword_value('Eab_left', ebl)
-        call get_keyword_value('Eab_right', ebr )
-        call get_keyword_value('Es_left', esl)
-        call get_keyword_value('Es_right', esr)
+        call get_keyword_value('ns_max', dsrfm)
+        call get_keyword_value('Eabs_left', Eabs_l )
+        call get_keyword_value('Eabs_right', Eabs_r)
+        call get_keyword_value('Edes_left', Edes_l)
+        call get_keyword_value('Edes_right', Edes_r)
+        call get_keyword_value('Eb_left', Eb_l)
+        call get_keyword_value('Eb_right', Eb_r )
+        call get_keyword_value('Eads_left', Eads_l)
+        call get_keyword_value('Eads_right', Eads_r)
         call get_keyword_value('nu0', nu)
+        call get_keyword_value('implantation_model', implantation_model)
+        call get_keyword_value('implantation_depth', implantation_depth)
+        call get_keyword_value('implantation_width', implantation_width)
         call get_keyword_value('Eimpact_ion', enrg)
-        call get_keyword_value('Gamma_min', inflx_min)
-        call get_keyword_value('Gamma_max', inflx_max)
-        call get_keyword_value('pressure_neutral', prg)
-        call get_keyword_value('temp_neutral', tg)
+        call get_keyword_value('Gamma_in', inflx_in)
+        call get_keyword_value('Gamma_in_max', inflx_in_max)
+        call get_keyword_value('pressure_neutral', gas_pressure)
+        call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
-
+        call get_keyword_value('active_cap', active_cap_string)
         call get_keyword_value('min_ablation_velocity', cero_min)
         call get_keyword_value('max_ablation_velocity', cero_max)
         call get_keyword_value('sputtering_yield', gamero)
@@ -159,91 +208,35 @@ contains
         call get_keyword_value('first_ramp_end_time', t1)
         call get_keyword_value('second_ramp_start_time', t2)
         call get_keyword_value('second_ramp_end_time', t3)
-        call get_keyword_value('pulse_period', tp)
+        call get_keyword_value('pulsed_flux', pulsed_flux)
+        call get_keyword_value('pulse_period', tpulse)
+        call get_keyword_value('iter_solver_max', iter_solver_max)
+        call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
+          call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
+
+        call get_keyword_value('Nprint_run_info', Nprint_run_info)
+        call get_keyword_value('solver_eps',solver_eps)
+        call get_keyword_value('solver_udspl',solver_udspl)
+        call get_keyword_value('solver_fdspl',solver_fdspl)
+        call get_keyword_value('solver_gdspl',solver_gdspl)
+        call get_keyword_value('solver_fstp',solver_fstp)
+
         if (verbose_input) write(iout,*) "Parsing keyword: DONE"
     end subroutine parse_keywords
 
    subroutine write_input_log()
-        character(200)::filename
-        integer::ios
-        call set_ifile(ifile_inputlog)
-        write (filename, '(a,a,a, i2.2, a)') trim(path_folder),trim(casename),'_input.face'
-        open (ifile_inputlog, file=trim(filename),status='replace', iostat=ios)
+        character(string_length)::filename
+        integer::ios,i
+        call set_unit(unit_inputlog)
+        filename= trim(path_folder)//trim(casename)//'_input.log'
+        open (unit_inputlog, file=trim(filename),status='replace', iostat=ios)
         if (ios.ne.0) then
-        write (iout,*) ' *** Cannot open file ', trim(filename)
-        stop 'Exiting FACE...'
+        call face_error('Cannot open file ', trim(filename))
         else
-        call write_input_log_keyword('order_solver',order_solver)
-        call write_input_log_keyword('restart_mode',restart_mode)
-        call write_input_log_keyword('wall_thickness',length)
-        call write_input_log_keyword('steady_state', stdst)
-        call write_input_log_keyword('start_time', time0)
-        call write_input_log_keyword('temp_ramp_start_time', tramp0)
-        call write_input_log_keyword('temp_ramp_stop_time', tramp1)
-        call write_input_log_keyword('simulation_end_time', toff)
-        call write_input_log_keyword('min_dt', dtmin)
-        call write_input_log_keyword('timestep_factor', cdt)
-        call write_input_log_keyword('filter_freq', nucut)
-        call write_input_log_keyword('dump_space_dt', tspc)
-        call write_input_log_keyword('dump_time_dt', ttm)
-        call write_input_log_keyword('dump_restart_dt', tstr)
-        call write_input_log_keyword('temp_ramp_filename', framp)
-        call write_input_log_keyword('solve_heat_equation', solve_heat_eq)
-        call write_input_log_keyword('n_species', nspc)
-
-        call write_input_log_keyword('n0_max', dens0)
-        call write_input_log_keyword('n0_profile', gprof)
-        call write_input_log_keyword('n0_xmax', gxmax)
-        call write_input_log_keyword('n0_width', gsigm)
-        call write_input_log_keyword('n_max', densm)
-
-        call write_input_log_keyword('D0', cdif0)
-        call write_input_log_keyword('ED', edif)
-        call write_input_log_keyword('Etr', etr )
-        call write_input_log_keyword('Edt', edtr)
-
-        call write_input_log_keyword('ns_max', dsrfm)
-        call write_input_log_keyword('ns0_left', dsrfl0)
-        call write_input_log_keyword('ns0_right', dsrfr0)
-        call write_input_log_keyword('Ech_left', echl )
-        call write_input_log_keyword('Ech_right', echr)
-        call write_input_log_keyword('Q_ch_left', qchl)
-        call write_input_log_keyword('Q_ch_right', qchr)
-        call write_input_log_keyword('Eab_left', ebl)
-        call write_input_log_keyword('Eab_right', ebr )
-        call write_input_log_keyword('Es_left', esl)
-        call write_input_log_keyword('Es_right', esr)
-        call write_input_log_keyword('nu0', nu)
-        call write_input_log_keyword('Eimpact_ion', enrg)
-        call write_input_log_keyword('Gamma_min', inflx_min)
-        call write_input_log_keyword('Gamma_max', inflx_max)
-        call write_input_log_keyword('pressure_neutral', prg)
-        call write_input_log_keyword('temp_neutral', tg)
-        call write_input_log_keyword('mass', mass)
-
-        call write_input_log_keyword('min_ablation_velocity', cero_min)
-        call write_input_log_keyword('max_ablation_velocity', cero_max)
-        call write_input_log_keyword('sputtering_yield', gamero)
-        call write_input_log_keyword('mat_temp_ramp_start', temp0)
-        call write_input_log_keyword('mat_temp_ramp_stop', temp1)
-        call write_input_log_keyword('lattice_constant', lambda)
-        call write_input_log_keyword('cristal_volume_factor', cvlm)
-        call write_input_log_keyword('cristal_surface', csrf)
-        call write_input_log_keyword('lattice_length_factor', clng)
-        call write_input_log_keyword('n_cells', ngrd)
-        call write_input_log_keyword('cell_scaling_factor', alpha)
-        call write_input_log_keyword('thermal_conductivity', thcond)
-        call write_input_log_keyword('heat_capacity', cp)
-        call write_input_log_keyword('density', rho)
-        call write_input_log_keyword('emissivity', emiss)
-        call write_input_log_keyword('heat_formation', qform)
-        call write_input_log_keyword('min_radiation_power', rad_min)
-        call write_input_log_keyword('max_radiation_power', rad_max)
-        call write_input_log_keyword('first_ramp_end_time', t1)
-        call write_input_log_keyword('second_ramp_start_time', t2)
-        call write_input_log_keyword('second_ramp_end_time', t3)
-        call write_input_log_keyword('pulse_period', tp)
-        close(ifile_inputlog)
+        do i=1,nlines!
+        write(unit_inputlog, '(a50,a3,a120)') adjustl(trim(input_lines(i)%keyword)),' : ',adjustl(trim(input_lines(i)%data))
+        enddo
+        close(unit_inputlog)
   endif
     end subroutine write_input_log
 
@@ -298,7 +291,8 @@ contains
     str=str0
     endif
     end subroutine set_str
-    !read keyward values for species
+
+    !read keyword values for species
     subroutine get_keyword_value_species_i(keyword,variable)
         character(*)::keyword
         type(input_valsp)::inputval
@@ -308,10 +302,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading int:',keyword
+        if (verbose_input) write(*,*) 'reading int:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'i')
         variable=inputval%i
-        if (verbose_input) write(iout,*) 'int:',keyword,'=',(variable(k),k=1,nspc) ,' : ' ,inputval%status
+        if (verbose_input) write(iout,*) 'int:',trim(keyword),'=',(variable(k),k=1,nspc) ,' : ' ,trim(inputval%status)
         call check_value_input(keyword)
 
         deallocate(inputval%s)
@@ -330,10 +324,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading real:',keyword
+        if (verbose_input) write(*,*) 'reading real:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'r')
         variable=inputval%r
-        if (verbose_input) write(iout,*) 'real:',keyword,'=',(variable(k),k=1,nspc)  ,' : ' ,inputval%status
+        if (verbose_input) write(iout,*) 'real:',trim(keyword),'=',(variable(k),k=1,nspc)  ,' : ' ,trim(inputval%status)
         call check_value_input(keyword)
         deallocate(inputval%s)
         deallocate(inputval%r)
@@ -350,10 +344,10 @@ contains
         allocate(inputval%s(nspc))
         allocate(inputval%r(nspc))
         allocate(inputval%i(nspc))
-        if (verbose_input) write(*,*) 'reading real:',keyword
+        if (verbose_input) write(*,*) 'reading real:',trim(keyword)
         call assign_keyword_value_species(keyword,inputval,'s')
         variable=inputval%s
-if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : ' ,inputval%status
+if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc) ,' : ' ,trim(inputval%status)
         deallocate(inputval%s)
         deallocate(inputval%r)
         deallocate(inputval%i)
@@ -365,18 +359,18 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
     subroutine init_input_single()
 
-        call init_zero(stdst)
+        call init_zero(steady_state)
         call init_zero(length)
-        call init_zero(time0)
+        call init_zero(start_time)
         call init_zero(tramp0)
         call init_zero(tramp1)
-        call init_zero(toff)
-        call init_zero(dtmin)
-        call init_zero(cdt)
+        call init_zero(end_time)
+        call init_zero(dt0_face)
+!        call init_zero(cdt)
         call init_zero(nucut)
-        call init_zero(tspc)
-        call init_zero(ttm)
-        call init_zero(tstr)
+        call init_zero(dump_time_dt)
+        call init_zero(dump_space_dt)
+        call init_zero(dump_restart_dt)
         call init_zero(framp)
         call init_zero(solve_heat_eq)
         call init_zero(cero_min)
@@ -400,7 +394,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
         call init_zero(t1)
         call init_zero( t2)
         call init_zero( t3)
-        call init_zero(tp)
+        call init_zero(tpulse)
         if (verbose_input) write(iout,*) 'Initialization of single input parameters: OK'
     end subroutine init_input_single
 
@@ -423,7 +417,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
     !      write (6, 1230) t3
     !      write (6, 1240) tp
     !
-    !                write (6, 1010) length, time0, tramp0, tramp1, toff, dtmin
+    !                write (6, 1010) length, start_time, tramp0, tramp1, end_time, dtmin
     !1010  format (' length of the simulation region: ', 1pe12.5, ' m'/
     !     + ' start time: ', 1pe12.5, ' s'/
     !     + ' temperature ramp start: ', 1pe12.5, ' s'/
@@ -449,13 +443,13 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
     !      write (6, 1050) (i, enrg(i), i=1,nspc)
     !1050  format (' impact energy of species ', i2, ' is ',
     !     + 1pe12.5, ' eV')
-    !      write (6, 1060) (i, inflx_min(i), i=1,nspc)
+    !      write (6, 1060) (i, inflx_in(i), i=1,nspc)
     !1060  format (' min influx of species ', i2, ' is', 1pe12.5,
     !     +        ' m^-2 s^-1')
-    !      write (6, 1061) (i, inflx_max(i), i=1,nspc)
+    !      write (6, 1061) (i, inflx_in_max(i), i=1,nspc)
     !1061  format (' max influx of species ', i2, ' is', 1pe12.5,
     !     +        ' m^-2 s^-1')
-    !      write (6, 1070) (i, prg(i), i=1,nspc)
+    !      write (6, 1070) (i, gas_pressure(i), i=1,nspc)
     !1070  format (' ext. pressure of species ', i2, ' is', 1pe12.5, ' Pa')
     !      write (6, 1080) (i, tg(i), i=1,nspc)
     !1080  format (' ext. temperature of species ', i2, ' is', 1pe12.5,
@@ -485,21 +479,7 @@ if (verbose_input) write(iout,*) 'str:',keyword,'=',(variable(k),k=1,nspc) ,' : 
 
 
 
-    subroutine get_input(face_input)
-        type(face_inputs):: face_input
-        if (.not.allocated(input_lines)) then
-        write(iout,*) 'check 0'
-        else
-         write(iout,*) 'check 0: allocated'
-        endif
-        call init_input()
-        if (face_input%read_input_file) then
-            call read_inputfile(face_input%input_filename)
-        else
-            call set_input_parameters()
-        endif
-        call write_input_log
-    end subroutine get_input
+
 
     subroutine set_input_parameters
     write(iout,*) "ERROR: set_input_parameters no implemented yet..."

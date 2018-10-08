@@ -1,72 +1,45 @@
     module modFACE_output
     use modFACE_header
+    use modFACE_error
      implicit none
      save
-    integer:: iout=6
-    integer::ifile_restart
-    integer:: ifile_heatdata
-    integer :: ifile_voldata
-    integer:: ifile_surfdata
-    integer::ifile_store
-    integer::ifile_log
-    integer:: ifile_inputlog
+
+
+    integer:: unit_inputlog
     integer::current_ifile=10
-    integer:: ifile_testpath
 
     public::iout,timestring
     contains
 
         subroutine init_log(logfile_)
         character(*)::logfile_
+        character(string_length)::filename
         integer ios
             if (logfile_.eq."no") then
                 iout=6 !default output unit
             elseif (logfile_.eq."yes") then
-                call set_ifile(iout)
-                open (iout, file='log_FACE', status='replace', iostat=ios)
+                call set_unit(iout)
+                filename=trim(path_folder)//trim(casename)//'.log'
+                open (iout, file=trim(filename), status='replace', iostat=ios)
                 if (ios.ne.0) then
-                    write (*, '(2a)') 'ERROR: Cannot open log file:', 'log_FACE'
-                    stop
+                    call face_error('Cannot open log file:',trim(filename))
                 endif
             else
-                call set_ifile(iout)
-                open (iout, file=logfile_, status='replace', iostat=ios)
+                call set_unit(iout)
+                open (iout, file=trim(logfile_), status='replace', iostat=ios)
                 if (ios.ne.0) then
-                    write (*, '(2a)') 'ERROR: Cannot open log file:', logfile_
-                    stop
+                    call face_error('Cannot open log file:', trim(logfile_))
                 endif
             endif
             if(verbose_init) write(iout,*) "iout=",iout
         end subroutine init_log
 
-        ! set unit numbers for various files opened by FACE
-        subroutine init_ifile()
-
-            call set_ifile(ifile_restart)
-            if(verbose_init) write(iout,*) "ifile_restart=",ifile_restart
-
-            call set_ifile(ifile_heatdata)
-            if(verbose_init) write(iout,*) "ifile_heatdata=",ifile_heatdata
-
-            call set_ifile(ifile_voldata)
-            if(verbose_init) write(iout,*) "ifile_voldata=",ifile_voldata
-
-            call set_ifile(ifile_store)
-            if(verbose_init) write(iout,*) "ifile_istore=",ifile_store
-
-            call set_ifile(ifile_inputlog)
-            if(verbose_init) write(iout,*) "ifile_inputlog=",ifile_inputlog
-
-            call set_ifile(ifile_testpath)
-            if(verbose_init) write(iout,*) "ifile_testpath=",ifile_testpath
-
-        end subroutine init_ifile
-
-subroutine set_ifile(ifile)
+subroutine set_unit(ifile)
       integer ifile
       logical unit_open
       unit_open = .true.
-      Do While (Unit_open.and.current_ifile.le.max_ifile)
+      current_ifile=10
+      Do While (unit_open.and.current_ifile.le.max_ifile)
          current_ifile=current_ifile + 1
          Inquire (Unit = current_ifile, Opened = Unit_open)
       End Do
@@ -80,7 +53,7 @@ subroutine set_ifile(ifile)
       return
 
 
-   end subroutine set_ifile
+   end subroutine set_unit
 
 
 
@@ -207,28 +180,19 @@ subroutine open_timedata_file
 !       '           04:densR',&
 !       '           05:NsrfL',&
 !       '           06:NsrfR',&
-!       '           07:GdesL',&
-!       '           08:GdesR',&
+!       '           07:GdEads_l',&
+!       '           08:GdEads_r',&
 !       '            09:Qnty',&
 !       '             10:Src',&
 !       '             11:Rct',&
-!       '             12:Rtd',&
+!       '             12:rate_d',&
 !       '           13:inflx',&
 !       '            14:qrad'&
 !      enddo
 end subroutine open_timedata_file
 
-subroutine print_timestep_info
-character(200)::myfmt
-write(myfmt,*) "('iter=', 1I6,' time=', 1pe12.4e2, ' s;   T_l=', 1pe12.4e2, ' K;   T_r=', 1pe12.4e2, ' K;   &
- dt=', 1pe12.4e2, ' s, |f|=',1pe12.4e2)"
-      write (iout, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt,normf
 
-end subroutine print_timestep_info
 
-subroutine print_milestone(str)
-character(*)::str
-write(iout,"('--- ',a,' ---')") str
-end subroutine print_milestone
+
 
     end module modFACE_output
