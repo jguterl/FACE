@@ -40,6 +40,7 @@
      logical :: verbose_help=.false.
      logical :: verbose_version=.false.
           logical :: verbose_header=.false.
+          logical :: verbose_surface=.false.
     logical:: enforce_error=.true.
 
 
@@ -50,7 +51,7 @@
     integer:: iout=6
       real(DP) :: tcpustart, tcpufinish,walltime_start,walltime_end
      integer :: Nprint_run_info=2 ! print info on current run every Nprint_run_info steps
-     real(DP),parameter :: min_rate_surface=1d-20
+     real(DP),parameter :: min_rate_surface=1.0d-20
       ! **  Some physical and mathematical constants
       real(DP),parameter ::ee=1.602176462d-19
       real(DP),parameter ::eps0=8.854187817d-12
@@ -79,7 +80,7 @@
 
       real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3
       real(DP) ::solver_fstp=1.d-1
-      integer :: iter_solver_max=100
+      integer :: iter_solver_max=150
       logical :: finalcheck=.true.
 
       character(string_length) :: default_inputfile="default_inputfile.face"
@@ -96,6 +97,7 @@
       real(DP),allocatable:: x(:)
       real(DP),allocatable:: dx(:)
       real(DP) ::alpha
+      character(string_length) ::grid_type
       ! time
       real(DP):: dt_face    !>@var current solver time step
       real(DP):: min_dt_face   !>@var current solver time step
@@ -126,7 +128,7 @@
       logical:: dump_time=.true.
       logical:: dump_restart=.true.
 
-      real(DP):: nucut=0
+      real(DP):: nucut=1d99
       real(DP):: delta=0
 
       integer:: iter_solver=0 ! #of solver iterations at each time step
@@ -253,6 +255,9 @@
 
 
 !     Boundary species parameters
+
+      real(DP),allocatable::order_desorption_left(:)
+      real(DP),allocatable::order_desorption_right(:)
       real(DP),allocatable::Eabs_l(:)
       real(DP),allocatable::Edes_l(:)
       real(DP),allocatable::Eb_l(:)

@@ -34,6 +34,7 @@ contains
         call init_reactions
 
         if (verbose_init) call print_milestone('initialization done')
+        if (verbose_debug) call print_milestone('initialization done')
     end subroutine initialize
 
     subroutine init_misc()
@@ -147,7 +148,8 @@ contains
                 dx (j-1)=x(j)-x(j-1)
             enddo
             dx (ngrd)=dx(ngrd-1)
-        else
+        elseif (grid_type.eq."S") then
+
             ngrd2=ngrd/2
             if (mod(ngrd,2) .ne. 0) then
                 dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd2-2.d0)
@@ -177,17 +179,31 @@ contains
                 enddo
             endif
             dx (ngrd)=dx(ngrd-1)
+
+        elseif (grid_type.eq."A") then
+
+            dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd-2.d0)
+            x (0)=0.d0
+            dx(0)=dx0
+            do j=1,ngrd
+                x (j)=x(j-1)+dx(j-1)
+                dx(j)=dx(j-1)*alpha
+            enddo
+            dx (ngrd)=dx(ngrd-1)
+
+        else
+            call face_error('Unknown type of grid',grid_type)
         endif
         ! find index of depth
         do k=1,nspc
-        j_implantation_depth(k)=ngrd
-        do j=0,ngrd
-        if (x(j).gt.implantation_depth(k)+x(0)) then
-        j_implantation_depth(k)=j-1
-        exit
-        endif
-        enddo
-        if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
+            j_implantation_depth(k)=ngrd
+            do j=0,ngrd
+                if (x(j).gt.implantation_depth(k)+x(0)) then
+                    j_implantation_depth(k)=j-1
+                    exit
+                endif
+            enddo
+            if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
         enddo
         call write_grid
         if (verbose_init) write(iout,*) " -- Initialization x grid completed"
@@ -240,68 +256,98 @@ contains
         !      surface parameters
         if (verbose_init) write(iout,*) "Initialization boundary variables"
         do k=1,nspc
-            K0abs_l(k)=1.d0
-            K0des_l(k)=nu(k)*lambda*lambda*csrf
-            K0b_l(k)=nu(k)
-            K0ads_l(k)=nu(k)*lambda*clng
-            K0abs_r(k)=1.d0
-            K0des_r(k)=nu(k)*lambda*lambda*csrf
-            K0b_r(k)=nu(k)
-            K0ads_r(k)=nu(k)*lambda*clng
+
+
 
             if (mass(k)*gas_temp(k) .ne. 0.d0) then
                 j0(k)=j0(k)+gas_pressure(k)/sqrt(twopi*mass(k)*ee*gas_temp(k))
             endif
 
+
+            if (active_cap) then
+                tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
+                Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
+                tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
+                Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+            else
+                Edes_lc=Edes_l(k)
+                Edes_rc=Edes_r(k)
+            endif
             ! left
-            tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
-            Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
-            tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
-            Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
             if (left_surface_model(k).eq."S") then
+                K0abs_l(k)=1.d0
+                K0des_l(k)=nu(k)*lambda**(2*order_desorption_left(k)-2)*csrf
 
-            Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
-            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
-            Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
-            Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
-elseif (left_surface_model(k).eq."N") then
-        K0abs_l(k)=min_rate_surface
-            K0des_l(k)=min_rate_surface
-            K0b_l(k)=min_rate_surface
-            K0ads_l(k)=min_rate_surface
+                K0b_l(k)=nu(k)
+                K0ads_l(k)=nu(k)*lambda*clng
+                Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
+                Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+                Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
+                Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
+            elseif (left_surface_model(k).eq."B") then
 
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=min_rate_surface
-        Kb_l(k)=min_rate_surface
-        Kads_l(k)=min_rate_surface
-        else
-        call face_error("Unknown left surface model:",left_surface_model(k))
-        endif
+                K0abs_l(k)=min_rate_surface
+                K0des_l(k)=nu(k)*lambda**(3*order_desorption_left(k)-2)*csrf
+                if (verbose_surface) then
+                    write(iout,*) 'init: K0des_l(k)',K0des_l(k),'nu(k)=',nu(k),'csrf=',csrf,' lambda=',lambda
+                endif
+                K0b_l(k)=min_rate_surface
+                K0ads_l(k)=min_rate_surface
+
+                Kabs_l(k)=min_rate_surface
+                Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+                if (verbose_surface) then
+                    write(iout,*) 'init: Kdes_l(k)',Kdes_l(k)
+                endif
+                Kb_l(k)=min_rate_surface
+                Kads_l(k)=min_rate_surface
+            elseif (left_surface_model(k).eq."N") then
+                K0abs_l(k)=min_rate_surface
+                K0des_l(k)=min_rate_surface
+                K0b_l(k)=min_rate_surface
+                K0ads_l(k)=min_rate_surface
+                Kabs_l(k)=min_rate_surface
+                Kdes_l(k)=min_rate_surface
+                Kb_l(k)=min_rate_surface
+                Kads_l(k)=min_rate_surface
+            else
+                call face_error("Unknown left surface model:",left_surface_model(k))
+            endif
 
             !right
             if (right_surface_model(k).eq."S") then
-!                Kabs_r(k)=j0(k)*K0abs_r(k) *exp(-     ee* Eabs_r(k)          /(kb*temp(ndt,ngrd)))
-!                Kdes_r(k)=2.d0 *K0des_r(k) *exp(-2.d0*ee*(Eabs_r(k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
-!                Kb_r(k)=      K0b_r(k)*exp(-     ee*(Eb_r (k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
-!                Kads_r(k)=      K0ads_r(k) *exp(-     ee*(Eb_r (k)-Eads_r  (k))/(kb*temp(ndt,ngrd)))
 
-            Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
-            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
-            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+                K0abs_r(k)=1.d0
+                K0des_r(k)=nu(k)*lambda**(2*order_desorption_right(k)-2)*csrf
+                K0b_r(k)=nu(k)
+                K0ads_r(k)=nu(k)*lambda*clng
+                Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
+                Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+                Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+                Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+            elseif (right_surface_model(k).eq."B") then
+                K0abs_r(k)=min_rate_surface
+                K0des_r(k)=nu(k)*lambda**(3*order_desorption_right(k)-2)*csrf
+                K0b_r(k)=min_rate_surface
+                K0ads_r(k)=min_rate_surface
 
-elseif (right_surface_model(k).eq."N") then
-        Kabs_r(k)=min_rate_surface
-        Kdes_r(k)=min_rate_surface
-        Kb_r(k)=min_rate_surface
-        Kads_r(k)=min_rate_surface
-            K0abs_r(k)=min_rate_surface
-            K0des_r(k)=min_rate_surface
-            K0b_r(k)=min_rate_surface
-            K0ads_r(k)=min_rate_surface
-        else
-        call face_error("unknown right surface model:",right_surface_model(k))
-        endif
+                Kabs_r(k)=min_rate_surface
+                Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+                Kb_r(k)= min_rate_surface
+                Kads_r(k)=min_rate_surface
+            elseif (right_surface_model(k).eq."N") then
+                Kabs_r(k)=min_rate_surface
+                Kdes_r(k)=min_rate_surface
+                Kb_r(k)=min_rate_surface
+                Kads_r(k)=min_rate_surface
+                K0abs_r(k)=min_rate_surface
+                K0des_r(k)=min_rate_surface
+                K0b_r(k)=min_rate_surface
+                K0ads_r(k)=min_rate_surface
+            else
+                call face_error("unknown right surface model:",right_surface_model(k))
+            endif
+
             do i=1,ndt
                 Gsrf_l(i,k)=0.d0
                 Gsrf_r(i,k)=0.d0
@@ -319,19 +365,35 @@ elseif (right_surface_model(k).eq."N") then
 
 
                 ! left
-                Gabs_l (i,k)=Kabs_l(k)
-                Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**2
-                Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
-                Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
+                if ((left_surface_model(k).eq."S").OR.(left_surface_model(k).eq."N")) then
+                    Gabs_l (i,k)=Kabs_l(k)
+                    Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**order_desorption_left(k)
+                    Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
+                    Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
+                elseif (left_surface_model(k).eq."B") then
+                    Gabs_l (i,k)=min_rate_surface
+                    Gdes_l (i,k)=Kdes_l(k) *dens(i,0   ,k)**order_desorption_left(k)
+                    Gb_l (i,k)  =min_rate_surface
+                    Gads_l (i,k)=min_rate_surface
+                endif
+
+
                 ! right
-                Gabs_r (i,k)=Kabs_r(k)
-                Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**2
+                if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
+                    Gabs_r (i,k)=Kabs_r(k)
+                    Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**order_desorption_right(k)
+                    Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
+                    Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
+                elseif (right_surface_model(k).eq."B") then
+                    Gabs_r (i,k)=min_rate_surface
+                    Gdes_r (i,k)=Kdes_r(k) *dens(i,ngrd   ,k)**order_desorption_right(k)
+                    Gb_r (i,k)  =min_rate_surface
+                    Gads_r (i,k)=min_rate_surface
+                endif
 
-                Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
-
-                Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
-
-                call compute_cap_factor_surface(k,i)
+                if (active_cap) then
+                    call compute_cap_factor_surface(k,i)
+                endif
 
                 if (solve_heat_eq .eq. "yes") then
                     jout(i,k)=jout(i,k)+Gdes_l(i,k)
@@ -427,9 +489,19 @@ elseif (right_surface_model(k).eq."N") then
                     ero_flx (i,j,k)=0.d0
                     cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
                     rate_d (i,j,k)=0.d0
-                    if (gprof(k) .eq. 'S'.or.gprof(k) .eq. 'F') then
+                    if (gprof(k) .eq. 'S') then
+                        if (x(j)>gxmax(k)) then
+                            dens(i,j,k)=0
+                        else
+                            dens(i,j,k)=dens0(k)
+                        endif
+                    elseif(gprof(k) .eq. 'F') then
                         dens(i,j,k)=dens0(k)
                     elseif(gprof(k) .eq. 'G') then
+                        if (gsigm(k)<=0) then
+                            call face_error('gsigm(k)<=0 for gaussian profile')
+                        endif
+
                         dens(i,j,k)=dens0(k) *exp(-0.5d0*abs((x(j)-gxmax(k))/gsigm(k))**2.d0)
                       !  if (verbose_init) write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
                     else
@@ -438,6 +510,7 @@ elseif (right_surface_model(k).eq."N") then
                     if (dens(i,j,k) .lt. 1.d5) then
                         dens(i,j,k)=1.d5
                     endif
+                    if (isnan(dens(i,j,k))) call face_error("dens(i,j,k) is NAN i=",i,"j=",j,"k=",k)
                 enddo
             enddo
         enddo

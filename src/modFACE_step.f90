@@ -10,9 +10,11 @@
 
 
           subroutine step()
+
+
               logical :: quick_convergence
 
-
+              if (verbose_debug) call print_milestone('step')
               ! update density and temp ndt->ndt-1
               call shift_array
               ! calculate new source and temperature both because of external influx with time dependecy)

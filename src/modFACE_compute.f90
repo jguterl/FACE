@@ -9,10 +9,13 @@ contains
     subroutine compute_f(u,f)
 
         integer i, j, k
-        real(DP),intent(in):: u(neq)
-        real(DP),intent(out):: f(neq)
+        real(DP),intent(in):: u(:)
+        real(DP),intent(out):: f(:)
 
         call compute_eq_rates(u)
+        ! ** check if NaN exist in u
+        call check_isNaN(u,"u compute_f")
+
         ! ** build f
         i=0
         ! *** loop over each species
@@ -63,6 +66,7 @@ contains
                     if (order_solver.eq.1) then
                         f(i)=u(i)-a11*dens(ndt-1,j,k)
                         f(i)=f(i)-a12*rate_d (ndt  ,j,k)*dt_face
+                       ! write(iout,*) 'rate_d(ndt,0,k)*dt_face',rate_d(ndt,0,k)*dt_face,'dens(ndt-1,j,k)=',dens(ndt-1,j,k)
                     !     --- 2nd order BDF ---
                     elseif (order_solver.eq.2) then
                         f(i)=u(i)-a21*dens(ndt-1,j,k)&
@@ -169,6 +173,9 @@ contains
         if (i .ne. neq) then
             call face_error('Wrong number of functions size(f)=', i, ' neq=',neq)
         endif
+        ! ** check if NaN exist in f
+        call check_isNaN(f,"f compute_f")
+
     end subroutine compute_f
 
     subroutine compute_gradient_dens(k)
@@ -329,10 +336,19 @@ subroutine compute_source_rate(k)
         !     --- surface ---
 
         ! reducing qch when close to surface saturation
-        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
-        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
-        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
-        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+        if (active_cap) then
+            tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
+            Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
+            tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
+            Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+        else
+            Edes_lc=Edes_l(k)
+            Edes_rc=Edes_r(k)
+        endif
+!        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
+!        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
+!        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
+!        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
         ! calculate rates of surface processes
         ! - left surface
          if (left_surface_model(k).eq."S") then
@@ -340,8 +356,12 @@ subroutine compute_source_rate(k)
         Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
         Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
         Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
-       Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
-
+        Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
+        elseif (left_surface_model(k).eq."B") then
+        Kabs_l(k)=min_rate_surface
+        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+        Kb_l(k)= min_rate_surface
+        Kads_l(k)= min_rate_surface
         elseif (left_surface_model(k).eq."N") then
         Kabs_l(k)=min_rate_surface
         Kdes_l(k)=min_rate_surface
@@ -350,42 +370,75 @@ subroutine compute_source_rate(k)
         else
         call face_error("unknown left surface model:",left_surface_model(k))
         endif
+
+
+
         ! - right surface
         if (right_surface_model(k).eq."S") then
 
-!        Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-     eekb* Eabs_r(k)          /temp(ndt,ngrd))
-!        Kdes_r(k)=2.d0 *K0des_r(k)*exp(-2.d0*eekb*(Eabs_r(k)+Edes_r(k))/temp(ndt,ngrd))
-!        Kb_r(k)=        K0b_r(k)  *exp(-     eekb*(Eb_r (k)+Edes_r(k))/temp(ndt,ngrd))
-!        Kads_r(k)=      K0ads_r(k)*exp(-     eekb*(Eb_r (k)-Eads_r  (k))/temp(ndt,ngrd))
-
           Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
-            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
-            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+         Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+         Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+        elseif (right_surface_model(k).eq."B") then
+         Kabs_r(k)=min_rate_surface
+         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+         Kb_r(k)= min_rate_surface
+         Kads_r(k)=min_rate_surface
         elseif (right_surface_model(k).eq."N") then
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=min_rate_surface
-        Kb_l(k)=min_rate_surface
-        Kads_l(k)=min_rate_surface
+        Kabs_r(k)=min_rate_surface
+        Kdes_r(k)=min_rate_surface
+        Kb_r(k)=min_rate_surface
+        Kads_r(k)=min_rate_surface
         else
         call face_error("unknown right surface model:",right_surface_model(k))
         endif
 
         ! calculate surface fluxes using rates and density
         ! - left surface
+
+
+if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
         Gabs_l (ndt,k)=Kabs_l(k)
-        Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)*dsrfl(ndt,k)
+        Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_left(k)
+
         Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
         Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
+
+        if (verbose_surface) then
+        write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^alpha=',dsrfl(ndt,k)**order_desorption_left(k)
+        write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
+        endif
+
+        elseif (left_surface_model(k).eq."B") then
+
+        Gabs_l (ndt,k)=min_rate_surface
+        Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
+        if (verbose_surface) then
+        write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^alpha=',dens(ndt,0,k)**order_desorption_left(k)
+        endif
+        Gb_l (ndt,k)  =dsrfl(ndt,k)
+        Gads_l (ndt,k)=min_rate_surface
+
+        endif
+
         ! - right surface
+         if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
         Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
-        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)*dsrfr(ndt,k)          ! Gdesorp=K*ns^2
+        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
         Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
         Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
 
+        elseif (right_surface_model(k).eq."B") then
+        Gabs_r (ndt,k)=min_rate_surface                           ! Gabsorp=K(gas)
+        Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+        Gb_r (ndt,k)  =dsrfr(ndt,k)             ! Gbulk  =K*ns
+        Gads_r (ndt,k)=min_rate_surface      ! Gadsorb=K*n
+        endif
         ! apply cap factor to mimic effects of saturation
+        if (active_cap) then
         call compute_cap_factor_surface(k,ndt)
-
+        endif
 
         ! calculate effective desorptiopn and heat fluxes
         if (solve_heat_eq .eq. "yes") then
@@ -394,9 +447,22 @@ subroutine compute_source_rate(k)
         endif
 
         ! - net flux onto surface
+         if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N"))then
         Gsrf_l(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
-        Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
+        elseif (left_surface_model(k).eq."B") then
+        Gsrf_l(ndt,k)=-Gb_l(ndt,k)
+        endif
 
+         if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
+        Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
+        elseif (right_surface_model(k).eq."B") then
+        Gsrf_r(ndt,k)=-Gb_r(ndt,k)
+        endif
+
+        if (verbose_surface) then
+        write(iout,*) 'Gsrf_l(ndt,k)=',Gsrf_l(ndt,k),'; Gsrf_r(ndt,k)=',Gsrf_r(ndt,k),&
+        'dsrfl(ndt,k)=',dsrfl(ndt,k),'dsrfr(ndt,k)=',dsrfr(ndt,k)
+        endif
 
 !     --- low-pass filter ---
        Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
@@ -467,19 +533,28 @@ subroutine compute_source_rate(k)
         rate_d(ndt,j,k)=ero_flx(ndt,j,k)
        enddo
 
-
+       if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
        rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+       elseif(left_surface_model(k).eq."B") then
+       rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+       !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'flx(ndt,0,k)',flx(ndt,0,k)
+       endif
 
        do j=1,ngrd-1
         rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
        enddo
+       if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
        rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+       elseif(right_surface_model(k).eq."B") then
+       rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+       endif
        do j=0,ngrd
 !     --- sources ---
         rate_d(ndt,j,k)=rate_d(ndt,j,k)+src(ndt,j,k)
 !     --- reactions ---
         rate_d(ndt,j,k)=rate_d(ndt,j,k)+rct(ndt,j,k)
 !     --- low-pass filter ---
+        delta=0
         rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
        enddo
 
@@ -618,15 +693,30 @@ subroutine compute_source_rate(k)
         endif
     end subroutine compute_temperature
 
+    subroutine check_isNaN(u,str)
+      ! update equation terms
+      real(DP),intent(in):: u(:)
+      character(*) :: str
+      integer :: i
+      do i=1,neq
+      if (isnan(u(i))) then
+      call face_error(' ; location:',str,'NaN found: at i=' ,i )
+      endif
+      enddo
+      end subroutine check_isNaN
 
     subroutine compute_eq_rates(u)
       ! update equation terms
-      real(DP),intent(in):: u(neq)
+      real(DP),intent(in):: u(:)
       integer :: k
+      !      if (verbose_debug) write (iout,*) '-- compute_eq_rates'
       ! ** get values of density and temperature from vector u
+
       call get_density_values(u)
 
+      call check_isNaN(u,'after get_density')
       ! ** check if calculated new values are positive and below max values
+
       call check_positivity_max
 
       ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
@@ -655,12 +745,13 @@ subroutine compute_source_rate(k)
       end subroutine compute_eq_rates
 
       real(DP) function compute_fnorm(u) result(fnorm)
-
         integer i, idx
-        real(DP):: u(neq), f(neq)
+        real(DP),intent(in):: u(:)
+        real(DP):: f(neq)
         real(DP):: norm, mxel, tmp
 
         call compute_f(u,f)
+
         norm=0.d0
         mxel=0.d0
         do i=1,neq
@@ -677,8 +768,6 @@ subroutine compute_source_rate(k)
         enddo
         !      write (*,*) 'Max norm element ', mxel, ' at eq', idx
         fnorm=sqrt(norm)
-
-
     end function compute_fnorm
 
      subroutine check_positivity_max
@@ -741,9 +830,10 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
     end subroutine check_positivity_max
 
           subroutine get_density_values(u)
-      integer i,j,k
-      real(DP),intent(in):: u(neq)
+      integer ::i,j,k
+      real(DP),intent(in):: u(:)
       i=0
+
       do k=1,nspc
        i=i+1
        dsrfl(ndt,k)=u(i)
@@ -753,7 +843,7 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
        enddo
        i=i+1
        dsrfr(ndt,k)=u(i)
-       !write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
+ !      write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
 
       enddo
       if (solve_heat_eq .eq. "yes") then

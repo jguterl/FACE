@@ -48,22 +48,24 @@ contains
         character(15) str4
         character(20) str5
         integer i
-        write(iout,*) ' '
-        write(iout,*) ' *** List of keywords for FACE input file ***'
-        write (str1, '(A30)') 'keyword'
-        write (str2, '(A70)') 'def'
-        write (str3, '(A20)') 'units'
-        write (str4, '(A15)') 'status'
-        write (str5, '(A15)') 'default'
-        write(iout,'(A5,A30,A70,A20,A15,A20)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
-        do i=1,ihelp-1
-            write (str1, '(A30)') help(i)%keyword
-            write (str2, '(A70)') help(i)%def
-            write (str3, '(A20)') help(i)%units
-            write (str4, '(A15)') help(i)%status
-            write (str5, '(A15)') help(i)%default
-            write(iout,'(A5,A30,A70,A20,A15)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
-        enddo
+        write(iout,*) ' Usage of FACE2.0:'
+        write(iout,*) ' -h or --help'
+
+!        write(iout,*) ' *** List of keywords for FACE input file ***'
+!        write (str1, '(A30)') 'keyword'
+!        write (str2, '(A70)') 'def'
+!        write (str3, '(A20)') 'units'
+!        write (str4, '(A15)') 'status'
+!        write (str5, '(A15)') 'default'
+!        write(iout,'(A5,A30,A70,A20,A15,A20)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
+!        do i=1,ihelp-1
+!            write (str1, '(A30)') help(i)%keyword
+!            write (str2, '(A70)') help(i)%def
+!            write (str3, '(A20)') help(i)%units
+!            write (str4, '(A15)') help(i)%status
+!            write (str5, '(A15)') help(i)%default
+!            write(iout,'(A5,A30,A70,A20,A15)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
+!        enddo
     end subroutine print_help
 
         subroutine print_list_keyword
@@ -111,6 +113,7 @@ contains
         call set_help(comment_str)
         call set_help('n_cells','Number of cells','none','mandatory',"100")
         call set_help('cell_scaling_factor','Cell width scaling factor','none','mandatory',"1.15305056")
+        call set_help('grid_type','A: antisym (smallest cell at x=0) S: symmetric','none','mandatory',"A")
         comment_str='# ********* Parameters for volumetric model and species ***************'
         call set_help(comment_str)
         call set_help('n_species','Number of species','none','mandatory',"3")
@@ -135,6 +138,10 @@ contains
         'mandatory',"S N N","species")
         call set_help('right_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
         'mandatory',"S N N","species")
+        call set_help('order_desorption_left','order of desorption cs^alpha or cb ^alpha','[1]',&
+        'non-mandatory',"2.0 2.0 2.0","species")
+        call set_help('order_desorption_right','order of desorption cs^alpha or cb ^alpha','[1]',&
+        'non-mandatory',"2.0 2.0 2.0","species")
 
         call set_help('ns0_left','Initial left surface density of species','[m^-2]','non-mandatory',&
             "1.00e+19 0.00e+19 0.00e+19","species")
@@ -191,8 +198,8 @@ contains
            comment_str='# ********* Material parameters ************************************** '
         call set_help(comment_str)
         call set_help('lattice_constant','Lattice constant of material','[m]','mandatory',"1.00e-10")
-        call set_help('cristal_volume_factor','Cristal cell volume factor','none','non-mandatory',"1")
-        call set_help('cristal_surface','Surface cell area factor','none','non-mandatory',"1")
+        call set_help('volume_factor','Cristal cell volume factor','none','non-mandatory',"1")
+        call set_help('surface_factor','Surface cell area factor','none','non-mandatory',"1")
         call set_help('lattice_length_factor','Lattice cell length factor','none','non-mandatory',"1")
 
         call set_help('thermal_conductivity','Thermal conductivity','[W m^-1 K^-1]','non-mandatory',"137.0")

@@ -81,14 +81,18 @@ contains
                     face_input%run_mode="print_default_input"
                     k=k+1
                 endif
-            elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
+                    elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
                     verbose_input=.true.
                     k=k+1
-
+                    elseif (arg.eq."-vs" .or. arg.eq."--verbose-surface") then
+                    verbose_surface=.true.
+                    k=k+1
                     elseif (arg.eq."-vp" .or. arg.eq."--verbose-parser") then
                     verbose_parser=.true.
                     k=k+1
-
+                    elseif (arg.eq."-vd" .or. arg.eq."--verbose-debug") then
+                    verbose_debug=.true.
+                    k=k+1
                     elseif (arg.eq."-vit" .or. arg.eq."--verbose-init") then
                     verbose_init=.true.
                     k=k+1

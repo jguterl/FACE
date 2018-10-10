@@ -533,6 +533,13 @@
           call init_zero(left_surface_model)
           allocate(right_surface_model(nspc))
           call init_zero(right_surface_model)
+
+          allocate(order_desorption_left(nspc))
+          call init_zero(order_desorption_left)
+
+          allocate(order_desorption_right(nspc))
+          call init_zero(order_desorption_right)
+
           allocate(dsrfm(nspc))
           call init_zero(dsrfm)
 

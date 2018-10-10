@@ -4,7 +4,6 @@
       use modFACE_interface
       implicit none
 
-      logical:: couple_fluidcode=.false.
 
       !     ******************************************************************
       !     * 1-dimensional First wAll simulation CodE "FACE"                *
@@ -23,14 +22,14 @@
 
 
 
-       couple_fluidcode=.true.
-      if (couple_fluidcode) then
+
+#ifdef COUPLING_FLUIDCODE
          ! test of coupling mode'
          call FACE_from_fluidcode
+#else
 
-      else
           call FACE_standalone
-      endif
+#endif
 
       ! main call to FACE
 

@@ -120,7 +120,7 @@ end subroutine save_timedata
         write(myfmt3,*) "(i13.4, 8es13.4)"
         call set_unit(unit_voldata)
         do k=1,nspc
-            write (filename, '(a,a, i2.2, a, i3.3, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
+            write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
             open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)
             if (ios.eq.0) then
 
@@ -632,5 +632,14 @@ character(*)::str
 write(iout,"(a5,'--- ',a,' ---')")" ", str
 write(iout,"(a)") " "
 end subroutine print_milestone
+
+subroutine print_vector(u,str)
+real(DP),intent(in) :: u(neq)
+integer :: i
+character(*) :: str
+do i=1,neq
+        write(iout,*) str,'(',i,')=',u(i)
+            enddo
+end subroutine print_vector
 
 end module modFACE_IO

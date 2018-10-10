@@ -1,7 +1,9 @@
 # makefile for FACE20
 # compiler
-FC     = ifort
-
+#FC     = ifort
+FC     = gfortran
+fopenmp=-fopenmp 
+FMKL=
 # PROGRAM NAME: FACE
 PROGRAM = FACE20
 # build directory
@@ -14,7 +16,7 @@ OBJDIR=$(BUILDDIR)
 
 
 # compile flags
-FFLAGS = #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons -fbounds-check
+FFLAGS =-fbounds-check -fcheck=all -Wall #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons 
 DBGFLAGS = -g -O0   -fbacktrace 
 RLSFLAGS = -O3 
 
@@ -54,16 +56,16 @@ debug_exe: $(DBGOBJECTS_f) $(DBGOBJECTS_f90)
 # release rules
 
 $(RLSOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@
 
 
 $(RLSOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  -cpp $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@
 
 release: prep release_exe
 
 release_exe: $(RLSOBJECTS_f) $(RLSOBJECTS_f90)
-	$(FC) -qopenmp  $(FFLAGS) $(RLSFLAGS) -mkl -o $(BINDIR)/$(EXE_RELEASE) $^
+	$(FC) -cpp ${fopenmp} $(FFLAGS) $(RLSFLAGS) ${FMKL} -o $(BINDIR)/$(EXE_RELEASE) $^
 
 # default
 default: release
