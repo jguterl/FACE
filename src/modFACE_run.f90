@@ -176,8 +176,8 @@ subroutine run_FACE(face_input,face_output)
         type(wall_temperatures),intent(out):: wall_temp
         real(DP)::max_temp,min_temp
         integer::j
-        wall_temp%sfr_temp_l=temp(ndt,0)
-        wall_temp%sfr_temp_r=temp(ndt,ngrd)
+        wall_temp%srf_temp_l=temp(ndt,0)
+        wall_temp%srf_temp_r=temp(ndt,ngrd)
         max_temp=0d0
         do j=0,ngrd
         max_temp=max(max_temp,temp(ndt,j))

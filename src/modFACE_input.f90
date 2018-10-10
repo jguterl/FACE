@@ -109,6 +109,24 @@ contains
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
 
+         case('dump_vol_append')
+         if(dump_vol_append_string.eq."yes") then
+         dump_vol_append=.true.
+         elseif (dump_vol_append_string.eq."no") then
+         dump_vol_append=.false.
+         else
+         call face_error("unknown option for dump_vol_append (must be yes or no) : ",dump_vol_append_string)
+         endif
+
+         case('dump_srf_append')
+         if(dump_srf_append_string.eq."yes") then
+         dump_srf_append=.true.
+         elseif (dump_srf_append_string.eq."no") then
+         dump_srf_append=.false.
+         else
+         call face_error("unknown option for dump_srf_append (must be yes or no) : ",dump_srf_append_string)
+         endif
+
 ! check that the reduction factor is >0 and lt 1
 case('reduction_factor_dt')
 if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
@@ -147,6 +165,8 @@ end select
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
         call get_keyword_value('dump_time_dt', dump_time_dt)
+         call get_keyword_value('dump_vol_append', dump_vol_append_string)
+         call get_keyword_value('dump_srf_append', dump_srf_append_string)
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
         call get_keyword_value('solve_heat_equation', solve_heat_eq)

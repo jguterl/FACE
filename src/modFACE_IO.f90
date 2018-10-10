@@ -21,7 +21,7 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (unit_timedata(k), '(17a13)')&
+            write (unit_timedata(k), '(23a10)')&
                 'time',&
                 'tempL',&
                 'tempR',&
@@ -42,7 +42,9 @@ contains
                 'Rct',&
                 'rate_d',&
                 'inflx',&
-                'qrad'
+                'qrad',&
+                'Kdes_l',&
+                'Kdes_r'
         enddo
     end subroutine open_timedata_files
 
@@ -66,7 +68,7 @@ subroutine save_timedata
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(17es13.3)"
+    write(myfmt2,*) "(23es10.3)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -100,7 +102,9 @@ subroutine save_timedata
             rctn,&
             rate_d  (ndt,0,k),&
             inflx(k),&
-            rad
+            rad,&
+            Kdes_l(k),&
+            Kdes_r(k)
     enddo
 
 end subroutine save_timedata
@@ -120,8 +124,15 @@ end subroutine save_timedata
         write(myfmt3,*) "(i13.4, 8es13.4)"
         call set_unit(unit_voldata)
         do k=1,nspc
-            write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
-            open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)
+        if (dump_vol_append) then
+         write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '.dat'
+         open (unit=unit_voldata, file=trim(filename), access='append',status='unknown', iostat=ios)
+        else
+         write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
+         open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)
+        endif
+
+
             if (ios.eq.0) then
 
                 write (unit_voldata,myfmt1) 'time=', time, ' s'

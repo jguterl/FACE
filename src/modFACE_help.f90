@@ -220,8 +220,8 @@ contains
         call set_help(comment_str)
         call set_help('active_cap','yes|no','none','non-mandatory',"yes")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
-        call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
-        call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")
+        call set_help('dump_vol_append','yes|no','none','non-mandatory',"no")
+        call set_help('dump_srf_append','yes|no ','none','non-mandatory',"no")
         call set_help('fluid-interface','yes|no','none','non-mandatory',"no")
 
         call set_help('Nprint_run_info','print info on current run every Nprint_run_info steps','none','non-mandatory',"100")

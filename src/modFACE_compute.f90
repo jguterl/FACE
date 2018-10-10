@@ -788,7 +788,7 @@ call face_error("left srf dens <0 for species k= ",k," dsrfl=",dsrfl(ndt,k),"pre
             endif
 
             if (dsrfr(ndt,k) .lt. 0.d0) then
-call face_error("right srf dens <0 for species k= ",k," dsrfr=",dsrfr(ndt,k),"previous step: dsfr(ndt-1)=",dsrfr(ndt-1,k))
+call face_error("right srf dens <0 for species k= ",k," dsrfr=",dsrfr(ndt,k),"previous step: dsrf(ndt-1)=",dsrfr(ndt-1,k))
             endif
 
             do j=0,ngrd

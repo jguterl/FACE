@@ -148,6 +148,9 @@
 !       Flags
       logical:: read_input_file=.true.
       logical:: restore_state_temp=.true.
+      logical::dump_vol_append=.false.
+      logical::dump_srf_append=.false.
+      logical::dump_time_append=.false.
       integer::avr
       character(string_length):: input_filename
       character(string_length):: logfile
@@ -181,7 +184,7 @@
     end type outgassing_fluxes
 
      type wall_temperatures
-        real(DP)         :: sfr_temp_l,sfr_temp_r
+        real(DP)         :: srf_temp_l,srf_temp_r
         real(DP)         :: mean_temp
         real(DP)         :: max_temp
         real(DP)         :: min_temp
@@ -346,6 +349,8 @@
       type(trace_fluxes),allocatable :: trace_flux(:)
       logical :: active_cap=.true.
       character(string_length)::active_cap_string
+      character(string_length)::dump_vol_append_string
+      character(string_length)::dump_srf_append_string
 !     ------------------------------------------------------------------
 !       Thermal variables
 !     ------------------------------------------------------------------
