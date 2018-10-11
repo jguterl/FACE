@@ -84,7 +84,7 @@ subroutine which_eq(j_eq)
         integer,intent(in):: j_eq
         integer j_idx,k_idx
 
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
 
             if (j_eq.ge.neq-ngrd+1.and.j_eq.le.neq) then
 
@@ -107,7 +107,7 @@ subroutine which_eq(j_eq)
                 endif
             endif
 
-            elseif (solve_heat_eq .eq. "no") then
+        else
 
                 k_idx=floor(real(j_eq)/real(ngrd+3))
                 j_idx=j_eq-k_idx*(ngrd+3)+1
@@ -120,9 +120,8 @@ subroutine which_eq(j_eq)
                 else
                     call face_error("cannot find the equation ;", j_eq,"/",neq,"; jdix=",j_idx)
                 endif
-            else
-
-                call face_error("j_eq too large j_eq=",j_eq,"; neq= ",neq)
+            !else
+             !   call face_error("j_eq too large j_eq=",j_eq,"; neq= ",neq)
             endif
     end subroutine which_eq
 

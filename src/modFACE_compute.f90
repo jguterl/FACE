@@ -132,7 +132,7 @@ contains
 
         enddo
         ! ** temperature
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
                 if (steady_state .eq. "no") then
@@ -265,7 +265,7 @@ contains
     subroutine compute_source
         integer::j,l,k
         !     --- source modification ---
-        if (solve_heat_eq .eq. "no") then
+        if (.not.solve_heat_eq) then
             do k=1,nspc
                 do j=0,ngrd
                     srs(ndt,j,k)=srs(ndt-1,j,k)
@@ -275,7 +275,7 @@ contains
                 enddo
             enddo
 
-        elseif (solve_heat_eq .eq. "yes") then
+        elseif (solve_heat_eq) then
             call compute_inflx()
             do k=1,nspc
                 do j=0,ngrd
@@ -285,8 +285,6 @@ contains
                     enddo
                 enddo
             enddo
-        else
-        call face_error("Unknown option for solve_heat_eq:", solve_heat_eq)
         endif
 
     end subroutine compute_source
@@ -296,7 +294,7 @@ subroutine compute_source_rate(k)
  integer,intent(in) :: k
         real(DP) csrs, csrb
         !     --- sources ---
-        if (solve_heat_eq .eq. "no") then
+        if (.not.solve_heat_eq) then
             do j=0,ngrd
                 src(ndt,j,k)=0.d0
                 if (srs(ndt,j,k) .ne. 0.d0) then
@@ -308,7 +306,7 @@ subroutine compute_source_rate(k)
                     endif
                 enddo
             enddo
-        elseif (solve_heat_eq .eq. "yes") then
+        elseif (solve_heat_eq) then
             jout(ndt,k)=0.d0
             do j=0,ngrd
                 src(ndt,j,k)=0.d0
@@ -325,8 +323,7 @@ subroutine compute_source_rate(k)
                     endif
                 enddo
             enddo
-        else
-            call face_error("Unknown option for solve_heat_eq:", solve_heat_eq)
+
         endif
     end subroutine compute_source_rate
 
@@ -441,7 +438,7 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
         endif
 
         ! calculate effective desorptiopn and heat fluxes
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
             qflx_in=qflx_in+jout(ndt,k)*(ee*Eads_l(k)-2.d0*kb*temp(ndt,0))
         endif
@@ -556,8 +553,8 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
 !     --- low-pass filter ---
         delta=0
         rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
-       enddo
 
+       enddo
            end subroutine compute_dens_rate
 
 
@@ -650,7 +647,7 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
         !     --- compute new temperature and update arrhenius coeffs in heat eq is not solved.
         ! if heat eq is solved, then arrhenius coefficients are computed within cpomputation of f functions
 
-        if (solve_heat_eq .eq. "no") then
+        if (.not.solve_heat_eq) then
             if (framp .eq. "none") then
                 if (time .lt. tramp0) then
                     do j=0,ngrd
@@ -720,7 +717,7 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
       call check_positivity_max
 
       ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
-      if (solve_heat_eq .eq. "yes") then
+      if (solve_heat_eq) then
       call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. Ifheaqt eq not solved, this is done upfront in routine step
       endif
       ! *** density
@@ -735,7 +732,7 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
       enddo
 
       ! *** heat conduction
-      if (solve_heat_eq .eq. "yes") then
+      if (solve_heat_eq) then
        call compute_gradient_temp ! compute qflx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
        call compute_ero_qflx      ! compute ero_qflx=cero*qflx
        call compute_thermal_qflx  ! compute qflx=kappa*qflx
@@ -818,7 +815,7 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
         enddo
 
         !    --- check for negative temperatures and update coefficients ---
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             do j=0,ngrd
                 if (temp(ndt,j) .lt. 0.d0) then
                     call face_error("negative temperature in cell",j,"T=",temp(ndt,j)," previous step:T(ndt-1)=",temp(ndt-1,j))
@@ -846,7 +843,7 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
  !      write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
 
       enddo
-      if (solve_heat_eq .eq. "yes") then
+      if (solve_heat_eq) then
        do j=0,ngrd
         i=i+1
         temp(ndt,j)=u(i)
@@ -879,6 +876,87 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
     enddo
         end subroutine compute_trace_flux
 
+      subroutine compute_dt_update
+
+      integer  ::i, j, k
+      real(DP) :: tmp,dt
+      real(DP),parameter:: rtfm=5.d-1, rtfp=5.d-1
+
+      tmp=0d0
+      if (variable_timestep) then
+      dt=end_time-time
+
+! bulk
+      do k=1,nspc
+       do j=0,ngrd
+        if (rate_d(ndt,j,k) .ne. 0.d0) then
+         if (rate_d(ndt,j,k) .lt. 0.d0) then
+          tmp=-rtfm*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+         else
+          tmp= rtfp*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+         endif
+        else
+         tmp=dt
+        endif
+
+        if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+         dt=tmp
+        endif
+       enddo
+! left surface
+       if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
+       if (Gsrf_l (ndt  ,k) .ne. 0.d0) then
+        if (Gsrf_l (ndt  ,k) .lt. 0.d0) then
+         tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+        else
+         tmp= rtfp*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+        endif
+       else
+        tmp=dt
+       endif
+       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+        dt=tmp
+       endif
+       endif
+! right surface
+       if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
+       if (Gsrf_r (ndt  ,k) .ne. 0.d0) then
+        if (Gsrf_r (ndt  ,k) .lt. 0.d0) then
+         tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+        else
+         tmp= rtfp*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+        endif
+       else
+        tmp=dt
+       endif
+       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+        dt=tmp
+       endif
+       endif
+      enddo
 
 
+
+! heat equation
+      if (solve_heat_eq) then
+      do j=0,ngrd-1
+       if (rate_t(ndt,j) .ne. 0.d0) then
+        if (rate_t(ndt,j) .lt. 0.d0) then
+         tmp=-rtfm*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+        else
+         tmp= rtfp*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+        endif
+       else
+        tmp=dt
+       endif
+       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+        dt=tmp
+       endif
+      enddo
+      endif
+      if (dt .lt. min_dt_face) dt=min_dt_face
+
+      dt_face=dt
+      endif
+end subroutine compute_dt_update
 end module modFACE_compute

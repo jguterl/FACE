@@ -83,7 +83,7 @@ contains
             if (isnan(u (i))) call face_error(" dsrfr NaN")
             du(i)=0.d0
         enddo
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
                 u (i)=temp(ndt-1,j)

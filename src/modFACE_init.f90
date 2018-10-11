@@ -56,10 +56,11 @@ contains
         iter_solver =0
 
         ! number fo equations to solve
-        if (solve_heat_eq .eq."no") then
-            neq=nspc*(ngrd+3)
-        else
+        if (solve_heat_eq) then
             neq=nspc*(ngrd+3)+ngrd+1
+        else
+
+            neq=nspc*(ngrd+3)
         endif
 
         do k=1,nspc
@@ -214,7 +215,7 @@ contains
         integer::i,j,k,l
 
         !      Initialization of sources
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             do i=1,ndt
                 do j=0,ngrd
                     do k=1,nspc
@@ -227,7 +228,7 @@ contains
                     enddo
                 enddo
             enddo
-        elseif (solve_heat_eq .eq. "no") then
+        else
             do i=1,ndt
                 do j=0,ngrd
                     do k=1,nspc
@@ -242,9 +243,7 @@ contains
                     enddo
                 enddo
             enddo
-        else
-            call face_error("Unknown option for solve_heat_eq:", solve_heat_eq)
-            stop
+
         endif
         if (verbose_init) write(iout,*) " -- Initialization source terms completed"
     end subroutine
@@ -395,7 +394,7 @@ contains
                     call compute_cap_factor_surface(k,i)
                 endif
 
-                if (solve_heat_eq .eq. "yes") then
+                if (solve_heat_eq) then
                     jout(i,k)=jout(i,k)+Gdes_l(i,k)
                 endif
 
@@ -438,7 +437,7 @@ contains
             call read_Tramp_file
         endif
 
-        if (solve_heat_eq .eq. "no") then
+        if (.not.solve_heat_eq) then
             if (framp .ne. 'none') then
                 do j=0,ngrd
                     do i=1,ndt
@@ -465,15 +464,12 @@ contains
                 enddo
             endif
          !  solving heat equation -> initial linear profile of T in bulk
-        elseif(solve_heat_eq .eq. "yes") then
+        elseif(solve_heat_eq) then
             do j=0,ngrd
                 do i=1,ndt
                     temp(i,j)=temp0+(temp1-temp0)*x(j)/length
                 enddo
             enddo
-        else
-            call face_error ("Unknown option for solve_heat_eq:", solve_heat_eq)
-
         endif
         if (verbose_init)  write(iout,*) 'Initialization of temperature : DONE '
     end subroutine init_temp

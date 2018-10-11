@@ -125,7 +125,7 @@ end subroutine save_timedata
         call set_unit(unit_voldata)
         do k=1,nspc
         if (dump_vol_append) then
-         write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '.dat'
+         write (filename, '(a,a, i2.2, a)') trim(dat_folder),'/vol', k, '.dat'
          open (unit=unit_voldata, file=trim(filename), access='append',status='unknown', iostat=ios)
         else
          write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
@@ -183,8 +183,15 @@ end subroutine save_timedata
         write(myfmt2,*) "(a8,5(a13))"
         write(myfmt3,*)"(i8.4, 5(1pe13.4e2))"
         call set_unit(unit_heatdata)
-        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
-        open (unit_heatdata, file=trim(filename), status='replace',iostat=ios)
+        if (dump_vol_append) then
+         write (filename, '(a,a)') trim(dat_folder),'/heat.dat'
+         open (unit=unit_heatdata, file=trim(filename), access='append',status='unknown', iostat=ios)
+        else
+         write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
+         open (unit_heatdata, file=trim(filename), status='replace',iostat=ios)
+        endif
+
+
         if (ios.eq.0) then
             write (unit_heatdata, myfmt1) 'time=', time, ' s'
 
@@ -219,13 +226,21 @@ end subroutine save_timedata
         character(string_length)::filename,myfmt1,myfmt2,myfmt3
         integer k,ios,unit_surfdata
         !     --- saving snapshot of surface parameters
-        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/srf_', sfln_srfdata, '.dat'
         write(myfmt1,*) "(a, 1pe13.4e2, a)"
         write(myfmt2,*) "(12(a13))"
         write(myfmt3,*) "(i13.2, 11(1pe13.4e2))"
         call set_unit(unit_surfdata)
-        open (unit_surfdata, file=trim(filename), status='replace',iostat=ios)
+
+          if (dump_srf_append) then
+         write (filename, '(a,a)') trim(dat_folder),'/srf.dat'
+         open (unit=unit_surfdata, file=trim(filename), access='append',status='unknown', iostat=ios)
+        else
+         write (filename, '(a, a, i4.4, a)') trim(dat_folder),'/srf_', sfln_srfdata, '.dat'
+         open (unit=unit_surfdata, file=trim(filename), status='replace', iostat=ios)
+        endif
+
         if (ios.eq.0) then
+
             write (unit_surfdata, myfmt1) 'time=', time, ' s'
             write (unit_surfdata, myfmt2)&
                 'spc#',&
@@ -621,8 +636,8 @@ character(string_length)::myfmt,str
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
 write(myfmt,*) "('iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
- ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3)"
- write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver
+ ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+ write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver,dt_face
   call print_formatted(str)
 endif
 end subroutine print_timestep_info

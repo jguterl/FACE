@@ -5,7 +5,7 @@
       use modFACE_functions
       use modFACE_output
       use modFACE_error
-       use modFACE_IO
+c c      use modFACE_IO
        use modFACE_compute
        use modFACE_solverf90
        implicit none
@@ -26,11 +26,11 @@ c                   : -1: solver step completed with iter_solver=max
 c                   : 1 : solver step completed iwht iter_solver<ideal
 
        iter_solver=0
-       if (verbose_debug) call print_milestone('newton_solver')
+       if (verbose_debug) write(iout,*) 'newton_solver'
 
       call build_vector(u,du)
 
-      if (verbose_debug) call print_vector(u,"u")
+
 
       norm=compute_fnorm(u)
 

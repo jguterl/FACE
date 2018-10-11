@@ -276,7 +276,7 @@ write(str,'(a,es12.3,a,es12.3,a,es12.3)') "start_time=",start_time,"; end_time="
 call print_line(str)
 write(str,'(a,i5)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
 call print_line(str)
-write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq
+write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
 call print_line(str)
 call print_end_section('Run features')
 end subroutine print_info_run

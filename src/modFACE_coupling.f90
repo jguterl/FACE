@@ -54,8 +54,8 @@ contains
         casename=fluidcode_input%casename
         if (verbose_couple) write(iout,*) '- casename overwritten :', casename
         ! temperature solver
-        solve_heat_eq=fluidcode_input%solve_heat_eq
-        if (verbose_couple) write(iout,*) '- solve_heat_eq overwritten :', solve_heat_eq
+        solve_heat_eq_string=fluidcode_input%solve_heat_eq_string
+        if (verbose_couple) write(iout,*) '- solve_heat_eq overwritten :', solve_heat_eq_string
         ! start time
         start_time=fluidcode_input%time
         if (verbose_couple) write(iout,*) '- start time overwritten : ', start_time
@@ -162,7 +162,7 @@ contains
                 "tramp0 and tramp1 must be equal to zero: tramp0=",tramp0," tramp1",tramp1)
         endif
 
-        if (solve_heat_eq.eq."yes") then ! if solving heat equation then impose heat flux from fluid code
+        if (solve_heat_eq_string.eq."yes") then ! if solving heat equation then impose heat flux from fluid code
             ! ** heat flux calculated in FACE as qflx_in=ee*energy*inflx where energy is in [eV].
             ! We thus calculated the energy correspondign to this expression using inflx and qflx_in from the fluid code.
             ! We assume that the entire heat flux is carried by the first species
@@ -194,7 +194,7 @@ contains
                 enrg(k)=enrg(k)/ee ! adjust units from Watts to eV
             enddo
 
-        elseif  (solve_heat_eq.eq."no") then
+        else
             ! if not solving the heat eq then we just set the entire wall temperature to the temperature from the fluid code
             temp0=fluidcode_input%tempwall
             temp1=fluidcode_input%tempwall
@@ -203,8 +203,6 @@ contains
             if (fluidcode_input%tempwall.le.0d0) then
                 call face_error('temperature from fluid code <=0": T=',fluidcode_input%tempwall)
             endif
-        else
-            call face_error('unknown mode for solve_heat_eq fron fluide code')
         endif
 
     end subroutine input_fluidcode

@@ -1,6 +1,7 @@
 # makefile for FACE20
 # compiler
 #FC     = ifort
+.SUFFIXES:
 FC     = gfortran
 fopenmp=-fopenmp 
 FMKL=
@@ -13,7 +14,7 @@ SRCDIR=src
 # directory where binary are created
 BINDIR=bin
 OBJDIR=$(BUILDDIR)
-
+MODDIR=modules
 
 # compile flags
 FFLAGS =-fbounds-check -fcheck=all -Wall #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons 
@@ -56,11 +57,11 @@ debug_exe: $(DBGOBJECTS_f) $(DBGOBJECTS_f90)
 # release rules
 
 $(RLSOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC)  -cpp ${fopenmp}  $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@ -J$(MODDIR)
 
 
 $(RLSOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC)  -cpp ${fopenmp}  -cpp $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  -cpp $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@ -J$(MODDIR)
 
 release: prep release_exe
 
@@ -72,10 +73,10 @@ default: release
 
 # cleaning rules
 clean:
-	@rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.mod $(BINDIR)/$(EXE_RELEASE) $(BINDIR)/$(EXE_DEBUG) 
+	@rm -f $(BUILDDIR)/*.o $(MODDIR)/*.mod $(BINDIR)/$(EXE_RELEASE) $(BINDIR)/$(EXE_DEBUG) 
 
 prep:
-	@mkdir -p $(BUILDDIR) ${BINDIR}
+	@mkdir -p $(BUILDDIR) ${BINDIR} ${MODDIR}
 
 
 

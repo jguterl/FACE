@@ -151,6 +151,8 @@
       logical::dump_vol_append=.false.
       logical::dump_srf_append=.false.
       logical::dump_time_append=.false.
+      logical:: solve_heat_eq=.false.
+      logical:: variable_timestep
       integer::avr
       character(string_length):: input_filename
       character(string_length):: logfile
@@ -158,7 +160,8 @@
       character(string_length):: read_state_file
       character(string_length):: steady_state
       character(string_length):: framp
-      character(string_length):: solve_heat_eq
+      character(string_length):: solve_heat_eq_string
+      character(string_length):: variable_timestep_string
       character(string_length):: final_state_file
       character(string_length):: casename
       character(string_length):: pulsed_flux
@@ -397,7 +400,7 @@ type fluidcode_inputs
         character(string_length)     :: read_state_file  ! restart from this staste file
         character(string_length)     :: final_state_file    ! store final state in this state file
         real(DP)                     :: tempwall            ! temperature of the wall from fluid code
-        character(15)                :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        character(15)                :: solve_heat_eq_string       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         character(string_length)      ::casename            ! casename (see below)
         character(string_length)      ::casename_base       ! base to form casename=casename_base_iteration_idx_wall
         character(string_length)      ::input_file            ! casename

@@ -262,7 +262,7 @@ integer:: iter
 
         fluidcode_input%qflx_in=0           ! Heat flux from fluid code
 
-        fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        fluidcode_input%solve_heat_eq_string="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%log_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//".log"
 fluidcode_input%log_file="no"
         call wrapper_FACE(fluidcode_input,fluidcode_output)

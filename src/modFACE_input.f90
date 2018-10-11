@@ -74,9 +74,15 @@ contains
 
         ! solve heat equation
         case('solve_heat_equation')
-            if (solve_heat_eq.ne."no".AND.solve_heat_eq.ne."yes") then
+            if (solve_heat_eq_string.ne."no".AND.solve_heat_eq_string.ne."yes") then
                 write(iout,*) "ERROR: solve_heat_equation must be yes or no"
                 stop
+            endif
+            if (solve_heat_eq_string.eq."no") then
+            solve_heat_eq=.false.
+            elseif (solve_heat_eq_string.ne."yes") then
+            solve_heat_eq=.true.
+            call face_error('heat equation solver must be checked!')
             endif
 
 
@@ -132,6 +138,14 @@ case('reduction_factor_dt')
 if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
 call face_error("reduction factor dt cannot be <=0 and >1: reduction factor dt=",reduction_factor_dt)
 endif
+case('variable_timestep')
+if(variable_timestep_string.eq."yes") then
+         variable_timestep=.true.
+         elseif (variable_timestep_string.eq."no") then
+         variable_timestep=.false.
+         else
+         call face_error("unknown option for variable_timestep (must be yes or no) : ",variable_timestep_string)
+         endif
 end select
     end subroutine check_value_input
 
@@ -162,6 +176,7 @@ end select
         call get_keyword_value('end_time', end_time)
         call get_keyword_value('dt', dt0_face)
         call get_keyword_value('min_dt', min_dt_face)
+        call get_keyword_value('variable_timestep', variable_timestep_string)
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
         call get_keyword_value('dump_time_dt', dump_time_dt)
@@ -169,7 +184,7 @@ end select
          call get_keyword_value('dump_srf_append', dump_srf_append_string)
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
-        call get_keyword_value('solve_heat_equation', solve_heat_eq)
+        call get_keyword_value('solve_heat_equation', solve_heat_eq_string)
         call get_keyword_value('n_species', nspc)
 
         call get_keyword_value('species_name', namespc)
@@ -396,7 +411,6 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(dump_space_dt)
         call init_zero(dump_restart_dt)
         call init_zero(framp)
-        call init_zero(solve_heat_eq)
         call init_zero(cero_min)
         call init_zero(cero_max)
         call init_zero(gamero)
