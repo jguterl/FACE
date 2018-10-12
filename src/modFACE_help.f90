@@ -182,6 +182,9 @@ contains
         call set_help('temp_neutral','External temperature of neutral species','[eV]','non-mandatory',&
         "0.00e-00 0.00e+00 0.00e+00","species")
         call set_help('mass','Mass of species','[kg]','non-mandatory',"3.343e-27 0.00e+00 0.00e+00","species")
+        call set_help('Gamma_pulse','pulsed partice flux N: no S: sin R: rectangle','none','non-mandatory',"N N N","species")
+        call set_help('Gamma_pulse_period','Gamma pulse period','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
+        call set_help('Gamma_pulse_starttime','Gamma pulse starttime','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
         comment_str='# ********* Parameters for abliation model ****************************** '
         call set_help(comment_str)
         call set_help('min_ablation_velocity','min ablation speed in addition to sputtering','[m s^-1]','non-mandatory'&
@@ -214,8 +217,7 @@ contains
         call set_help('first_ramp_end_time','End of first ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_start_time','Start of second ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_end_time','End of second ramp time','[s]','non-mandatory',"1.0e+99")
-        call set_help('pulsed_flux','pulse incoming plasma flux: yes|no','none','non-mandatory',"no")
-        call set_help('pulse_period','Pulse period','[s]','non-mandatory',"1.0e+99")
+
 
           comment_str='# ********* Miscelleneaous *********************************************'
         call set_help(comment_str)

@@ -1,9 +1,9 @@
 module modFACE_compute
-use modFACE_header
-use modFACE_cap
-use modFACE_error
-use modFACE_functions
-implicit none
+    use modFACE_header
+    use modFACE_cap
+    use modFACE_error
+    use modFACE_functions
+    implicit none
 contains
 
     subroutine compute_f(u,f)
@@ -155,7 +155,7 @@ contains
                             -a54*temp(ndt-4,j)
                         f(i)=f(i)-a55*rate_t (ndt  ,j)*dt_face
                     else
-                       call face_error("ERROR: order of solver not implemented. order=",order_solver)
+                        call face_error("ERROR: order of solver not implemented. order=",order_solver)
                     endif
                 elseif(steady_state .eq. "yes") then
                     if (temp(ndt,j) .gt. 1.d0) then
@@ -164,7 +164,7 @@ contains
                         f(i)=rate_t(ndt,j)*temp(ndt,j)
                     endif
                 else
-                 call face_error("Unknown mode for steady_state:",steady_state)
+                    call face_error("Unknown mode for steady_state:",steady_state)
                 endif
             enddo
 
@@ -202,21 +202,21 @@ contains
 
         integer j,k
 
-       ero_flx(ndt,0,k)=-cero*flx(ndt,0,k) ! until now, flx is the density gradient (see line 764)
-       do j=1,ngrd-1
-!        ero(ndt,j,k)=-cero*(dx(j)*flx(ndt,j-1,k)+dx(j-1)*flx(ndt,j,k))/(dx(j-1)+dx(j))
-        ero_flx(ndt,j,k)=-cero*flx(ndt,j,k)
-       enddo
-!       ero(ndt,ngrd,k)=-cero*flx(ndt,ngrd,k)
-       ero_flx(ndt,ngrd,k)=0.d0 ! no erosion on the right side of the material (only left side is facing plasma)
+        ero_flx(ndt,0,k)=-cero*flx(ndt,0,k) ! until now, flx is the density gradient (see line 764)
+        do j=1,ngrd-1
+            !        ero(ndt,j,k)=-cero*(dx(j)*flx(ndt,j-1,k)+dx(j-1)*flx(ndt,j,k))/(dx(j-1)+dx(j))
+            ero_flx(ndt,j,k)=-cero*flx(ndt,j,k)
+        enddo
+        !       ero(ndt,ngrd,k)=-cero*flx(ndt,ngrd,k)
+        ero_flx(ndt,ngrd,k)=0.d0 ! no erosion on the right side of the material (only left side is facing plasma)
 
     end subroutine compute_ero_flx
 
     subroutine compute_diff_flx(k)
         integer j,k
         do j=0,ngrd
-        flx(ndt,j,k)=cdif(ndt,j,k)*flx(ndt,j,k)
-       enddo
+            flx(ndt,j,k)=cdif(ndt,j,k)*flx(ndt,j,k)
+        enddo
 
     end subroutine compute_diff_flx
 
@@ -225,38 +225,38 @@ contains
         integer j
 
         ero_qflx(ndt,0)=-cero*qflx(ndt,0)
-       do j=1,ngrd-1
-!        ero_qflx(ndt,j)=-cero*(dx(j)*qflx(ndt,j-1)+dx(j-1)*qflx(ndt,j))/(dx(j-1)+dx(j))
-        ero_qflx(ndt,j)=-cero*qflx(ndt,j)
-       enddo
-!       ero_qflx(ndt,ngrd)=-cero*qflx(ndt,ngrd)
-       ero_qflx(ndt,ngrd)=0.d0
+        do j=1,ngrd-1
+            !        ero_qflx(ndt,j)=-cero*(dx(j)*qflx(ndt,j-1)+dx(j-1)*qflx(ndt,j))/(dx(j-1)+dx(j))
+            ero_qflx(ndt,j)=-cero*qflx(ndt,j)
+        enddo
+        !       ero_qflx(ndt,ngrd)=-cero*qflx(ndt,ngrd)
+        ero_qflx(ndt,ngrd)=0.d0
 
     end subroutine compute_ero_qflx
 
     subroutine compute_thermal_qflx
 
         integer j
-       do j=0,ngrd
-        qflx(ndt,j)=thcond*qflx(ndt,j)
-       enddo
+        do j=0,ngrd
+            qflx(ndt,j)=thcond*qflx(ndt,j)
+        enddo
 
     end subroutine compute_thermal_qflx
 
- subroutine compute_arrhenius_coeffs
+    subroutine compute_arrhenius_coeffs
 
         integer j,k,l,m
 
-            do k=1,nspc
-                do j=0,ngrd
-                    cdif(ndt,j,k)=cdif0(k)*exp(-eekb*edif(k)/temp(ndt,j))
-                    do l=1,nspc
-                        m=1
-                        kbin(k,l,m)=kbin0(k,l,m)*exp(-eekb*ebin(k,l,m)/temp(ndt,j))
-                        nuth(k,l  )=nuth0(k,l  )*exp(-eekb*eth (k,l  )/temp(ndt,j))
-                    enddo
+        do k=1,nspc
+            do j=0,ngrd
+                cdif(ndt,j,k)=cdif0(k)*exp(-eekb*edif(k)/temp(ndt,j))
+                do l=1,nspc
+                    m=1
+                    kbin(k,l,m)=kbin0(k,l,m)*exp(-eekb*ebin(k,l,m)/temp(ndt,j))
+                    nuth(k,l  )=nuth0(k,l  )*exp(-eekb*eth (k,l  )/temp(ndt,j))
                 enddo
-                enddo
+            enddo
+        enddo
 
 
 
@@ -265,7 +265,9 @@ contains
     subroutine compute_source
         integer::j,l,k
         !     --- source modification ---
+        call compute_inflx
         if (.not.solve_heat_eq) then
+
             do k=1,nspc
                 do j=0,ngrd
                     srs(ndt,j,k)=srs(ndt-1,j,k)
@@ -276,7 +278,6 @@ contains
             enddo
 
         elseif (solve_heat_eq) then
-            call compute_inflx()
             do k=1,nspc
                 do j=0,ngrd
                     srs(ndt,j,k)=source(j,k)
@@ -289,9 +290,9 @@ contains
 
     end subroutine compute_source
 
-subroutine compute_source_rate(k)
- integer::j,l
- integer,intent(in) :: k
+    subroutine compute_source_rate(k)
+        integer::j,l
+        integer,intent(in) :: k
         real(DP) csrs, csrb
         !     --- sources ---
         if (.not.solve_heat_eq) then
@@ -327,7 +328,7 @@ subroutine compute_source_rate(k)
         endif
     end subroutine compute_source_rate
 
-        subroutine compute_surface_flx(k)
+    subroutine compute_surface_flx(k)
         integer::k
         real(DP):: tmp,Edes_rc,Edes_lc
         !     --- surface ---
@@ -342,30 +343,30 @@ subroutine compute_source_rate(k)
             Edes_lc=Edes_l(k)
             Edes_rc=Edes_r(k)
         endif
-!        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
-!        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
-!        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
-!        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+        !        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
+        !        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
+        !        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)
+        !        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
         ! calculate rates of surface processes
         ! - left surface
-         if (left_surface_model(k).eq."S") then
+        if (left_surface_model(k).eq."S") then
 
-        Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
-        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
-        Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
-        Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
+            Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
+            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+            Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
+            Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
         elseif (left_surface_model(k).eq."B") then
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
-        Kb_l(k)= min_rate_surface
-        Kads_l(k)= min_rate_surface
+            Kabs_l(k)=min_rate_surface
+            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+            Kb_l(k)= min_rate_surface
+            Kads_l(k)= min_rate_surface
         elseif (left_surface_model(k).eq."N") then
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=min_rate_surface
-        Kb_l(k)=min_rate_surface
-        Kads_l(k)=min_rate_surface
+            Kabs_l(k)=min_rate_surface
+            Kdes_l(k)=min_rate_surface
+            Kb_l(k)=min_rate_surface
+            Kads_l(k)=min_rate_surface
         else
-        call face_error("unknown left surface model:",left_surface_model(k))
+            call face_error("unknown left surface model:",left_surface_model(k))
         endif
 
 
@@ -373,68 +374,68 @@ subroutine compute_source_rate(k)
         ! - right surface
         if (right_surface_model(k).eq."S") then
 
-          Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
-         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-         Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
-         Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+            Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
+            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
         elseif (right_surface_model(k).eq."B") then
-         Kabs_r(k)=min_rate_surface
-         Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-         Kb_r(k)= min_rate_surface
-         Kads_r(k)=min_rate_surface
+            Kabs_r(k)=min_rate_surface
+            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+            Kb_r(k)= min_rate_surface
+            Kads_r(k)=min_rate_surface
         elseif (right_surface_model(k).eq."N") then
-        Kabs_r(k)=min_rate_surface
-        Kdes_r(k)=min_rate_surface
-        Kb_r(k)=min_rate_surface
-        Kads_r(k)=min_rate_surface
+            Kabs_r(k)=min_rate_surface
+            Kdes_r(k)=min_rate_surface
+            Kb_r(k)=min_rate_surface
+            Kads_r(k)=min_rate_surface
         else
-        call face_error("unknown right surface model:",right_surface_model(k))
+            call face_error("unknown right surface model:",right_surface_model(k))
         endif
 
-        ! calculate surface fluxes using rates and density
-        ! - left surface
+                ! calculate surface fluxes using rates and density
+                ! - left surface
 
 
-if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
-        Gabs_l (ndt,k)=Kabs_l(k)
-        Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_left(k)
+        if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
+            Gabs_l (ndt,k)=Kabs_l(k)
+            Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_left(k)
 
-        Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
-        Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
+            Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
+            Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
 
-        if (verbose_surface) then
-        write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^alpha=',dsrfl(ndt,k)**order_desorption_left(k)
-        write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
-        endif
+            if (verbose_surface) then
+                write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^alpha=',dsrfl(ndt,k)**order_desorption_left(k)
+                write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
+            endif
 
         elseif (left_surface_model(k).eq."B") then
 
-        Gabs_l (ndt,k)=min_rate_surface
-        Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
-        if (verbose_surface) then
-        write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^alpha=',dens(ndt,0,k)**order_desorption_left(k)
-        endif
-        Gb_l (ndt,k)  =dsrfl(ndt,k)
-        Gads_l (ndt,k)=min_rate_surface
+            Gabs_l (ndt,k)=min_rate_surface
+            Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
+            if (verbose_surface) then
+                write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^alpha=',dens(ndt,0,k)**order_desorption_left(k)
+            endif
+            Gb_l (ndt,k)  =dsrfl(ndt,k)
+            Gads_l (ndt,k)=min_rate_surface
 
         endif
 
         ! - right surface
-         if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
-        Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
-        Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
-        Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
-        Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
+        if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
+            Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
+            Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+            Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
+            Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
 
         elseif (right_surface_model(k).eq."B") then
-        Gabs_r (ndt,k)=min_rate_surface                           ! Gabsorp=K(gas)
-        Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
-        Gb_r (ndt,k)  =dsrfr(ndt,k)             ! Gbulk  =K*ns
-        Gads_r (ndt,k)=min_rate_surface      ! Gadsorb=K*n
+            Gabs_r (ndt,k)=min_rate_surface                           ! Gabsorp=K(gas)
+            Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+            Gb_r (ndt,k)  =dsrfr(ndt,k)             ! Gbulk  =K*ns
+            Gads_r (ndt,k)=min_rate_surface      ! Gadsorb=K*n
         endif
         ! apply cap factor to mimic effects of saturation
         if (active_cap) then
-        call compute_cap_factor_surface(k,ndt)
+            call compute_cap_factor_surface(k,ndt)
         endif
 
         ! calculate effective desorptiopn and heat fluxes
@@ -444,30 +445,30 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
         endif
 
         ! - net flux onto surface
-         if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N"))then
-        Gsrf_l(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
+        if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N"))then
+            Gsrf_l(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
         elseif (left_surface_model(k).eq."B") then
-        Gsrf_l(ndt,k)=-Gb_l(ndt,k)
+            Gsrf_l(ndt,k)=-Gb_l(ndt,k)
         endif
 
-         if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
-        Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
+        if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N"))then
+            Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
         elseif (right_surface_model(k).eq."B") then
-        Gsrf_r(ndt,k)=-Gb_r(ndt,k)
+            Gsrf_r(ndt,k)=-Gb_r(ndt,k)
         endif
 
         if (verbose_surface) then
-        write(iout,*) 'Gsrf_l(ndt,k)=',Gsrf_l(ndt,k),'; Gsrf_r(ndt,k)=',Gsrf_r(ndt,k),&
-        'dsrfl(ndt,k)=',dsrfl(ndt,k),'dsrfr(ndt,k)=',dsrfr(ndt,k)
+            write(iout,*) 'Gsrf_l(ndt,k)=',Gsrf_l(ndt,k),'; Gsrf_r(ndt,k)=',Gsrf_r(ndt,k),&
+                'dsrfl(ndt,k)=',dsrfl(ndt,k),'dsrfr(ndt,k)=',dsrfr(ndt,k)
         endif
 
-!     --- low-pass filter ---
-       Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
-       Gsrf_r(ndt,k)=delta*Gsrf_r(ndt-1,k)+(1.d0-delta)*Gsrf_r(ndt,k)
+        !     --- low-pass filter ---
+        Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
+        Gsrf_r(ndt,k)=delta*Gsrf_r(ndt-1,k)+(1.d0-delta)*Gsrf_r(ndt,k)
 
     end subroutine compute_surface_flx
 
-        subroutine compute_reaction_rate(k)
+    subroutine compute_reaction_rate(k)
         integer j,k,l,m
         !     --- reactions ---
 
@@ -508,76 +509,76 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
     end subroutine compute_reaction_rate
 
     subroutine compute_temp_rate
-     integer j
-     rate_t(ndt,0)=(qflx_in-qflx(ndt,0))*2.d0/dx(0)/rhocp+ero_qflx(ndt,0)
-       do j=1,ngrd-1
-        rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)+ero_qflx(ndt,j)
-       enddo
-       rate_t(ndt,ngrd)=0.d0
+        integer j
+        rate_t(ndt,0)=(qflx_in-qflx(ndt,0))*2.d0/dx(0)/rhocp+ero_qflx(ndt,0)
+        do j=1,ngrd-1
+            rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)+ero_qflx(ndt,j)
+        enddo
+        rate_t(ndt,ngrd)=0.d0
 
-       do j=0,ngrd
-!     --- low-pass filter ---
-        rate_t(ndt,j)=delta*rate_t(ndt-1,j)+(1.d0-delta)*rate_t(ndt,j)
-       enddo
+        do j=0,ngrd
+            !     --- low-pass filter ---
+            rate_t(ndt,j)=delta*rate_t(ndt-1,j)+(1.d0-delta)*rate_t(ndt,j)
+        enddo
 
 
 
     end subroutine compute_temp_rate
 
-       subroutine compute_dens_rate(k)
-       integer j,k
-       do j=0,ngrd
-        rate_d(ndt,j,k)=ero_flx(ndt,j,k)
-       enddo
+    subroutine compute_dens_rate(k)
+        integer j,k
+        do j=0,ngrd
+            rate_d(ndt,j,k)=ero_flx(ndt,j,k)
+        enddo
 
-       if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
-       rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
-       elseif(left_surface_model(k).eq."B") then
-       rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
-       !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'flx(ndt,0,k)',flx(ndt,0,k)
-       endif
+        if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
+            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+        elseif(left_surface_model(k).eq."B") then
+            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+        !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'flx(ndt,0,k)',flx(ndt,0,k)
+        endif
 
-       do j=1,ngrd-1
-        rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
-       enddo
-       if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
-       rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
-       elseif(right_surface_model(k).eq."B") then
-       rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
-       endif
-       do j=0,ngrd
-!     --- sources ---
-        rate_d(ndt,j,k)=rate_d(ndt,j,k)+src(ndt,j,k)
-!     --- reactions ---
-        rate_d(ndt,j,k)=rate_d(ndt,j,k)+rct(ndt,j,k)
-!     --- low-pass filter ---
-        delta=0
-        rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
+        do j=1,ngrd-1
+            rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
+        enddo
+        if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
+            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+        elseif(right_surface_model(k).eq."B") then
+            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+        endif
+        do j=0,ngrd
+            !     --- sources ---
+            rate_d(ndt,j,k)=rate_d(ndt,j,k)+src(ndt,j,k)
+            !     --- reactions ---
+            rate_d(ndt,j,k)=rate_d(ndt,j,k)+rct(ndt,j,k)
+            !     --- low-pass filter ---
+            delta=0
+            rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
 
-       enddo
-           end subroutine compute_dens_rate
+        enddo
+    end subroutine compute_dens_rate
 
 
-      subroutine compute_cap_factor_surface(k,i)
-      integer,intent(in)::k,i
-      real(DP) :: cabs_l, cdes_l, cb_l, cads_l
-      real(DP) :: cabs_r, cdes_r, cb_r, cads_r
-      if (active_cap) then
-       call cap_srf_flx(k,i,cabs_l, cdes_l, cb_l, cads_l,cabs_r, cdes_r, cb_r, cads_r)
+    subroutine compute_cap_factor_surface(k,i)
+        integer,intent(in)::k,i
+        real(DP) :: cabs_l, cdes_l, cb_l, cads_l
+        real(DP) :: cabs_r, cdes_r, cb_r, cads_r
+        if (active_cap) then
+            call cap_srf_flx(k,i,cabs_l, cdes_l, cb_l, cads_l,cabs_r, cdes_r, cb_r, cads_r)
 
-        ! multiply surfaces fluxes by cap factors
-        ! - left surface
-        Gabs_l (i,k)=Gabs_l (i,k) *cabs_l
-        Gdes_l (i,k)=Gdes_l (i,k) *cdes_l
-        Gb_l (i,k)  =Gb_l (i,k)   *cb_l
-        Gads_l (i,k)=Gads_l (i,k) *cads_l
-        ! - right surface
-        Gabs_r (i,k)=Gabs_r (i,k) *cabs_r
-        Gdes_r (i,k)=Gdes_r (i,k) *cdes_r
-        Gb_r (i,k)  =Gb_r (i,k)   *cb_r
-        Gads_r (i,k)=Gads_r (i,k) *cads_r
-      endif
-      end subroutine compute_cap_factor_surface
+            ! multiply surfaces fluxes by cap factors
+            ! - left surface
+            Gabs_l (i,k)=Gabs_l (i,k) *cabs_l
+            Gdes_l (i,k)=Gdes_l (i,k) *cdes_l
+            Gb_l (i,k)  =Gb_l (i,k)   *cb_l
+            Gads_l (i,k)=Gads_l (i,k) *cads_l
+            ! - right surface
+            Gabs_r (i,k)=Gabs_r (i,k) *cabs_r
+            Gdes_r (i,k)=Gdes_r (i,k) *cdes_r
+            Gb_r (i,k)  =Gb_r (i,k)   *cb_r
+            Gads_r (i,k)=Gads_r (i,k) *cads_r
+        endif
+    end subroutine compute_cap_factor_surface
 
     subroutine compute_inflx()
         implicit none
@@ -589,44 +590,58 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
 
 
         ! pulsed plasma flow
-        if (pulsed_flux.eq."yes") then
-            ! check that the pulse period is not zero
-            if (tpulse.le.0) then
-            call face_error('Pulsed incoming plasma flux activated but pulse_period =0')
-            endif
+        do k=1,nspc
+            if (inflx_in_pulse(k).eq."R") then
+                ! check that the pulse period is not zero
+                if (inflx_in_pulse_period(k).le.0) then
+                    call face_error('Pulsed incoming plasma flux activated but pulse_period =0')
+                endif
 
-            trel=time-tpulse*int(time/tpulse)
-            if (trel .le. t1) then ! phase 1 of pulse
-                tmp=trel/t1
-                do k=1,nspc
+                trel=time-inflx_in_pulse_period(k)*int(time/inflx_in_pulse_period(k))
+                if (trel .le. t1) then ! phase 1 of pulse
+                    tmp=trel/t1
+
                     inflx(k)=inflx_in(k)+(inflx_in_max(k)-inflx_in(k))*tmp
-                enddo
-                rad =rad_min +(rad_max -rad_min )*tmp
-                cero=cero_min+(cero_max-cero_min)*tmp
-            elseif (trel .le. t2) then ! phase 2 of pusle
-                do k=1,nspc
-                    inflx(k)=inflx_in_max(k)
-                enddo
-                rad =rad_max
-                cero=cero_max
-            elseif (trel .le. t3) then ! phase 3 of pulse
-                tmp=(trel-t2)/(t3-t2)
-                do k=1,nspc
-                    inflx(k)=inflx_in_max(k)+(inflx_in(k)-inflx_in_max(k))*tmp
-                enddo
-                rad =rad_max +(rad_min -rad_max )*tmp
-                cero=cero_max+(cero_min-cero_max)*tmp
-            endif
 
-        elseif (pulsed_flux.eq."no") then ! no pulse
-            do k=1,nspc
+                    rad =rad_min +(rad_max -rad_min )*tmp
+                    cero=cero_min+(cero_max-cero_min)*tmp
+                elseif (trel .le. t2) then ! phase 2 of pusle
+
+                    inflx(k)=inflx_in_max(k)
+
+                    rad =rad_max
+                    cero=cero_max
+                elseif (trel .le. t3) then ! phase 3 of pulse
+                    tmp=(trel-t2)/(t3-t2)
+
+                    inflx(k)=inflx_in_max(k)+(inflx_in(k)-inflx_in_max(k))*tmp
+
+                    rad =rad_max +(rad_min -rad_max )*tmp
+                    cero=cero_max+(cero_min-cero_max)*tmp
+                endif
+            elseif (inflx_in_pulse(k).eq."N") then ! no pulse
                 inflx(k)=inflx_in(k)
-            enddo
-            rad =rad_min
-            cero=cero_min
-        else
-        call face_error("Unknown mode for pulsed_flux")
-        endif
+
+            elseif (inflx_in_pulse(k).eq."S") then
+                if (time.ge.inflx_in_pulse_starttime(k)) then
+                    if (inflx_in_pulse_period(k).le.0d0) then
+                        call face_error(' Gamma pulse_period <=0')
+                    endif
+                    inflx(k)=inflx_in(k)+(inflx_in_max(k)-inflx_in(k))*&
+                    sin(2d0*pi*(time-inflx_in_pulse_starttime(k))/inflx_in_pulse_period(k))
+
+                else
+                inflx(k)=inflx_in(k)
+                endif
+
+            else
+                call face_error("Unknown mode for Gamma_in_pulse k=",k)
+            endif
+        enddo
+
+        rad =rad_min
+        cero=cero_min
+
 
         if (gamero.ne.0d0) cero=cero+gamero*inflx(1)*(lambda**3*cvlm) ! sputtering
 
@@ -642,7 +657,7 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
 
     end subroutine compute_inflx
 
-       subroutine  compute_temperature
+    subroutine  compute_temperature
         integer j,n
         !     --- compute new temperature and update arrhenius coeffs in heat eq is not solved.
         ! if heat eq is solved, then arrhenius coefficients are computed within cpomputation of f functions
@@ -691,57 +706,57 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
     end subroutine compute_temperature
 
     subroutine check_isNaN(u,str)
-      ! update equation terms
-      real(DP),intent(in):: u(:)
-      character(*) :: str
-      integer :: i
-      do i=1,neq
-      if (isnan(u(i))) then
-      call face_error(' ; location:',str,'NaN found: at i=' ,i )
-      endif
-      enddo
-      end subroutine check_isNaN
+        ! update equation terms
+        real(DP),intent(in):: u(:)
+        character(*) :: str
+        integer :: i
+        do i=1,neq
+            if (isnan(u(i))) then
+                call face_error(' ; location:',str,'NaN found: at i=' ,i )
+            endif
+        enddo
+    end subroutine check_isNaN
 
     subroutine compute_eq_rates(u)
-      ! update equation terms
-      real(DP),intent(in):: u(:)
-      integer :: k
-      !      if (verbose_debug) write (iout,*) '-- compute_eq_rates'
-      ! ** get values of density and temperature from vector u
+        ! update equation terms
+        real(DP),intent(in):: u(:)
+        integer :: k
+        !      if (verbose_debug) write (iout,*) '-- compute_eq_rates'
+        ! ** get values of density and temperature from vector u
 
-      call get_density_values(u)
+        call get_density_values(u)
 
-      call check_isNaN(u,'after get_density')
-      ! ** check if calculated new values are positive and below max values
+        call check_isNaN(u,'after get_density')
+        ! ** check if calculated new values are positive and below max values
 
-      call check_positivity_max
+        call check_positivity_max
 
-      ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
-      if (solve_heat_eq) then
-      call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. Ifheaqt eq not solved, this is done upfront in routine step
-      endif
-      ! *** density
-      do k=1,nspc
-      call compute_source_rate(k)             ! compute source term for species
-      call compute_gradient_dens(k)      ! set flx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
-      call compute_reaction_rate(k)           !
-      call compute_surface_flx(k)
-      call compute_ero_flx(k)
-      call compute_diff_flx(k)
-      call compute_dens_rate(k)
-      enddo
+        ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
+        if (solve_heat_eq) then
+            call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. Ifheaqt eq not solved, this is done upfront in routine step
+        endif
+        ! *** density
+        do k=1,nspc
+            call compute_source_rate(k)             ! compute source term for species
+            call compute_gradient_dens(k)      ! set flx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
+            call compute_reaction_rate(k)           !
+            call compute_surface_flx(k)
+            call compute_ero_flx(k)
+            call compute_diff_flx(k)
+            call compute_dens_rate(k)
+        enddo
 
-      ! *** heat conduction
-      if (solve_heat_eq) then
-       call compute_gradient_temp ! compute qflx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
-       call compute_ero_qflx      ! compute ero_qflx=cero*qflx
-       call compute_thermal_qflx  ! compute qflx=kappa*qflx
-       call compute_temp_rate    !
-      endif
+        ! *** heat conduction
+        if (solve_heat_eq) then
+            call compute_gradient_temp ! compute qflx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
+            call compute_ero_qflx      ! compute ero_qflx=cero*qflx
+            call compute_thermal_qflx  ! compute qflx=kappa*qflx
+            call compute_temp_rate    !
+        endif
 
-      end subroutine compute_eq_rates
+    end subroutine compute_eq_rates
 
-      real(DP) function compute_fnorm(u) result(fnorm)
+    real(DP) function compute_fnorm(u) result(fnorm)
         integer i, idx
         real(DP),intent(in):: u(:)
         real(DP):: f(neq)
@@ -767,51 +782,56 @@ if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
         fnorm=sqrt(norm)
     end function compute_fnorm
 
-     subroutine check_positivity_max
+    subroutine check_positivity_max
         integer ::j,k
         real(DP)::tmp
         !     --- check for negative densities ---
         do k=1,nspc
             if (dsrfl(ndt,k) .lt. 0.d0) then
-call face_error("left srf dens <0 for species k= ",k," dsrfl=",dsrfl(ndt,k),"previous step: dsrfl(ndt-1)=",dsrfl(ndt-1,k))
+                call face_error("left srf dens <0 for species k= ",k,&
+                " dsrfl=",dsrfl(ndt,k),"previous step: dsrfl(ndt-1)=",dsrfl(ndt-1,k))
             endif
 
             if (dsrfl(ndt,k) .gt. dsrfm(k)) then
-                call face_error("left srf dens >max for species k= ",k," dsrfl=",dsrfl(ndt,k),"dsrfm=",dsrfm(k))
+                call face_error("left srf dens >max for species k= ",k,&
+                " dsrfl=",dsrfl(ndt,k),"dsrfm=",dsrfm(k))
             endif
 
             if (dsrfr(ndt,k) .gt. dsrfm(k)) then
-                call face_error("right srf dens >max for species k= ",k," dsrfr=",dsrfr(ndt,k),"dsrfm=",dsrfm(k))
+                call face_error("right srf dens >max for species k= ",k,&
+                " dsrfr=",dsrfr(ndt,k),"dsrfm=",dsrfm(k))
             endif
 
             if (dsrfr(ndt,k) .lt. 0.d0) then
-call face_error("right srf dens <0 for species k= ",k," dsrfr=",dsrfr(ndt,k),"previous step: dsrf(ndt-1)=",dsrfr(ndt-1,k))
+                call face_error("right srf dens <0 for species k= ",k,&
+                " dsrfr=",dsrfr(ndt,k),"previous step: dsrf(ndt-1)=",dsrfr(ndt-1,k))
             endif
 
             do j=0,ngrd
                 if (dens(ndt,j,k) .lt. 0.d0) then
-call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),"previous step: dens(ndt-1)=",dens(ndt-1,j,k))
+                    call face_error("dens <0 for species k= ",k," cell j=",j,&
+                    " dens=",dens(ndt,j,k),"previous step: dens(ndt-1)=",dens(ndt-1,j,k))
                 endif
 
             enddo
         enddo
 
         !     --- check for density exceeding maximum ---
-         do j=0,ngrd
-        if (dens(ndt,j,1) .gt. densm(1)) then
-            call face_warning('hydrogen density exceeded the limit j=',j, " dens=",dens(ndt,j,1))
-            dens(ndt,j,1)=densm(1)
-        endif
-        !
-        do k=2,(nspc-1),2
-            if ((dens(ndt,j,k)+dens(ndt,j,k+1)) .gt.(densm(k)+densm(k+1))) then
-                call face_warning('Trap density exceeded the limit k=',k,' j=' ,j,&
-                ' dens tr(k)+otr(k+1)=',dens(ndt,j,k)+dens(ndt,j,k+1))
-                tmp=(densm(k)+densm(k+1))/(dens(ndt,j,k)+dens(ndt,j,k+1))
-                dens(ndt,j,k  )=tmp*dens(ndt,j,k  )
-                dens(ndt,j,k+1)=tmp*dens(ndt,j,k+1)
+        do j=0,ngrd
+            if (dens(ndt,j,1) .gt. densm(1)) then
+                call face_warning('hydrogen density exceeded the limit j=',j, " dens=",dens(ndt,j,1))
+                dens(ndt,j,1)=densm(1)
             endif
-        enddo
+            !
+            do k=2,(nspc-1),2
+                if ((dens(ndt,j,k)+dens(ndt,j,k+1)) .gt.(densm(k)+densm(k+1))) then
+                    call face_warning('Trap density exceeded the limit k=',k,' j=' ,j,&
+                        ' dens tr(k)+otr(k+1)=',dens(ndt,j,k)+dens(ndt,j,k+1))
+                    tmp=(densm(k)+densm(k+1))/(dens(ndt,j,k)+dens(ndt,j,k+1))
+                    dens(ndt,j,k  )=tmp*dens(ndt,j,k  )
+                    dens(ndt,j,k+1)=tmp*dens(ndt,j,k+1)
+                endif
+            enddo
         enddo
 
         !    --- check for negative temperatures and update coefficients ---
@@ -822,141 +842,157 @@ call face_error("dens <0 for species k= ",k," cell j=",j," dens=",dens(ndt,j,k),
                 endif
 
             enddo
-      endif
+        endif
 
     end subroutine check_positivity_max
 
-          subroutine get_density_values(u)
-      integer ::i,j,k
-      real(DP),intent(in):: u(:)
-      i=0
+    subroutine get_density_values(u)
+        integer ::i,j,k
+        real(DP),intent(in):: u(:)
+        i=0
 
-      do k=1,nspc
-       i=i+1
-       dsrfl(ndt,k)=u(i)
-       do j=0,ngrd
-        i=i+1
-        dens(ndt,j,k)=u(i)
-       enddo
-       i=i+1
-       dsrfr(ndt,k)=u(i)
- !      write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
+        do k=1,nspc
+            i=i+1
+            dsrfl(ndt,k)=u(i)
+            do j=0,ngrd
+                i=i+1
+                dens(ndt,j,k)=u(i)
+            enddo
+            i=i+1
+            dsrfr(ndt,k)=u(i)
+        !      write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
 
-      enddo
-      if (solve_heat_eq) then
-       do j=0,ngrd
-        i=i+1
-        temp(ndt,j)=u(i)
-       enddo
+        enddo
+        if (solve_heat_eq) then
+            do j=0,ngrd
+                i=i+1
+                temp(ndt,j)=u(i)
+            enddo
 
-      endif
+        endif
 
-      end subroutine get_density_values
+    end subroutine get_density_values
 
     subroutine compute_trace_flux
-    ! sum up the outgassing flux left and right over time to estimate the average outgassing flux over the simulation
-    ! end verify if <Gdes_l>\approx Gdes_l(end)
-    real(DP):: int_src
-    integer k,j
+        ! sum up the outgassing flux left and right over time to estimate the average outgassing flux over the simulation
+        ! end verify if <Gdes_l>\approx Gdes_l(end)
+        real(DP):: int_src
+        integer k,j
 
-    do k=1,nspc
-    int_src=0d0
-    do j=0,ngrd
-    int_src=int_src+source(j,k)*dx(j)
-    enddo
-    trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+int_src*dt_face
-    trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
-    trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
-    trace_flux(k)%sig_Gdes_l=trace_flux(k)%sig_Gdes_l+Gdes_l(ndt,k)**2
-    trace_flux(k)%sig_Gdes_r=trace_flux(k)%sig_Gdes_r+Gdes_r(ndt,k)**2
-    trace_flux(k)%max_Gdes_l=max(trace_flux(k)%max_Gdes_l,Gdes_l(ndt,k))
-    trace_flux(k)%max_Gdes_r=max(trace_flux(k)%max_Gdes_r,Gdes_r(ndt,k))
-    trace_flux(k)%min_Gdes_l=min(trace_flux(k)%min_Gdes_l,Gdes_l(ndt,k))
-    trace_flux(k)%min_Gdes_r=min(trace_flux(k)%min_Gdes_r,Gdes_r(ndt,k))
-    enddo
-        end subroutine compute_trace_flux
+        do k=1,nspc
+            int_src=0.d0
+            do j=0,ngrd-1
+                int_src=int_src+source(j,k)*dx(j)
+            enddo
+            trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+int_src*dt_face
+            trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
+            trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
+            trace_flux(k)%sig_Gdes_l=trace_flux(k)%sig_Gdes_l+Gdes_l(ndt,k)**2
+            trace_flux(k)%sig_Gdes_r=trace_flux(k)%sig_Gdes_r+Gdes_r(ndt,k)**2
+            trace_flux(k)%max_Gdes_l=max(trace_flux(k)%max_Gdes_l,Gdes_l(ndt,k))
+            trace_flux(k)%max_Gdes_r=max(trace_flux(k)%max_Gdes_r,Gdes_r(ndt,k))
+            trace_flux(k)%min_Gdes_l=min(trace_flux(k)%min_Gdes_l,Gdes_l(ndt,k))
+            trace_flux(k)%min_Gdes_r=min(trace_flux(k)%min_Gdes_r,Gdes_r(ndt,k))
+        enddo
+    end subroutine compute_trace_flux
 
-      subroutine compute_dt_update
+    subroutine compute_dt_update
 
-      integer  ::i, j, k
-      real(DP) :: tmp,dt
-      real(DP),parameter:: rtfm=5.d-1, rtfp=5.d-1
+        integer  ::i, j, k
+        real(DP) :: tmp,dt
+        real(DP),parameter:: rtfm=5.d-1, rtfp=5.d-1
 
-      tmp=0d0
-      if (variable_timestep) then
-      dt=end_time-time
+        tmp=0d0
+        if (variable_timestep) then
+            dt=end_time-time
 
-! bulk
-      do k=1,nspc
-       do j=0,ngrd
-        if (rate_d(ndt,j,k) .ne. 0.d0) then
-         if (rate_d(ndt,j,k) .lt. 0.d0) then
-          tmp=-rtfm*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
-         else
-          tmp= rtfp*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
-         endif
-        else
-         tmp=dt
-        endif
+            ! bulk
+            do k=1,nspc
+                do j=0,ngrd
+                    if (rate_d(ndt,j,k) .ne. 0.d0) then
+                        if (rate_d(ndt,j,k) .lt. 0.d0) then
+                            tmp=-rtfm*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+                        else
+                            tmp= rtfp*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+                        endif
+                    else
+                        tmp=dt
+                    endif
 
-        if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
-         dt=tmp
-        endif
-       enddo
-! left surface
-       if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
-       if (Gsrf_l (ndt  ,k) .ne. 0.d0) then
-        if (Gsrf_l (ndt  ,k) .lt. 0.d0) then
-         tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
-        else
-         tmp= rtfp*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
-        endif
-       else
-        tmp=dt
-       endif
-       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
-        dt=tmp
-       endif
-       endif
-! right surface
-       if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
-       if (Gsrf_r (ndt  ,k) .ne. 0.d0) then
-        if (Gsrf_r (ndt  ,k) .lt. 0.d0) then
-         tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
-        else
-         tmp= rtfp*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
-        endif
-       else
-        tmp=dt
-       endif
-       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
-        dt=tmp
-       endif
-       endif
-      enddo
+                    if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+                        dt=tmp
+                    endif
+                enddo
+                ! left surface
+                if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
+                    if (Gsrf_l (ndt  ,k) .ne. 0.d0) then
+                        if (Gsrf_l (ndt  ,k) .lt. 0.d0) then
+                            tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+                        else
+                            tmp= rtfp*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+                        endif
+                    else
+                        tmp=dt
+                    endif
+                    if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+                        dt=tmp
+                    endif
+                endif
+                ! right surface
+                if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
+                    if (Gsrf_r (ndt  ,k) .ne. 0.d0) then
+                        if (Gsrf_r (ndt  ,k) .lt. 0.d0) then
+                            tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+                        else
+                            tmp= rtfp*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+                        endif
+                    else
+                        tmp=dt
+                    endif
+                    if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+                        dt=tmp
+                    endif
+                endif
+            enddo
 
 
 
-! heat equation
-      if (solve_heat_eq) then
-      do j=0,ngrd-1
-       if (rate_t(ndt,j) .ne. 0.d0) then
-        if (rate_t(ndt,j) .lt. 0.d0) then
-         tmp=-rtfm*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
-        else
-         tmp= rtfp*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
-        endif
-       else
-        tmp=dt
-       endif
-       if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
-        dt=tmp
-       endif
-      enddo
-      endif
-      if (dt .lt. min_dt_face) dt=min_dt_face
+            ! heat equation
+            if (solve_heat_eq) then
+                do j=0,ngrd-1
+                    if (rate_t(ndt,j) .ne. 0.d0) then
+                        if (rate_t(ndt,j) .lt. 0.d0) then
+                            tmp=-rtfm*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+                        else
+                            tmp= rtfp*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+                        endif
+                    else
+                        tmp=dt
+                    endif
+                    if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
+                        dt=tmp
+                    endif
+                enddo
+            endif
 
-      dt_face=dt
-      endif
+
+            if (dt .lt. min_dt_face) dt=min_dt_face
+
+
+
+        do k=1,nspc
+            if (inflx_in_pulse(k).ne."N") then
+                if (time.ge.inflx_in_pulse_starttime(k)) then
+                    if (dt>inflx_in_pulse_period(k)/20d0) then
+                        dt=inflx_in_pulse_period(k)/20d0
+                    endif
+                endif
+            endif
+        enddo
+
+
+        dt_face=dt
+
+    endif
 end subroutine compute_dt_update
 end module modFACE_compute

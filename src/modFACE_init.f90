@@ -130,6 +130,8 @@ contains
         !      time step initialization
         dt_face=dt0_face
         !      dt=cdt*ttm
+        time_savevol=start_time
+        time_savetime=start_time
         time=start_time
         solver_step_count=0
         if (verbose_init) write(iout,*) "Initialization time parameters: DONE"

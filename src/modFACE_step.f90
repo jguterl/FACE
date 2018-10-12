@@ -66,10 +66,12 @@
 
               ! update time when solver step is completed with the current dt_face
               time=time+dt_face
+              time_savetime=time_savetime+dt_face
+              time_savevol=time_savevol+dt_face
               call check_positivity_max
               call compute_trace_flux
+              call print_timestep_info                   ! print info on current time step
               call compute_dt_update
-
                             ! if dt_face is less than nominal time step dt0_face,
                            ! then we increase dt by 1/reduction_factor_dt if there was enough successsful timestep
                            ! for the next iteration

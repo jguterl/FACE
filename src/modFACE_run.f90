@@ -219,10 +219,11 @@ subroutine time_loop
         call print_milestone('starting time iteration')
 
         iteration=0
-        do while (time .le. end_time)
-            call print_timestep_info()                   ! print info on current time step
+        do while (time .lt. end_time)
+
             call save()                                  ! dump data
             call step()                                  ! numerical solver
+
             call store_restart(trim(restart_filename))   ! store restart if requested
             iteration=iteration+1
         enddo

@@ -220,6 +220,9 @@ end select
         call get_keyword_value('Eimpact_ion', enrg)
         call get_keyword_value('Gamma_in', inflx_in)
         call get_keyword_value('Gamma_in_max', inflx_in_max)
+        call get_keyword_value('Gamma_pulse', inflx_in_pulse)
+        call get_keyword_value('Gamma_pulse_period', inflx_in_pulse_period)
+        call get_keyword_value('Gamma_pulse_starttime', inflx_in_pulse_starttime)
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
@@ -246,8 +249,8 @@ end select
         call get_keyword_value('first_ramp_end_time', t1)
         call get_keyword_value('second_ramp_start_time', t2)
         call get_keyword_value('second_ramp_end_time', t3)
-        call get_keyword_value('pulsed_flux', pulsed_flux)
-        call get_keyword_value('pulse_period', tpulse)
+!        call get_keyword_value('pulsed_flux', pulsed_flux)
+!        call get_keyword_value('pulse_period', tpulse)
         call get_keyword_value('iter_solver_max', iter_solver_max)
         call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
           call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
@@ -432,86 +435,12 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(t1)
         call init_zero( t2)
         call init_zero( t3)
-        call init_zero(tpulse)
+!        call init_zero(tpulse)
         if (verbose_input) write(iout,*) 'Initialization of single input parameters: OK'
     end subroutine init_input_single
 
 
 
-    !      write (6, 1090) cero_min
-    !      write (6, 1100) cero_max
-    !      write (6, 1110) gamero
-    !      write (6, 1120) ngrd
-    !      write (6, 1130) alpha
-    !      write (6, 1140) thcond
-    !      write (6, 1150) cp
-    !      write (6, 1160) rho
-    !      write (6, 1170) emiss
-    !      write (6, 1180) qform
-    !      write (6, 1190) rad_min
-    !      write (6, 1200) rad_max
-    !      write (6, 1210) t1
-    !      write (6, 1220) t2
-    !      write (6, 1230) t3
-    !      write (6, 1240) tp
-    !
-    !                write (6, 1010) length, start_time, tramp0, tramp1, end_time, dtmin
-    !1010  format (' length of the simulation region: ', 1pe12.5, ' m'/
-    !     + ' start time: ', 1pe12.5, ' s'/
-    !     + ' temperature ramp start: ', 1pe12.5, ' s'/
-    !     + ' temperature ramp stop: ', 1pe12.5, ' s'/
-    !     + ' simulation time: ', 1pe12.5, ' s'/
-    !     + ' minimal time step: ', 1pe12.5, ' s')
-    !            write (6, 1030) nspc
-    !      write (6, 1040) (i, dens0(i), dsrfl0(i), dsrfr0(i), i=1,nspc)
-    !1030  format (' number of species is ', i2)
-    !1040  format (' species of sort ', i2,
-    !     + '  have initial (max) density ', 1pe12.5, ' m^-3',
-    !     + '  initial left  surface density', 1pe12.5, ' m^-2',
-    !     + '  initial right surface density', 1pe12.5, ' m^-2')
-    !            write (6, 1020) tspc, ttm, tstr
-    !1020  format (' spatial parameters saving interval: ', 1pe12.5, ' s'/
-    !     + ' temporal parameters saving interval: ', 1pe12.5, ' s'/
-    !     + ' restart file saving interval: ', 1pe12.5, ' s')
-    !      write (6, 1021) 'Double precision is used'
-    !1021  format (a)
-    !
-    !
-    !
-    !      write (6, 1050) (i, enrg(i), i=1,nspc)
-    !1050  format (' impact energy of species ', i2, ' is ',
-    !     + 1pe12.5, ' eV')
-    !      write (6, 1060) (i, inflx_in(i), i=1,nspc)
-    !1060  format (' min influx of species ', i2, ' is', 1pe12.5,
-    !     +        ' m^-2 s^-1')
-    !      write (6, 1061) (i, inflx_in_max(i), i=1,nspc)
-    !1061  format (' max influx of species ', i2, ' is', 1pe12.5,
-    !     +        ' m^-2 s^-1')
-    !      write (6, 1070) (i, gas_pressure(i), i=1,nspc)
-    !1070  format (' ext. pressure of species ', i2, ' is', 1pe12.5, ' Pa')
-    !      write (6, 1080) (i, tg(i), i=1,nspc)
-    !1080  format (' ext. temperature of species ', i2, ' is', 1pe12.5,
-    !     + ' eV')
-    !1090  format (' min ablation speed is ', 1pe12.5, ' m/s')
-    !1100  format (' max ablation speed is ', 1pe12.5, ' m/s')
-    !1110  format (' sputtering yiled is ', 1pe12.5)
-    !1120  format (' number of grid points is ', i6)
-    !1130  format (' grid scaling factor is ', 1pe12.5)
-    !1140  format (' thermal conductivity is ', 1pe12.5, ' W/(m*K)')
-    !1150  format (' heat capacity is ', 1pe12.5, ' J/(kg*K)')
-    !1160  format (' density factor is ', 1pe12.5, ' kg/m^3')
-    !1170  format (' emissivity is ', 1pe12.5)
-    !1180  format (' heat of formation is ', 1pe12.5, ' eV')
-    !1190  format (' min radiation power is ', 1pe12.5, ' W/m^2')
-    !1200  format (' max radiation power is ', 1pe12.5, ' W/m^2')
-    !1210  format (' end time of first ramp is ', 1pe12.5, ' s')
-    !1220  format (' start time of second ramp is ', 1pe12.5, ' s')
-    !1230  format (' end time of second ramp is ', 1pe12.5, ' s')
-    !1240  format (' pulse period is ', 1pe12.5, ' s')
-    !c
-    !      close (unit=10)
-    !      return
-    !1999  stop ' *** error occured when reading ''face.ini''!'
 
 
 

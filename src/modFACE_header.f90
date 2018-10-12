@@ -108,6 +108,8 @@
 
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
+      real(DP):: time_savevol  !
+      real(DP):: time_savetime  !
       real(DP):: start_time ! start time  of simulation
 !      real(DP):: cdt   ! factor for solver time step (dt)
       ! temp
@@ -164,7 +166,6 @@
       character(string_length):: variable_timestep_string
       character(string_length):: final_state_file
       character(string_length):: casename
-      character(string_length):: pulsed_flux
 
       type inventories
        real(DP)         ::  Nnetbulk
@@ -174,7 +175,7 @@
      end type inventories
 
      type particle_balances
-             real(DP):: Nnet=0,Ninflux=0,Noutflux=0,p_net=0,p_max=0,f_lost=0
+     real(DP):: Nnet=0d0,Ninflux=0d0,Noutflux=0d0,p_net=0d0,p_max=0d0,f_lost=0d0
      end type particle_balances
 
     type outgassing_fluxes
@@ -223,6 +224,9 @@
       real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
       real(DP),allocatable::inflx_in_max(:) ! max influx of particles
       real(DP),allocatable::inflx_in(:) ! nominal influx of particles
+      real(DP),allocatable::inflx_in_pulse_period(:) ! max influx of particles
+      real(DP),allocatable::inflx_in_pulse_starttime(:) ! max influx of particles
+      character(lname),allocatable::inflx_in_pulse(:) ! nominal influx of particles
       real(DP),allocatable::gas_pressure(:)
       real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
@@ -370,7 +374,7 @@
       real(DP)::t1       =0
       real(DP):: t2      =0
       real(DP)::t3       =0
-      real(DP)::tpulse   =0 ! period of plasma pulse
+!      real(DP)::tpulse   =0 ! period of plasma pulse
       real(DP),allocatable::rate_t(:,:)
       real(DP),allocatable::qflx(:,:)
       real(DP),allocatable::ero_qflx(:,:)

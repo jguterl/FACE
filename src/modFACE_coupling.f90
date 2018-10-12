@@ -136,7 +136,7 @@ contains
                     k,'enrg=',inflx_in(k))
             endif
         enddo
-        if (pulsed_flux.ne."no") then
+        if (inflx_in_pulse(1).ne."N") then
             call face_error('Cannot run pulsed fluxwhen running FACE coupled to fluid code')
         endif
          ! ** Overwritting inflx_in with input from fluid code.

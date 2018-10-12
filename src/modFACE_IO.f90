@@ -68,7 +68,7 @@ subroutine save_timedata
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(23es10.3)"
+    write(myfmt2,*) "(es18.8e2,23es12.3e2)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -288,25 +288,27 @@ end subroutine save_timedata
         real(DP)::tmp
 
         ! dump time data
-        if (dump_space_dt.gt.0d0) then
-            tmp=2.d0*abs(time-dump_time_dt*nint(time/dump_time_dt))
-        else
-            tmp=1d99
-        endif
-        if (dump_space.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+!        if (dump_time_dt.gt.0d0) then
+!            tmp=2.d0*abs(time-dump_time_dt*nint(time/dump_time_dt))
+!        else
+!            tmp=1d99
+!        endif
+        if (dump_time.and.(time_savetime.ge.dump_time_dt.or.time.le.start_time.or.time.ge.end_time)) then
             call save_timedata
+            time_savetime=0d0
         endif
 
         ! dump space data
-        if (dump_space_dt.gt.0d0) then
-            tmp=2.d0*abs(time-dump_space_dt*nint(time/dump_space_dt))
-        else
-            tmp=1d99
-        endif
-        if (dump_time.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+!        if (dump_space_dt.gt.0d0) then
+!            tmp=2.d0*abs(time-dump_space_dt*nint(time/dump_space_dt))
+!        else
+!            tmp=1d99
+!        endif
+        if (dump_space.and.(time_savevol.ge.dump_space_dt.or.time.le.start_time.or.time.ge.end_time)) then
             call save_voldata
             call save_srfdata
             call save_heatdata
+            time_savevol=0d0
         endif
 
         ! dump restart file
@@ -635,7 +637,7 @@ integer :: i
 character(string_length)::myfmt,str
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
-write(myfmt,*) "('iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
+write(myfmt,*) "('iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
  ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
  write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver,dt_face
   call print_formatted(str)
