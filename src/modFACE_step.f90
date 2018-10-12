@@ -70,6 +70,7 @@
               time_savevol=time_savevol+dt_face
               call check_positivity_max
               call compute_trace_flux
+              call compute_onthefly_inventory
               call print_timestep_info                   ! print info on current time step
               call compute_dt_update
                             ! if dt_face is less than nominal time step dt0_face,

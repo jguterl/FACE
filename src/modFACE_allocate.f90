@@ -493,6 +493,12 @@
           else
               call face_error('trace_outgassing already allocated')
           endif
+          if (.not.allocated(onthefly_inventory)) then
+      allocate(onthefly_inventory(nspc))
+
+          else
+              call face_error('onthefly_inventory already allocated')
+          endif
 
 
 
@@ -718,6 +724,7 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
 
 
       if (allocated(trace_flux)) deallocate(trace_flux)
+       if (allocated(onthefly_inventory)) deallocate(onthefly_inventory)
        if (allocated(init_inventory)) deallocate(init_inventory)
        if (allocated(final_inventory)) deallocate(final_inventory)
     end subroutine deallocate_variables

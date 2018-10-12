@@ -28,7 +28,7 @@
 
                   elseif  (implantation_model(k).eq.'S') then
 
-                      if (j.le.j_implantation_depth(k)) then
+                      if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)-1) then
                           source=source_rate
                       else
                           source=0d0

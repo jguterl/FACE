@@ -75,6 +75,15 @@ contains
             trace_flux(k)%sig_Gdes_r=0.d0
         enddo
 
+        do k=1,nspc
+            onthefly_inventory(k)%int_dens=0.d0
+            onthefly_inventory(k)%int_dsrf=0.d0
+            onthefly_inventory(k)%net_int_dens=0.d0
+            onthefly_inventory(k)%net_int_dsrf=0.d0
+            onthefly_inventory(k)%int_des=0.d0
+            onthefly_inventory(k)%int_src=0.d0
+        enddo
+
         call open_timedata_files
 
     end subroutine init_misc
@@ -138,9 +147,10 @@ contains
     end subroutine init_time
 
 
-    subroutine init_grid()
+    subroutine init_grid
         integer:: j,ngrd2,k
         real(DP)::dx0
+        real(DP):: a,b,sa,sm
 
         !      initialization of grid arrays
         x(0)=0.d0
@@ -152,6 +162,7 @@ contains
             enddo
             dx (ngrd)=dx(ngrd-1)
         elseif (grid_type.eq."S") then
+          if (grid_gen_mode.eq."alpha") then
 
             ngrd2=ngrd/2
             if (mod(ngrd,2) .ne. 0) then
@@ -182,10 +193,44 @@ contains
                 enddo
             endif
             dx (ngrd)=dx(ngrd-1)
+            if (x(ngrd).ne.length) then
+            call face_error("x(ngrd).ne.length",x(ngrd))
+            endif
 
-        elseif (grid_type.eq."A") then
+             else
+            call face_error('Grid generation not implemented for this type of grid',grid_type)
+        endif
+         elseif (grid_type.eq."A") then
+        if (grid_gen_mode.eq."seed") then
+        if (grid_dx0.ge.length) then
+        call face_error("dx0 cannot be >= than total grid length in this grid mode")
+        endif
 
-            dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd-2.d0)
+            a=1.0000001d0;
+            b=100d0;
+do while (abs(b-a)>1.d-10)
+sa=sum_geo(a,ngrd)-length/grid_dx0
+sm=sum_geo((b+a)/2d0,ngrd)-length/grid_dx0
+if (sa*sm<0d0) then
+    b=(a+b)/2d0
+else
+    a=(a+b)/2d0
+endif
+if (verbose_init) write(iout,*) "a=",a,"b=",b
+enddo
+alpha=a
+if (alpha.gt.99d0) then
+alpha=1d0
+endif
+dx0=grid_dx0
+if (verbose_init) write(iout,*) "seed mode: alpha=",alpha," dx0=",dx0
+elseif (grid_gen_mode.eq."alpha") then
+dx0=length*(1.d0-alpha)/(1-alpha**ngrd)
+if (verbose_init) write(iout,*) "alpha mode: alpha=",alpha," dx0=",dx0
+else
+call face_error("unknown grid gen mode")
+endif
+
             x (0)=0.d0
             dx(0)=dx0
             do j=1,ngrd
@@ -194,6 +239,11 @@ contains
             enddo
             dx (ngrd)=dx(ngrd-1)
 
+            if (abs(x(ngrd)-length)>1d-7) then
+
+            call face_error("x(ngrd).ne.length",x(ngrd))
+
+            endif
         else
             call face_error('Unknown type of grid',grid_type)
         endif
@@ -203,7 +253,7 @@ contains
             do j=0,ngrd
                 if (x(j).gt.implantation_depth(k)+x(0)) then
                     j_implantation_depth(k)=j-1
-                    exit
+
                 endif
             enddo
             if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
@@ -553,7 +603,15 @@ contains
         final_state_file=trim(path_folder)//trim(casename)//".state"
     end subroutine init_path
 
-
+real(DP) function sum_geo(q,N)
+real(DP),intent(in):: q
+integer,intent(in) :: N
+if (q==1d0) then
+sum_geo=real(N,DP)
+else
+sum_geo=(1-q**real(N,DP))/(1-q)
+endif
+end function sum_geo
 
 
 end module modFACE_init

@@ -66,7 +66,7 @@ subroutine run_FACE(face_input,face_output)
         real(DP):: s
         do k=1,nspc
             s=0d0
-            do j=0,ngrd
+            do j=0,ngrd-1
                 s=s+dens(ndt,j,k)*dx(j)
             enddo
             init_inventory(k)%Ntotbulk=s
@@ -82,7 +82,7 @@ subroutine run_FACE(face_input,face_output)
         real(DP):: s
         do k=1,nspc
             s=0d0
-            do j=0,ngrd
+            do j=0,ngrd-1
                 s=s+dens(ndt,j,k)*dx(j)
             enddo
             final_inventory(k)%Ntotbulk=s
@@ -95,6 +95,8 @@ subroutine run_FACE(face_input,face_output)
 
 
     end subroutine compute_final_inventory
+
+
 
     subroutine compute_particle_balance
     ! WARNING: this particle balance is performed for hydrogen assuming that free hydrogen are species k=1 and are trapped in species k=3,5,7,...

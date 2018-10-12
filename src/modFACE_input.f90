@@ -115,6 +115,15 @@ contains
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
 
+         case('onthefly_inventory')
+         if(print_onthefly_inventory_string.eq."yes") then
+         print_onthefly_inventory=.true.
+         elseif (print_onthefly_inventory_string.eq."no") then
+         print_onthefly_inventory=.false.
+         else
+         call face_error("unknown option for onthefly_inventory (must be yes or no) : ",print_onthefly_inventory_string)
+         endif
+
          case('dump_vol_append')
          if(dump_vol_append_string.eq."yes") then
          dump_vol_append=.true.
@@ -185,6 +194,7 @@ end select
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
         call get_keyword_value('solve_heat_equation', solve_heat_eq_string)
+        call get_keyword_value('onthefly_inventory', print_onthefly_inventory_string)
         call get_keyword_value('n_species', nspc)
 
         call get_keyword_value('species_name', namespc)
@@ -239,6 +249,8 @@ end select
         call get_keyword_value('n_cells', ngrd)
         call get_keyword_value('cell_scaling_factor', alpha)
         call get_keyword_value('grid_type', grid_type)
+        call get_keyword_value('grid_gen_mode', grid_gen_mode)
+        call get_keyword_value('grid_dx0', grid_dx0)
         call get_keyword_value('thermal_conductivity', thcond)
         call get_keyword_value('heat_capacity', cp)
         call get_keyword_value('density', rho)
@@ -425,6 +437,7 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(clng)
         call init_zero( ngrd)
         call init_zero(alpha)
+        call init_zero(grid_dx0)
         call init_zero( thcond)
         call init_zero( cp)
         call init_zero( rho)

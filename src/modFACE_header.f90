@@ -97,7 +97,9 @@
       real(DP),allocatable:: x(:)
       real(DP),allocatable:: dx(:)
       real(DP) ::alpha
+      real(DP) ::grid_dx0
       character(string_length) ::grid_type
+      character(string_length) ::grid_gen_mode
       ! time
       real(DP):: dt_face    !>@var current solver time step
       real(DP):: min_dt_face   !>@var current solver time step
@@ -354,7 +356,19 @@
       real(DP):: max_Gdes_r
       end type trace_fluxes
       type(trace_fluxes),allocatable :: trace_flux(:)
-      logical :: active_cap=.true.
+
+         type onthefly_inventories
+      real(DP):: int_dens
+      real(DP):: int_dsrf
+      real(DP):: net_int_dens
+      real(DP):: net_int_dsrf
+      real(DP):: int_des
+      real(DP):: int_src
+      end type onthefly_inventories
+      type(onthefly_inventories),allocatable :: onthefly_inventory(:)
+      logical :: active_cap=.false.
+      logical :: print_onthefly_inventory=.false.
+      character(string_length)::print_onthefly_inventory_string
       character(string_length)::active_cap_string
       character(string_length)::dump_vol_append_string
       character(string_length)::dump_srf_append_string

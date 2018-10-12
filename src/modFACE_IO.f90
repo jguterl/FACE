@@ -635,13 +635,28 @@ integer :: i
 
     subroutine print_timestep_info
 character(string_length)::myfmt,str
+real(DP)::tot=0d0
+integer:: k
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
 write(myfmt,*) "('iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
  ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
  write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver,dt_face
   call print_formatted(str)
+if (print_onthefly_inventory) then
+write(myfmt,*) "(' - onthefly inventory: k=', 1I2,' int_des=', es10.3,' int_src=',es10.3,' net_int_dens=',",&
+"es10.3,' net_int_dsrf=', es10.3,' tot=', es10.3)"
+
+do k=1,nspc
+tot=-onthefly_inventory(k)%int_des+&
+(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf+onthefly_inventory(k)%int_src)
+write (str, myfmt) k,onthefly_inventory(k)%int_des,onthefly_inventory(k)%int_src,onthefly_inventory(k)%net_int_dens,&
+onthefly_inventory(k)%net_int_dsrf,tot
+  call print_formatted(str)
+enddo
 endif
+endif
+
 end subroutine print_timestep_info
 
 subroutine print_reduction_timestep_info

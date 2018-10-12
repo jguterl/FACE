@@ -110,11 +110,16 @@ contains
         call set_help('steady_state','Steady state yes|no','none','non-mandatory',"no")
         call set_help('temp_ramp_filename','Temperature ramp data file (ramp.dat) used if .ne. 0','none','non-mandatory',"none")
         call set_help('solve_heat_equation','yes|no :solve heat equation','none','non-mandatory',"no")
+        call set_help('onthefly_inventory','yes|no','none','non-mandatory',"no")
         comment_str='# ********* Grid parameters ********************************************'
         call set_help(comment_str)
         call set_help('n_cells','Number of cells','none','mandatory',"100")
         call set_help('cell_scaling_factor','Cell width scaling factor','none','mandatory',"1.15305056")
         call set_help('grid_type','A: antisym (smallest cell at x=0) S: symmetric','none','mandatory',"A")
+        call set_help('grid_gen_mode','grid generation: [alpha]alpha=cell_scaling_factor|[seed]dx0=grid_dx0 ',&
+        'none','non-mandatory',"alpha")
+        call set_help('grid_dx0','grid first cell length','none','non-mandatory',"1e-9")
+
         comment_str='# ********* Parameters for volumetric model and species ***************'
         call set_help(comment_str)
         call set_help('n_species','Number of species','none','mandatory',"3")
@@ -139,9 +144,9 @@ contains
         'mandatory',"S N N","species")
         call set_help('right_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
         'mandatory',"S N N","species")
-        call set_help('order_desorption_left','order of desorption cs^alpha or cb ^alpha','[1]',&
+        call set_help('order_desorption_left','order of desorption cs^order or cb ^order','none',&
         'non-mandatory',"2.0 2.0 2.0","species")
-        call set_help('order_desorption_right','order of desorption cs^alpha or cb ^alpha','[1]',&
+        call set_help('order_desorption_right','order of desorption cs^order or cb ^order','none',&
         'non-mandatory',"2.0 2.0 2.0","species")
 
         call set_help('ns0_left','Initial left surface density of species','[m^-2]','non-mandatory',&

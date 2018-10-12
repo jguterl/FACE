@@ -181,8 +181,10 @@ contains
     subroutine compute_gradient_dens(k)
 
         integer k,j
-        do j=0,ngrd-1
+         flx (ndt,0,k)=(dens(ndt,0,k)-dens(ndt,1,k))/dx(0)
+        do j=1,ngrd-1
             flx (ndt,j,k)=(dens(ndt,j,k)-dens(ndt,j+1,k))/dx(j)
+          !  flx (ndt,j,k)=(dens(ndt,j-1,k)-dens(ndt,j+1,k))/(dx(j-1)+dx(j))
         enddo
         flx (ndt,ngrd,k)=flx (ndt,ngrd-1,k)
 
@@ -404,7 +406,7 @@ contains
             Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
 
             if (verbose_surface) then
-                write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^alpha=',dsrfl(ndt,k)**order_desorption_left(k)
+                write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^order=',dsrfl(ndt,k)**order_desorption_left(k)
                 write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
             endif
 
@@ -413,7 +415,7 @@ contains
             Gabs_l (ndt,k)=min_rate_surface
             Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
             if (verbose_surface) then
-                write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^alpha=',dens(ndt,0,k)**order_desorption_left(k)
+                write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^order=',dens(ndt,0,k)**order_desorption_left(k)
             endif
             Gb_l (ndt,k)  =dsrfl(ndt,k)
             Gads_l (ndt,k)=min_rate_surface
@@ -532,19 +534,26 @@ contains
         enddo
 
         if ((left_surface_model(k).eq."S") .OR. (left_surface_model(k).eq."N")) then
-            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+            !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-flx(ndt,0,k))/dx(0)
         elseif(left_surface_model(k).eq."B") then
-            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+            !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))*2.d0/dx(0)
+             rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-flx(ndt,0,k))/dx(0)
         !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'flx(ndt,0,k)',flx(ndt,0,k)
         endif
 
         do j=1,ngrd-1
-            rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
+            !rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
+            rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j,k))/dx(j-1)
+            !rate_d(ndt,j,k)=rate_d(ndt,j,k)+(flx(ndt,j-1,k)-flx(ndt,j+1,k))/((dx(j-1)+dx(j)))
         enddo
+
         if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
-            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+            !rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+flx(ndt,ngrd,k))/dx(ngrd-1)
         elseif(right_surface_model(k).eq."B") then
-            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+            !rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+        rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+flx(ndt,ngrd,k))/dx(ngrd-1)
         endif
         do j=0,ngrd
             !     --- sources ---
@@ -895,6 +904,38 @@ contains
             trace_flux(k)%min_Gdes_r=min(trace_flux(k)%min_Gdes_r,Gdes_r(ndt,k))
         enddo
     end subroutine compute_trace_flux
+
+    subroutine compute_onthefly_inventory
+        ! sum up the outgassing flux left and right over time to estimate the average outgassing flux over the simulation
+        ! end verify if <Gdes_l>\approx Gdes_l(end)
+        real(DP):: int_src,int_dens,int_dsrf,int_des
+        integer k,j
+         if (print_onthefly_inventory) then
+        do k=1,nspc
+            int_src=0.d0
+            do j=0,ngrd-1
+                int_src=int_src+source(j,k)*dx(j)*dt_face
+            enddo
+            int_dens=0.d0
+
+            do j=0,ngrd-1
+                int_dens=int_dens+dens(ndt,j,k)*dx(j)
+            enddo
+
+            int_dsrf=dsrfl(ndt,k)+dsrfr(ndt,k)
+
+            int_des=Gdes_l(ndt,k)*dt_face+Gdes_r(ndt,k)*dt_face
+
+            onthefly_inventory(k)%net_int_dens=int_dens-onthefly_inventory(k)%int_dens
+            onthefly_inventory(k)%net_int_dsrf=int_dsrf-onthefly_inventory(k)%int_dsrf
+            onthefly_inventory(k)%int_dens=int_dens
+            onthefly_inventory(k)%int_src=int_src
+            onthefly_inventory(k)%int_dsrf=int_dsrf
+            onthefly_inventory(k)%int_des=int_des
+        enddo
+        endif
+
+    end subroutine compute_onthefly_inventory
 
     subroutine compute_dt_update
 
