@@ -373,6 +373,37 @@ endif
 
         !      surface parameters
         if (verbose_init) write(iout,*) "Initialization boundary variables"
+
+
+         do k=1,nspc
+
+         if(left_surface_model_string(k).eq."S") then
+         left_surface_model(k)=surf_model_S
+         elseif (left_surface_model_string(k).eq."N") then
+         left_surface_model(k)=surf_model_N
+         elseif (left_surface_model_string(k).eq."B") then
+         left_surface_model(k)=surf_model_B
+         else
+          call face_error("Unknown left_surface_model::",left_surface_model_string(k),"at k=",k)
+         endif
+         enddo
+
+
+
+
+         do k=1,nspc
+         if (right_surface_model_string(k).eq."S") then
+         right_surface_model(k)=surf_model_S
+         elseif (right_surface_model_string(k).eq."N") then
+         right_surface_model(k)=surf_model_N
+         elseif (right_surface_model_string(k).eq."B") then
+         right_surface_model(k)=surf_model_B
+         else
+          call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
+         endif
+         enddo
+
+
         do k=1,nspc
 
 
@@ -392,7 +423,7 @@ endif
                 Edes_rc=Edes_r(k)
             endif
             ! left
-            if (left_surface_model(k).eq."S") then
+            if (left_surface_model(k).eq.surf_model_S) then
                 K0abs_l(k)=1.d0
                 K0des_l(k)=nu(k)*lambda**(2*order_desorption_left(k)-2)*csrf
 
@@ -402,7 +433,7 @@ endif
                 Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
                 Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
                 Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
-            elseif (left_surface_model(k).eq."B") then
+            elseif (left_surface_model(k).eq.surf_model_B) then
 
                 K0abs_l(k)=0d0
                 K0des_l(k)=nu(k)*lambda**(3*order_desorption_left(k)-2)*csrf
@@ -419,7 +450,7 @@ endif
                 endif
                 Kb_l(k)=0d0
                 Kads_l(k)=0d0
-            elseif (left_surface_model(k).eq."N") then
+            elseif (left_surface_model(k).eq.surf_model_N) then
                 K0abs_l(k)=0d0
                 K0des_l(k)=0d0
                 K0b_l(k)=0d0
@@ -433,7 +464,7 @@ endif
             endif
 
             !right
-            if (right_surface_model(k).eq."S") then
+            if (right_surface_model(k).eq.surf_model_S) then
 
                 K0abs_r(k)=1.d0
                 K0des_r(k)=nu(k)*lambda**(2*order_desorption_right(k)-2)*csrf
@@ -443,7 +474,7 @@ endif
                 Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
                 Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
                 Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
-            elseif (right_surface_model(k).eq."B") then
+            elseif (right_surface_model(k).eq.surf_model_B) then
                 K0abs_r(k)=0d0
                 K0des_r(k)=nu(k)*lambda**(3*order_desorption_right(k)-2)*csrf
                 K0b_r(k)=0d0
@@ -453,7 +484,7 @@ endif
                 Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
                 Kb_r(k)= 0d0
                 Kads_r(k)=0d0
-            elseif (right_surface_model(k).eq."N") then
+            elseif (right_surface_model(k).eq.surf_model_N) then
                 Kabs_r(k)=0d0
                 Kdes_r(k)=0d0
                 Kb_r(k)=0d0
@@ -483,17 +514,17 @@ endif
 
 
                 ! left
-                if ((left_surface_model(k).eq."S")) then
+                if ((left_surface_model(k).eq.surf_model_S)) then
                     Gabs_l (i,k)=Kabs_l(k)
                     Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**order_desorption_left(k)
                     Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
                     Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
-                    elseif (left_surface_model(k).eq."N") then
+                    elseif (left_surface_model(k).eq.surf_model_N) then
             Gabs_l(ndt,k)=0d0                           ! Gabsorp=K(gas)
             Gdes_l (ndt,k)=0d0          ! Gdesorp=K*ns^2
             Gb_l (ndt,k)  =dsrfl(ndt,k)               ! Gbulk  =K*ns
             Gads_l (ndt,k)=0d0
-                elseif (left_surface_model(k).eq."B") then
+                elseif (left_surface_model(k).eq.surf_model_B) then
                     Gabs_l (i,k)=0d0
                     Gdes_l (i,k)=Kdes_l(k) *dens(i,0   ,k)**order_desorption_left(k)
                     Gb_l (i,k)  =dsrfl(ndt,k)
@@ -502,17 +533,17 @@ endif
 
 
                 ! right
-                if ((right_surface_model(k).eq."S")) then
+                if ((right_surface_model(k).eq.surf_model_S)) then
                     Gabs_r (i,k)=Kabs_r(k)
                     Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**order_desorption_right(k)
                     Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
                     Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
-                    elseif(left_surface_model(k).eq."N") then
+                    elseif(left_surface_model(k).eq.surf_model_N) then
                  Gabs_r (i,k)=0d0
                     Gdes_r (i,k)=0d0
                     Gb_r (i,k)  =dsrfr(i,k)
                     Gads_r (i,k)=0d0
-                elseif (right_surface_model(k).eq."B") then
+                elseif (right_surface_model(k).eq.surf_model_B) then
                     Gabs_r (i,k)=0d0
                     Gdes_r (i,k)=Kdes_r(k) *dens(i,ngrd   ,k)**order_desorption_right(k)
                     Gb_r (i,k)  =dsrfr(i,k)

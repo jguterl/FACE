@@ -39,7 +39,7 @@ contains
             up(i)=u(i)
         enddo
         !     --- pseudo-transient continuation ---
-        if (steady_state .eq. "yes") then
+        if (steady_state) then
             do i=1,neq
                 fdot(i,i)=fdot(i,i)-ftran*norm
             enddo

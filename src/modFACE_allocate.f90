@@ -557,6 +557,11 @@
           call init_zero(left_surface_model)
           allocate(right_surface_model(nspc))
           call init_zero(right_surface_model)
+          allocate(left_surface_model_string(nspc))
+          call init_zero(left_surface_model_string)
+          allocate(right_surface_model_string(nspc))
+          call init_zero(right_surface_model_string)
+
 
           allocate(order_desorption_left(nspc))
           call init_zero(order_desorption_left)
@@ -721,7 +726,8 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
         if (allocated(dsrfr)) deallocate(dsrfr)
        if (allocated(right_surface_model)) deallocate(right_surface_model)
        if (allocated(left_surface_model)) deallocate(left_surface_model)
-
+if (allocated(right_surface_model_string)) deallocate(right_surface_model_string)
+       if (allocated(left_surface_model_string)) deallocate(left_surface_model_string)
       if (allocated(Kabs_l)) deallocate(Kabs_l)
       if (allocated(Kdes_l)) deallocate(Kdes_l)
       if (allocated(Kb_l)) deallocate(Kb_l)

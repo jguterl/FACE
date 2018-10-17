@@ -68,10 +68,10 @@ subroutine run_FACE(face_input,face_output)
 
             init_inventory(k)%Ntotbulk=integrale_dens(k)
             init_inventory(k)%Ntotsrf=0d0
-            if (left_surface_model(k).eq."S") then
+            if (left_surface_model(k).eq.surf_model_S) then
             init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfl(ndt,k)
             endif
-            if (right_surface_model(k).eq."S") then
+            if (right_surface_model(k).eq.surf_model_S) then
             init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfr(ndt,k)
             endif
 
@@ -88,10 +88,10 @@ subroutine run_FACE(face_input,face_output)
 
             final_inventory(k)%Ntotbulk=integrale_dens(k)
             final_inventory(k)%Ntotsrf=0d0
-            if (left_surface_model(k).eq."S") then
+            if (left_surface_model(k).eq.surf_model_S) then
             final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfl(ndt,k)
             endif
-             if (right_surface_model(k).eq."S") then
+             if (right_surface_model(k).eq.surf_model_S) then
             final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfr(ndt,k)
             endif
             final_inventory(k)%Nnetbulk=final_inventory(k)%Ntotbulk-init_inventory(k)%Ntotbulk

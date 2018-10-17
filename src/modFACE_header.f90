@@ -166,7 +166,8 @@
       character(string_length):: logfile
       character(string_length):: read_restart_file
       character(string_length):: read_state_file
-      character(string_length):: steady_state
+      character(string_length):: steady_state_string
+      logical:: steady_state=.false.
       character(string_length):: framp
       character(string_length):: solve_heat_eq_string
       character(string_length):: variable_timestep_string
@@ -247,9 +248,13 @@
 !     ------------------------------------------------------------------
 !
       character(lname),allocatable::namespc(:)
-      character(lname),allocatable::left_surface_model(:)
-      character(lname),allocatable::right_surface_model(:)
-
+      character(lname),allocatable::left_surface_model_string(:)
+      character(lname),allocatable::right_surface_model_string(:)
+      integer,allocatable::left_surface_model(:)
+      integer,allocatable::right_surface_model(:)
+      integer,parameter :: surf_model_B=999
+      integer,parameter :: surf_model_N=998
+      integer,parameter :: surf_model_S=997
 !      Volumetric species terms
       real(DP),allocatable::dens0(:)
       real(DP),allocatable::gxmax(:)

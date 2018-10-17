@@ -23,7 +23,7 @@ contains
             i=i+1
 
             ! **** left surface (dsrf)
-            if (steady_state .eq. "no") then
+            if (.not.steady_state) then
                 !     --- 1st order BDF ---
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
@@ -47,21 +47,19 @@ contains
                     call face_error("ERROR: order of solver not implemented. order=",order_solver)
                 endif
 
-            elseif(steady_state .eq. "yes") then
+            elseif(steady_state) then
                 if (dsrfl(ndt,k) .gt. 1.d0) then
                     f(i)=Gsrf_l(ndt,k)
                 else
                     f(i)=Gsrf_l(ndt,k)*dsrfl(ndt,k)
                 endif
-            else
-                call face_error("Unknown mode for steady_state:",steady_state)
             endif
 
             ! **** bulk (dens)
             do j=0,ngrd
                 !     --- step ---
                 i=i+1
-                if (steady_state .eq. "no") then
+                if (.not.steady_state) then
                     !     --- 1st order BDF ---
                     if (order_solver.eq.1) then
                         f(i)=u(i)-a11*dens(ndt-1,j,k)
@@ -83,21 +81,19 @@ contains
                     else
                         call face_error("ERROR: order of solver not implemented. order=",order_solver)
                     endif
-                elseif (steady_state .eq. "yes") then
+                elseif (steady_state) then
                     if (dens(ndt,j,k) .gt. 1.d0) then
                         f(i)=rate_d(ndt,j,k)
                     else
                         f(i)=rate_d(ndt,j,k)*dens(ndt,j,k)
                     endif
 
-                else
-                    call face_error("Unknown mode for steady_state:",steady_state)
                 end if
             enddo
 
             ! **** right surface (dsrfr)
             i=i+1
-            if (steady_state .eq. "no") then
+            if (.not.steady_state) then
                 !     --- 1st order BDF ---
                 if (order_solver.eq.1) then
                     f(i)=u(i)-a11*dsrfr(ndt-1,k)
@@ -120,14 +116,12 @@ contains
                 else
                     call face_error("ERROR: order of solver not implemented. order=",order_solver)
                 endif
-            elseif(steady_state .eq. "yes") then
+            elseif(steady_state) then
                 if (dsrfr(ndt,k) .gt. 1.d0) then
                     f(i)=Gsrf_r(ndt,k)
                 else
                     f(i)=Gsrf_r(ndt,k)*dsrfr(ndt,k)
                 endif
-            else
-                call face_error("Unknown mode for steady_state:",steady_state)
             endif
 
         enddo
@@ -135,7 +129,7 @@ contains
         if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
-                if (steady_state .eq. "no") then
+                if (.not.steady_state) then
 
                         !     --- 1st order BDF ---
                     if (order_solver.eq.1) then
@@ -157,14 +151,12 @@ contains
                     else
                         call face_error("ERROR: order of solver not implemented. order=",order_solver)
                     endif
-                elseif(steady_state .eq. "yes") then
+                elseif(steady_state) then
                     if (temp(ndt,j) .gt. 1.d0) then
                         f(i)=rate_t(ndt,j)
                     else
                         f(i)=rate_t(ndt,j)*temp(ndt,j)
                     endif
-                else
-                    call face_error("Unknown mode for steady_state:",steady_state)
                 endif
             enddo
 
@@ -354,18 +346,18 @@ contains
         !        Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
         ! calculate rates of surface processes
         ! - left surface
-        if (left_surface_model(k).eq."S") then
+        if (left_surface_model(k).eq.surf_model_S) then
 
             Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
             Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
             Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
             Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
-        elseif (left_surface_model(k).eq."B") then
+        elseif (left_surface_model(k).eq.surf_model_B) then
             Kabs_l(k)=min_rate_surface
             Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
             Kb_l(k)= min_rate_surface
             Kads_l(k)= min_rate_surface
-        elseif (left_surface_model(k).eq."N") then
+        elseif (left_surface_model(k).eq.surf_model_N) then
             Kabs_l(k)=0d0
             Kdes_l(k)=0d0
             Kb_l(k)=0d0
@@ -377,18 +369,18 @@ contains
 
 
         ! - right surface
-        if (right_surface_model(k).eq."S") then
+        if (right_surface_model(k).eq.surf_model_S) then
 
             Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
             Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
             Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
             Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
-        elseif (right_surface_model(k).eq."B") then
+        elseif (right_surface_model(k).eq.surf_model_B) then
             Kabs_r(k)=0d0
             Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
             Kb_r(k)= 0d0
             Kads_r(k)=0d0
-        elseif (right_surface_model(k).eq."N") then
+        elseif (right_surface_model(k).eq.surf_model_N) then
             Kabs_r(k)=0d0
             Kdes_r(k)=0d0
             Kb_r(k)=0d0
@@ -401,7 +393,7 @@ contains
                 ! - left surface
 
 
-        if ((left_surface_model(k).eq."S")) then
+        if ((left_surface_model(k).eq.surf_model_S)) then
             Gabs_l (ndt,k)=Kabs_l(k)
             Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_left(k)
 
@@ -412,13 +404,13 @@ contains
                 write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^order=',dsrfl(ndt,k)**order_desorption_left(k)
                 write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
             endif
-       elseif (left_surface_model(k).eq."N") then
+       elseif (left_surface_model(k).eq.surf_model_N) then
             Gabs_l (ndt,k)=0d0
             Gdes_l (ndt,k)=0d0
 
             Gb_l (ndt,k)  =dsrfl(ndt,k)
             Gads_l (ndt,k)=0d0
-        elseif (left_surface_model(k).eq."B") then
+        elseif (left_surface_model(k).eq.surf_model_B) then
 
             Gabs_l (ndt,k)=0d0
             Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
@@ -431,17 +423,17 @@ contains
         endif
 
         ! - right surface
-        if ((right_surface_model(k).eq."S"))then
+        if ((right_surface_model(k).eq.surf_model_S))then
             Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
             Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
             Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
-        elseif (right_surface_model(k).eq."N") then
+        elseif (right_surface_model(k).eq.surf_model_N) then
               Gabs_r (ndt,k)=0d0                           ! Gabsorp=K(gas)
             Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =0d0               ! Gbulk  =K*ns
             Gads_r (ndt,k)=0d0
-        elseif (right_surface_model(k).eq."B") then
+        elseif (right_surface_model(k).eq.surf_model_B) then
             Gabs_r (ndt,k)=0d0                          ! Gabsorp=K(gas)
             Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =dsrfr(ndt,k)             ! Gbulk  =K*ns
@@ -459,19 +451,19 @@ contains
         endif
 
         ! - net flux onto surface
-        if ((left_surface_model(k).eq."S"))then
+        if ((left_surface_model(k).eq.surf_model_S))then
             Gsrf_l(ndt,k)=Gabs_l(ndt,k)-Gdes_l(ndt,k)-Gb_l(ndt,k)+Gads_l(ndt,k)
-            elseif (left_surface_model(k).eq."N") then
+            elseif (left_surface_model(k).eq.surf_model_N) then
             Gsrf_l(ndt,k)=-Gb_l(ndt,k)
-        elseif (left_surface_model(k).eq."B") then
+        elseif (left_surface_model(k).eq.surf_model_B) then
             Gsrf_l(ndt,k)=-Gb_l(ndt,k)
         endif
 
-        if ((right_surface_model(k).eq."S")) then
+        if ((right_surface_model(k).eq.surf_model_S)) then
         Gsrf_r(ndt,k)=Gabs_r(ndt,k)-Gdes_r(ndt,k)-Gb_r(ndt,k)+Gads_r(ndt,k)
-        elseif (right_surface_model(k).eq."N") then
+        elseif (right_surface_model(k).eq.surf_model_N) then
             Gsrf_r(ndt,k)=-Gb_r(ndt,k)
-        elseif (right_surface_model(k).eq."B") then
+        elseif (right_surface_model(k).eq.surf_model_B) then
             Gsrf_r(ndt,k)=-Gb_r(ndt,k)
         endif
 
@@ -551,23 +543,22 @@ contains
             rate_d(ndt,j,k)=ero_flx(ndt,j,k)
         enddo
 
-        if (left_surface_model(k).eq."S") then
-        if (correct_scheme) then
+        if (left_surface_model(k).eq.surf_model_S) then
+       if (correct_scheme) then
          rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))*2d00/dx(0)
          else
          rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
         endif
-        elseif (left_surface_model(k).eq."N") then
+        elseif (left_surface_model(k).eq.surf_model_N) then
         if (correct_scheme) then
-            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-dif_flx(ndt,0,k))*2.d0/dx(0)
+           rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-dif_flx(ndt,0,k))*2.d0/dx(0)
             else
-            rate_d(ndt,0,k)=rate_d(ndt,0,k)-dif_flx(ndt,0,k)/dx(0)
-            endif
-        elseif(left_surface_model(k).eq."B") then
+           rate_d(ndt,0,k)=rate_d(ndt,0,k)-dif_flx(ndt,0,k)/dx(0)
+           endif
+        elseif(left_surface_model(k).eq.surf_model_B) then
          if (correct_scheme) then
             rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))*2.d0/dx(0)
             else
-             !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
              rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
         !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'dif_flx(ndt,0,k)',dif_flx(ndt,0,k)
         endif
@@ -579,23 +570,23 @@ contains
           else
             rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/dx(j-1)
           endif
-            !rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j+1,k))/((dx(j-1)+dx(j)))
+
         enddo
 
-        if (right_surface_model(k).eq."S") then
+        if (right_surface_model(k).eq.surf_model_S) then
 
          if (correct_scheme) then
          rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2d0/dx(ngrd-1)
          else
         rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
         endif
-        elseif(right_surface_model(k).eq."N") then
+        elseif(right_surface_model(k).eq.surf_model_N) then
              if (correct_scheme) then
              rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
              else
             rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+dif_flx(ndt,ngrd,k)/dx(ngrd-1)
         endif
-        elseif(right_surface_model(k).eq."B") then
+        elseif(right_surface_model(k).eq.surf_model_B) then
         if (correct_scheme) then
         rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.0d0/dx(ngrd-1)
         else
@@ -608,8 +599,8 @@ endif
             !     --- reactions ---
             rate_d(ndt,j,k)=rate_d(ndt,j,k)+rct(ndt,j,k)
             !     --- low-pass filter ---
-            delta=0d0
-            rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
+            !delta=0d0
+            !rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
 
         enddo
     end subroutine compute_dens_rate
@@ -772,11 +763,14 @@ endif
         real(DP),intent(in):: u(:)
         character(*) :: str
         integer :: i
+        logical :: check_nan=.false.
+        if (check_nan) then
         do i=1,neq
             if (isnan(u(i))) then
                 call face_error(' ; location:',str,'NaN found: at i=' ,i )
             endif
         enddo
+        endif
     end subroutine check_isNaN
 
     subroutine compute_eq_rates(u)
@@ -791,7 +785,7 @@ endif
         call check_isNaN(u,'after get_density')
         ! ** check if calculated new values are positive and below max values
 
-        call check_positivity_max
+        !call check_positivity_max
 
         ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
         if (solve_heat_eq) then
@@ -889,9 +883,9 @@ endif
                 if ((dens(ndt,j,k)+dens(ndt,j,k+1)) .gt.(densm(k)+densm(k+1))) then
                     call face_warning('Trap density exceeded the limit k=',k,' j=' ,j,&
                         ' dens tr(k)+otr(k+1)=',dens(ndt,j,k)+dens(ndt,j,k+1))
-                    tmp=(densm(k)+densm(k+1))/(dens(ndt,j,k)+dens(ndt,j,k+1))
-                    dens(ndt,j,k  )=tmp*dens(ndt,j,k  )
-                    dens(ndt,j,k+1)=tmp*dens(ndt,j,k+1)
+                    !tmp=(densm(k)+densm(k+1))/(dens(ndt,j,k)+dens(ndt,j,k+1))
+                    !dens(ndt,j,k  )=tmp*dens(ndt,j,k  )
+                    !dens(ndt,j,k+1)=tmp*dens(ndt,j,k+1)
                 endif
             enddo
         enddo
@@ -967,11 +961,11 @@ endif
             int_dens=integrale_dens(k)
 
             int_dsrf=0d0
-            if ((left_surface_model(k).eq."S")) then
+            if ((left_surface_model(k).eq.surf_model_S)) then
             int_dsrf=dsrfl(ndt,k)+int_dsrf
             endif
 
-            if ((right_surface_model(k).eq."S")) then
+            if ((right_surface_model(k).eq.surf_model_S)) then
             int_dsrf=dsrfr(ndt,k)+int_dsrf
             endif
 
@@ -1034,7 +1028,7 @@ endif
                 enddo
 
                 ! left surface
-                if ((left_surface_model(k).eq."S")) then
+                if ((left_surface_model(k).eq.surf_model_S)) then
                     if (Gsrf_l (ndt  ,k) .ne. 0.d0) then
                         if (Gsrf_l (ndt  ,k) .lt. 0.d0) then
                             tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
@@ -1049,7 +1043,7 @@ endif
                     endif
                 endif
                 ! right surface
-                if ((right_surface_model(k).eq."S") ) then
+                if ((right_surface_model(k).eq.surf_model_S) ) then
                     if (Gsrf_r (ndt  ,k) .ne. 0.d0) then
                         if (Gsrf_r (ndt  ,k) .lt. 0.d0) then
                             tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt

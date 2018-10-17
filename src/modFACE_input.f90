@@ -87,12 +87,15 @@ contains
 
 
         ! check steady-state value
-        case('steady_state')
-            if (steady_state.ne."no".AND.steady_state.ne."yes") then
-                write(iout,*) "ERROR: steady_state must be yes or no"
-                stop
-            endif
 
+case('steady_state')
+         if(steady_state_string.eq."yes") then
+         steady_state=.true.
+         elseif (steady_state_string.eq."no") then
+         steady_state=.false.
+         else
+         call face_error("unknown option for steady_state (must be yes or no) : ",steady_state_string)
+         endif
 
         ! check that name of species are unique
         case('species_name')
@@ -106,7 +109,8 @@ contains
        enddo
 
        ! set active_cap (true or false)
-        case('active_cap')
+         case('active_cap')
+
          if(active_cap_string.eq."yes") then
          active_cap=.true.
          elseif (active_cap_string.eq."no") then
@@ -114,6 +118,8 @@ contains
          else
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
+
+
 
 
 
@@ -193,7 +199,7 @@ end select
         call get_keyword_value('read_restart_file',read_restart_file)
         call get_keyword_value('read_state_file',read_state_file)
         call get_keyword_value('wall_thickness',length)
-        call get_keyword_value('steady_state', steady_state)
+        call get_keyword_value('steady_state', steady_state_string)
         call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
@@ -225,8 +231,8 @@ end select
         call get_keyword_value('ED', edif)
         call get_keyword_value('Etr', etr )
         call get_keyword_value('Edt', edtr)
-        call get_keyword_value('left_surface_model', left_surface_model)
-        call get_keyword_value('right_surface_model', right_surface_model)
+        call get_keyword_value('left_surface_model', left_surface_model_string)
+        call get_keyword_value('right_surface_model', right_surface_model_string)
         call get_keyword_value('order_desorption_left', order_desorption_left)
         call get_keyword_value('order_desorption_right', order_desorption_right)
         call get_keyword_value('ns0_left', dsrfl0)
@@ -433,7 +439,6 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
 
     subroutine init_input_single()
 
-        call init_zero(steady_state)
         call init_zero(length)
         call init_zero(start_time)
         call init_zero(tramp0)
