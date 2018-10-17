@@ -137,8 +137,8 @@ subroutine which_eq(j_eq)
     ! ***************************************************************
      Subroutine DLUDCMP(A,N,INDX,D,CODE)
      IMPLICIT NONE
-     integer, parameter :: nmax = 20000
-     real(DP), parameter :: tiny = 1.d-50
+     integer, parameter :: nmax = 10000
+     real(DP), parameter :: tiny = 1.d-30
 
      real(DP), intent(inout), dimension(N,N) :: A
      integer, intent(in) :: N

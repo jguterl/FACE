@@ -166,6 +166,15 @@
               call face_error('ero_flx already allocated')
 
           endif
+
+          if (.not.allocated(dif_flx)) then
+              allocate(dif_flx (ndt,0:ngrd,nspc))
+              call init_zero(dif_flx)
+          else
+              call face_error('dif_flx already allocated')
+
+          endif
+
           if (.not.allocated(rate_t)) then
               allocate(rate_t(ndt,0:ngrd))
               call init_zero(rate_t)
@@ -480,6 +489,7 @@
           endif
 
 
+
                if (.not.allocated(final_inventory)) then
       allocate(final_inventory(nspc))
 
@@ -631,6 +641,7 @@ subroutine deallocate_variables()
         if (allocated(cdif)) deallocate(cdif)
 if (allocated(rct)) deallocate(rct)
 if (allocated(ero_flx)) deallocate(ero_flx)
+if (allocated(dif_flx)) deallocate(dif_flx)
 if (allocated(ero_qflx)) deallocate(ero_qflx)
         if (allocated(gprof)) deallocate(gprof)
         if (allocated(gxmax)) deallocate(gxmax)

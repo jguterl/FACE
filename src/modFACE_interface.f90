@@ -87,6 +87,9 @@ contains
                     elseif (arg.eq."-vs" .or. arg.eq."--verbose-surface") then
                     verbose_surface=.true.
                     k=k+1
+                    elseif (arg.eq."-vstp" .or. arg.eq."--verbose-step") then
+                    verbose_step=.true.
+                    k=k+1
                     elseif (arg.eq."-vp" .or. arg.eq."--verbose-parser") then
                     verbose_parser=.true.
                     k=k+1

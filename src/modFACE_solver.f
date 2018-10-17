@@ -77,8 +77,8 @@ c       endif
         du(i)=solver_fstp*du(i)
        enddo
        cntl=cntl+1
-c       if (verbose_step) write (*,*) cntl, ' var step reduction',
-c     +idx
+       if (verbose_step) write (*,*) cntl, ' var step reduction',
+     +idx
        goto 5198
       endif
 
@@ -91,7 +91,9 @@ c     +idx
         du(i)=solver_fstp*du(i)
        enddo
        cntl=cntl+1
+        if (verbose_step) then
        write (iout,*) cntl, ' norm step reduction', normnew
+       endif
        goto 5198
       else
        do i=1,neq
@@ -105,10 +107,10 @@ c     +idx
 c     --- check convergence ---
       iter_solver=iter_solver+1
       if (iter_solver .lt. iter_solver_max) then
-      if ((verbose_step).OR.(verbose_debug)) then
-      write (iout,*)'-- Newton iter# ',iter_solver,
-     +' norm ', norm
-      endif
+c      if ((verbose_step).OR.(verbose_debug)) then
+c      write (iout,*)'-- Newton iter# ',iter_solver,
+c     +' norm ', norm
+c      endif
 
        if (norm .gt. solver_eps) then
        if (verbose_debug) then

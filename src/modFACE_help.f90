@@ -87,7 +87,7 @@ contains
          help(i)=helper('none','none','none','none','none',.false.,.false.)
         enddo
         ihelp=1
-        call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"2")
+        call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"1")
         call set_help('read_restart_file','read Restart file: yes|no|filename (yes:default "dsave.rst")',&
         'none','non-mandatory',"no")
         call set_help('read_state_file','read state file: yes|no|filename (yes:"face.state").~=read restart file',&
@@ -234,6 +234,7 @@ contains
 
         call set_help('Nprint_run_info','print info on current run every Nprint_run_info steps','none','non-mandatory',"100")
         call set_help('solver_eps','solver: precision norm (norm<eps:exit','none','non-mandatory',"3.d-3")
+        call set_help('jac_eps','jac: precision norm (norm<eps:exit','none','non-mandatory',"1.d-8")
         call set_help('solver_udspl','solver: displacement min vector u','none','non-mandatory',"9.d-1")
         call set_help('solver_fdspl','solver: displacement min function f(u)','none','non-mandatory',"9.d0")
         call set_help('solver_gdspl','solver: displacement min grad u','none','non-mandatory',"1.d-3")

@@ -10,13 +10,21 @@
 
 
           subroutine step()
-
+              integer::k
 
               logical :: quick_convergence
 
               if (verbose_debug) call print_milestone('step')
               ! update density and temp ndt->ndt-1
               call shift_array
+                do k=1,nspc
+            if (inflx_in_pulse(k).ne."N") then
+                if ((time+dt_face.ge.inflx_in_pulse_starttime(k)).and.(time.lt.inflx_in_pulse_starttime(k))) then
+                dt_face=inflx_in_pulse_starttime(k)-time
+                endif
+                endif
+                enddo
+
               ! calculate new source and temperature both because of external influx with time dependecy)
               call compute_source
               call compute_temperature
@@ -97,6 +105,7 @@
                     dens(i,j,k)=dens(i+1,j,k)
                     flx (i,j,k)=flx (i+1,j,k)
                     ero_flx (i,j,k)=ero_flx (i+1,j,k)
+                    dif_flx (i,j,k)=dif_flx (i+1,j,k)
                     src (i,j,k)=src (i+1,j,k)
                     srs (i,j,k)=srs (i+1,j,k)
                     cdif(i,j,k)=cdif(i+1,j,k)

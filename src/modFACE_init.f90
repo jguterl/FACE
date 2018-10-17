@@ -32,7 +32,7 @@ contains
         call init_source
         call init_boundary
         call init_reactions
-
+        call compute_onthefly_inventory ! init onthefly inventory
         if (verbose_init) call print_milestone('initialization done')
         if (verbose_debug) call print_milestone('initialization done')
     end subroutine initialize
@@ -81,6 +81,7 @@ contains
             onthefly_inventory(k)%net_int_dens=0.d0
             onthefly_inventory(k)%net_int_dsrf=0.d0
             onthefly_inventory(k)%int_des=0.d0
+            onthefly_inventory(k)%int_dens=0.d0
             onthefly_inventory(k)%int_src=0.d0
         enddo
 
@@ -106,14 +107,14 @@ contains
         !     ------------------------------------------------------------------
         !      initialization of reaction constatnts
         !     ------------------------------------------------------------------
+        call init_kbin0
+        call init_nuth0
         do k=1,nspc
             do l=1,nspc
                 do m=1,nspc
-                    kbin0(k,l,m)=kbinar(k,l,m)
                     ebin (k,l,m)=ebinar(k,l,m)
                     kbin (k,l,m)=kbin0 (k,l,m)*exp(-ee*ebin(k,l,m)/(kb*temp(ndt,0)))
                 enddo
-                nuth0(k,l)=ktherm(k,l)
                 eth  (k,l)=etherm(k,l)
                 nuth (k,l)=nuth0 (k,l)*exp(-ee*eth(k,l)/(kb*temp(ndt,0)))
             enddo
@@ -337,30 +338,30 @@ endif
                 Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
             elseif (left_surface_model(k).eq."B") then
 
-                K0abs_l(k)=min_rate_surface
+                K0abs_l(k)=0d0
                 K0des_l(k)=nu(k)*lambda**(3*order_desorption_left(k)-2)*csrf
                 if (verbose_surface) then
                     write(iout,*) 'init: K0des_l(k)',K0des_l(k),'nu(k)=',nu(k),'csrf=',csrf,' lambda=',lambda
                 endif
-                K0b_l(k)=min_rate_surface
-                K0ads_l(k)=min_rate_surface
+                K0b_l(k)=0d0
+                K0ads_l(k)=0d0
 
                 Kabs_l(k)=min_rate_surface
                 Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
                 if (verbose_surface) then
                     write(iout,*) 'init: Kdes_l(k)',Kdes_l(k)
                 endif
-                Kb_l(k)=min_rate_surface
-                Kads_l(k)=min_rate_surface
+                Kb_l(k)=0d0
+                Kads_l(k)=0d0
             elseif (left_surface_model(k).eq."N") then
-                K0abs_l(k)=min_rate_surface
-                K0des_l(k)=min_rate_surface
-                K0b_l(k)=min_rate_surface
-                K0ads_l(k)=min_rate_surface
-                Kabs_l(k)=min_rate_surface
-                Kdes_l(k)=min_rate_surface
-                Kb_l(k)=min_rate_surface
-                Kads_l(k)=min_rate_surface
+                K0abs_l(k)=0d0
+                K0des_l(k)=0d0
+                K0b_l(k)=0d0
+                K0ads_l(k)=0d0
+                Kabs_l(k)=0d0
+                Kdes_l(k)=0d0
+                Kb_l(k)=0d0
+                Kads_l(k)=0d0
             else
                 call face_error("Unknown left surface model:",left_surface_model(k))
             endif
@@ -377,24 +378,24 @@ endif
                 Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
                 Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
             elseif (right_surface_model(k).eq."B") then
-                K0abs_r(k)=min_rate_surface
+                K0abs_r(k)=0d0
                 K0des_r(k)=nu(k)*lambda**(3*order_desorption_right(k)-2)*csrf
-                K0b_r(k)=min_rate_surface
-                K0ads_r(k)=min_rate_surface
+                K0b_r(k)=0d0
+                K0ads_r(k)=0d0
 
-                Kabs_r(k)=min_rate_surface
+                Kabs_r(k)=0d0
                 Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-                Kb_r(k)= min_rate_surface
-                Kads_r(k)=min_rate_surface
+                Kb_r(k)= 0d0
+                Kads_r(k)=0d0
             elseif (right_surface_model(k).eq."N") then
-                Kabs_r(k)=min_rate_surface
-                Kdes_r(k)=min_rate_surface
-                Kb_r(k)=min_rate_surface
-                Kads_r(k)=min_rate_surface
-                K0abs_r(k)=min_rate_surface
-                K0des_r(k)=min_rate_surface
-                K0b_r(k)=min_rate_surface
-                K0ads_r(k)=min_rate_surface
+                Kabs_r(k)=0d0
+                Kdes_r(k)=0d0
+                Kb_r(k)=0d0
+                Kads_r(k)=0d0
+                K0abs_r(k)=0d0
+                K0des_r(k)=0d0
+                K0b_r(k)=0d0
+                K0ads_r(k)=0d0
             else
                 call face_error("unknown right surface model:",right_surface_model(k))
             endif
@@ -416,30 +417,40 @@ endif
 
 
                 ! left
-                if ((left_surface_model(k).eq."S").OR.(left_surface_model(k).eq."N")) then
+                if ((left_surface_model(k).eq."S")) then
                     Gabs_l (i,k)=Kabs_l(k)
                     Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**order_desorption_left(k)
                     Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
                     Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
+                    elseif (left_surface_model(k).eq."N") then
+            Gabs_l(ndt,k)=0d0                           ! Gabsorp=K(gas)
+            Gdes_l (ndt,k)=0d0          ! Gdesorp=K*ns^2
+            Gb_l (ndt,k)  =dsrfl(ndt,k)               ! Gbulk  =K*ns
+            Gads_l (ndt,k)=0d0
                 elseif (left_surface_model(k).eq."B") then
-                    Gabs_l (i,k)=min_rate_surface
+                    Gabs_l (i,k)=0d0
                     Gdes_l (i,k)=Kdes_l(k) *dens(i,0   ,k)**order_desorption_left(k)
-                    Gb_l (i,k)  =min_rate_surface
-                    Gads_l (i,k)=min_rate_surface
+                    Gb_l (i,k)  =dsrfl(ndt,k)
+                    Gads_l (i,k)=0d0
                 endif
 
 
                 ! right
-                if ((right_surface_model(k).eq."S") .OR. (right_surface_model(k).eq."N")) then
+                if ((right_surface_model(k).eq."S")) then
                     Gabs_r (i,k)=Kabs_r(k)
                     Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**order_desorption_right(k)
                     Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
                     Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
+                    elseif(left_surface_model(k).eq."N") then
+                 Gabs_r (i,k)=0d0
+                    Gdes_r (i,k)=0d0
+                    Gb_r (i,k)  =dsrfr(i,k)
+                    Gads_r (i,k)=0d0
                 elseif (right_surface_model(k).eq."B") then
-                    Gabs_r (i,k)=min_rate_surface
+                    Gabs_r (i,k)=0d0
                     Gdes_r (i,k)=Kdes_r(k) *dens(i,ngrd   ,k)**order_desorption_right(k)
-                    Gb_r (i,k)  =min_rate_surface
-                    Gads_r (i,k)=min_rate_surface
+                    Gb_r (i,k)  =dsrfr(i,k)
+                    Gads_r (i,k)=0d0
                 endif
 
                 if (active_cap) then
@@ -535,6 +546,7 @@ endif
                 do i=1,ndt
                     flx (i,j,k)=0.d0
                     ero_flx (i,j,k)=0.d0
+                    dif_flx (i,j,k)=0.d0
                     cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
                     rate_d (i,j,k)=0.d0
                     if (gprof(k) .eq. 'S') then
@@ -613,5 +625,38 @@ sum_geo=(1-q**real(N,DP))/(1-q)
 endif
 end function sum_geo
 
+subroutine init_kbin0
+  integer :: kk,ll,mm,n
+       do kk=1,nspc
+        do ll=1,nspc
+         do mm=1,nspc
+          kbin0(kk,ll,mm)=0.d0
+         enddo
+        enddo
+       enddo
+       if (nspc.ge.3) then
+       do n=2,nspc-1,2
+        kbin0(1  ,n,1)=-nu(n)*lambda**3*cvlm
+        kbin0(n  ,n,1)=-nu(n)*lambda**3*cvlm
+        kbin0(n+1,n,1)=+nu(n)*lambda**3*cvlm
+       enddo
+       endif
+      end subroutine init_kbin0
+
+      subroutine init_nuth0
+        integer :: kk,ll,n
+       do kk=1,nspc
+        do ll=1,nspc
+          nuth0(kk,ll)=0.d0
+        enddo
+       enddo
+       if (nspc.ge.3) then
+       do n=3,nspc,2
+        nuth0(1  ,n)=+nu(n)
+        nuth0(n  ,n)=+nu(n)
+        nuth0(n+1,n)=-nu(n)
+       enddo
+       endif
+      end subroutine init_nuth0
 
 end module modFACE_init

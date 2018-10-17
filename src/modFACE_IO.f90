@@ -119,7 +119,7 @@ end subroutine save_timedata
 
         !     --- saving snapshot of volume distributions ---
 
-        write(myfmt1,*)    "(a, 1pe13.4e2, a)"
+        write(myfmt1,*)    "(a, 1pe18.9e2, a)"
         write(myfmt2,*) "(9a13)"
         write(myfmt3,*) "(i13.4, 8es13.4)"
         call set_unit(unit_voldata)
@@ -141,7 +141,7 @@ end subroutine save_timedata
                     ' icell', &
                     '  x',&
                     ' dens',&
-                    'flx',&
+                    'dif_flx',&
                     'ero_flx',&
                     '   src',&
                     '  rct',&
@@ -153,7 +153,7 @@ end subroutine save_timedata
                         j, &
                         x(j), &
                         dens(ndt,j,k), &
-                        flx (ndt,j,k), &
+                        dif_flx (ndt,j,k), &
                         ero_flx(ndt,j,k), &
                         src (ndt,j,k), &
                         rct (ndt,j,k), &
@@ -635,23 +635,25 @@ integer :: i
 
     subroutine print_timestep_info
 character(string_length)::myfmt,str
-real(DP)::tot=0d0
+real(DP)::tot=0d0,fin=0d0,fn=0d0
 integer:: k
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
 write(myfmt,*) "('iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
- ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
- write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver,dt_face
+ ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+ write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), reduction_factor_dt,normf,iter_solver,dt_face
   call print_formatted(str)
 if (print_onthefly_inventory) then
-write(myfmt,*) "(' - onthefly inventory: k=', 1I2,' int_des=', es10.3,' int_src=',es10.3,' net_int_dens=',",&
-"es10.3,' net_int_dsrf=', es10.3,' tot=', es10.3)"
+write(myfmt,*) "(' - onthefly inventory: k=', 1I2,' src+des=', es10.3,' net_int_dens=',",&
+"es10.3,' net_int_dsrf=', es10.3,' tot=', es10.3,' f-n=',es9.3,' f-src=',es9.3)"
 
 do k=1,nspc
-tot=-onthefly_inventory(k)%int_des+&
-(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf+onthefly_inventory(k)%int_src)
-write (str, myfmt) k,onthefly_inventory(k)%int_des,onthefly_inventory(k)%int_src,onthefly_inventory(k)%net_int_dens,&
-onthefly_inventory(k)%net_int_dsrf,tot
+tot=-onthefly_inventory(k)%int_des+onthefly_inventory(k)%int_src&
+-(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf)
+fn=abs(tot)/abs(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf)
+fin=abs(tot)/abs(onthefly_inventory(k)%int_src)
+write (str, myfmt) k,-onthefly_inventory(k)%int_des+onthefly_inventory(k)%int_src,onthefly_inventory(k)%net_int_dens,&
+onthefly_inventory(k)%net_int_dsrf,tot,fn,fin
   call print_formatted(str)
 enddo
 endif

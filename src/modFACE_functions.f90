@@ -140,6 +140,8 @@
 
 
 
+
+
       ! pre-expoential factor of trapping process
       ! H + n->n+1
       real(DP) function kbinar(k,l,m)

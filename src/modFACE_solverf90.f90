@@ -14,9 +14,8 @@ contains
         real(DP),intent(in):: u(:), f(:)
         real(DP)::  um(neq), up(neq), fm(neq), fp(neq)
         real(DP):: fdot(neq,neq)
-        real(DP):: eps, ddu, uud, amax, norm
+        real(DP)::  ddu, uud, amax, norm
         real(DP):: ftran
-        parameter (eps=1.d-4)
         parameter (ftran=1.d-0)
 
         do i=1,neq
@@ -25,7 +24,7 @@ contains
         enddo
 
         do i=1,neq
-            ddu=u(i)*eps
+            ddu=u(i)*jac_eps
             um(i)=u(i)-ddu
             up(i)=u(i)+ddu
 

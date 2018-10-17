@@ -70,7 +70,14 @@ subroutine run_FACE(face_input,face_output)
                 s=s+dens(ndt,j,k)*dx(j)
             enddo
             init_inventory(k)%Ntotbulk=s
-            init_inventory(k)%Ntotsrf=dsrfl(ndt,k)+dsrfr(ndt,k)
+            init_inventory(k)%Ntotsrf=0d0
+            if (left_surface_model(k).eq."S") then
+            init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfl(ndt,k)
+            endif
+            if (right_surface_model(k).eq."S") then
+            init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfr(ndt,k)
+            endif
+
             init_inventory(k)%Nnetbulk=0.d0
             init_inventory(k)%Nnetsrf=0.d0
         enddo
@@ -86,8 +93,15 @@ subroutine run_FACE(face_input,face_output)
                 s=s+dens(ndt,j,k)*dx(j)
             enddo
             final_inventory(k)%Ntotbulk=s
-            final_inventory(k)%Ntotsrf=dsrfl(ndt,k)+dsrfr(ndt,k)
+            final_inventory(k)%Ntotsrf=0d0
+            if (left_surface_model(k).eq."S") then
+            final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfl(ndt,k)
+            endif
+             if (right_surface_model(k).eq."S") then
+            final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfr(ndt,k)
+            endif
             final_inventory(k)%Nnetbulk=final_inventory(k)%Ntotbulk-init_inventory(k)%Ntotbulk
+
             final_inventory(k)%Nnetsrf =final_inventory(k)%Ntotsrf-init_inventory(k)%Ntotsrf
 
         enddo
@@ -107,7 +121,8 @@ subroutine run_FACE(face_input,face_output)
 
       particle_balance%Nnet=particle_balance%Nnet+final_inventory(1)%Nnetbulk+final_inventory(1)%Nnetsrf
       particle_balance%Noutflux=particle_balance%Noutflux+trace_flux(1)%sum_Gdes_l+trace_flux(1)%sum_Gdes_r
-
+      particle_balance%Noutflux_l=trace_flux(1)%sum_Gdes_l
+      particle_balance%Noutflux_r=trace_flux(1)%sum_Gdes_r
       if (nspc.gt.2) then
       do k=3,nspc,2
       particle_balance%Nnet=particle_balance%Nnet+final_inventory(k)%Nnetbulk+final_inventory(k)%Nnetsrf
@@ -221,10 +236,11 @@ subroutine time_loop
         call print_milestone('starting time iteration')
 
         iteration=0
+
         do while (time .lt. end_time)
 
-            call save()                                  ! dump data
-            call step()                                  ! numerical solver
+            call save                                  ! dump data
+            call step                                  ! numerical solver
 
             call store_restart(trim(restart_filename))   ! store restart if requested
             iteration=iteration+1
@@ -262,8 +278,9 @@ call print_line(str)
 enddo
 call print_end_section('Final inventory')
 call print_section('Particle balance')
-      write(str,'(a,es12.3,a,es12.3,a,es12.3)') "Ninflux=",particle_balance%Ninflux,"; Nnet_material=",particle_balance%Nnet,&
-      "; Noutflux=",particle_balance%Noutflux
+ write(str,'(a,es12.3,a,es12.3,a,es12.3,a,es12.3,a,es12.3,a)') "Ninflux=",particle_balance%Ninflux,&
+ "; Nnet_material=",particle_balance%Nnet,"; Noutflux=",particle_balance%Noutflux,&
+      "(" , particle_balance%Noutflux_l,"/", particle_balance%Noutflux_r,")"
      call print_line(str)
       write(str,'(a,es12.3)') "Ninflux-Noutflux-Nnet=",particle_balance%p_net
       call print_line(str)

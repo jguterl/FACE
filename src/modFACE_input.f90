@@ -269,6 +269,7 @@ end select
 
         call get_keyword_value('Nprint_run_info', Nprint_run_info)
         call get_keyword_value('solver_eps',solver_eps)
+        call get_keyword_value('jac_eps',jac_eps)
         call get_keyword_value('solver_udspl',solver_udspl)
         call get_keyword_value('solver_fdspl',solver_fdspl)
         call get_keyword_value('solver_gdspl',solver_gdspl)

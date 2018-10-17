@@ -78,7 +78,7 @@
       real(DP),parameter ::a54=- 3.d0/25.d0
       real(DP),parameter ::a55= 12.d0/25.d0
 
-      real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3
+      real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3,jac_eps=1d-8
       real(DP) ::solver_fstp=1.d-1
       integer :: iter_solver_max=150
       logical :: finalcheck=.true.
@@ -177,7 +177,7 @@
      end type inventories
 
      type particle_balances
-     real(DP):: Nnet=0d0,Ninflux=0d0,Noutflux=0d0,p_net=0d0,p_max=0d0,f_lost=0d0
+     real(DP):: Nnet=0d0,Ninflux=0d0,Noutflux=0d0,p_net=0d0,p_max=0d0,f_lost=0d0,Noutflux_l=0d0,Noutflux_r=0d0
      end type particle_balances
 
     type outgassing_fluxes
@@ -324,6 +324,7 @@
       real(DP),allocatable::cdif(:,:,:)
       real(DP),allocatable::rct (:,:,:)
       real(DP),allocatable::ero_flx (:,:,:)  ! erosion flux
+      real(DP),allocatable::dif_flx (:,:,:)  ! erosion flux
 !     Surface
       integer :: error_status=0
 
