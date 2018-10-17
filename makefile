@@ -42,7 +42,7 @@ all: prep release
 
 # debug rules
 $(DBGOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) -cpp ${fopenmp} $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
+	$(FC) -cpp  ${fopenmp} $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
 
 
 $(DBGOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
