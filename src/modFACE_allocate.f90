@@ -220,6 +220,14 @@
 
           endif
 
+          if (.not.allocated(src_profile)) then
+              allocate(src_profile (0:ngrd,nspc))
+              call init_zero(src_profile)
+          else
+              call face_error('src_profile already allocated')
+
+          endif
+
          ! reaction parameters
          if (.not.allocated(kbin0)) then
      allocate(kbin0(nspc,nspc,nspc))
@@ -598,8 +606,14 @@
           allocate(implantation_depth(nspc))
           call init_zero(implantation_depth)
 
+           allocate(diagnostic_depth(nspc))
+          call init_zero(diagnostic_depth)
+
           allocate(j_implantation_depth(nspc))
           call init_zero(j_implantation_depth)
+
+          allocate(j_diagnostic_depth(nspc))
+          call init_zero(j_diagnostic_depth)
 
           allocate(implantation_width(nspc))
           call init_zero(implantation_width)
@@ -670,6 +684,8 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
          if (allocated(implantation_model)) deallocate(implantation_model)
          if (allocated( implantation_depth)) deallocate( implantation_depth)
          if (allocated(j_implantation_depth)) deallocate( j_implantation_depth)
+         if (allocated( diagnostic_depth)) deallocate( diagnostic_depth)
+         if (allocated(j_diagnostic_depth)) deallocate( j_diagnostic_depth)
          if (allocated( implantation_width)) deallocate( implantation_width)
          if (allocated(enrg)) deallocate(enrg)
          if (allocated(inflx)) deallocate(inflx)
@@ -688,6 +704,7 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
        if (allocated(srb)) deallocate(srb)
        if (allocated(jout)) deallocate(jout)
        if (allocated(src)) deallocate(src)
+       if (allocated(src_profile)) deallocate(src_profile)
        if (allocated(j0)) deallocate(j0)
        ! reaction
        if (allocated(nuth0)) deallocate(nuth0)

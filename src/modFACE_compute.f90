@@ -270,6 +270,7 @@ contains
         integer::j,l,k
         !     --- source modification ---
         call compute_inflx
+
 !        if (.not.solve_heat_eq) then
 !
 !            do k=1,nspc
@@ -284,7 +285,7 @@ contains
 !        elseif (solve_heat_eq) then
             do k=1,nspc
                 do j=0,ngrd
-                    srs(ndt,j,k)=source(j,k)
+                    srs(ndt,j,k)=inflx(k)*src_profile(j,k)
                     do l=1,nspc
                         srb(ndt,j,k,l)=srcbin(j,k,l)
                     enddo
@@ -545,39 +546,61 @@ contains
 
     subroutine compute_dens_rate(k)
         integer j,k
+        logical:: scheme_modif=.true.
         do j=0,ngrd
             rate_d(ndt,j,k)=ero_flx(ndt,j,k)
         enddo
 
         if (left_surface_model(k).eq."S") then
-         !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
+        if (scheme_modif) then
+         rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))*2d00/dx(0)
+         else
          rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
+        endif
         elseif (left_surface_model(k).eq."N") then
-            !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))*2.d0/dx(0)
+        if (scheme_modif) then
+            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-dif_flx(ndt,0,k))*2.d0/dx(0)
+            else
             rate_d(ndt,0,k)=rate_d(ndt,0,k)-dif_flx(ndt,0,k)/dx(0)
+            endif
         elseif(left_surface_model(k).eq."B") then
-            !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))*2.d0/dx(0)
+         if (scheme_modif) then
+            rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))*2.d0/dx(0)
+            else
              !rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
              rate_d(ndt,0,k)=rate_d(ndt,0,k)+(-Gdes_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
         !write(iout,*) 'rate_d(ndt,0,k)',rate_d(ndt,0,k),'Gdes_l(ndt,k)',Gdes_l(ndt,k),'dif_flx(ndt,0,k)',dif_flx(ndt,0,k)
         endif
+        endif
 
         do j=1,ngrd-1
-            !rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
+         if (scheme_modif) then
+            rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
+          else
             rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/dx(j-1)
+          endif
             !rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j+1,k))/((dx(j-1)+dx(j)))
         enddo
 
         if (right_surface_model(k).eq."S") then
-        !rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
-        rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
-        elseif(right_surface_model(k).eq."N") then
-            !rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
-            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+dif_flx(ndt,ngrd,k)/dx(ngrd-1)
-        elseif(right_surface_model(k).eq."B") then
-        !rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
-            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
 
+         if (scheme_modif) then
+         rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2d0/dx(ngrd-1)
+         else
+        rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
+        endif
+        elseif(right_surface_model(k).eq."N") then
+             if (scheme_modif) then
+             rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+             else
+            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+dif_flx(ndt,ngrd,k)/dx(ngrd-1)
+        endif
+        elseif(right_surface_model(k).eq."B") then
+        if (scheme_modif) then
+        rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.0d0/dx(ngrd-1)
+        else
+            rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(-Gdes_r(ndt,k)+dif_flx(ndt,ngrd,k))/dx(ngrd-1)
+endif
         endif
         do j=0,ngrd
             !     --- sources ---
@@ -670,7 +693,11 @@ contains
             else
                 call face_error("Unknown mode for Gamma_in_pulse k=",k)
             endif
+          if (inflx(k).lt.0d0) then
+                  call face_error("inflx(k) < 0 : k=",k," ;inflx(k)=",inflx(k))
+              endif
         enddo
+
 
         rad =rad_min
         cero=cero_min
@@ -689,6 +716,8 @@ contains
         if (emiss.ne.0d0) qflx_in=qflx_in-emiss*sigma_sb*(temp(ndt,0)**4.d0-temp(ndt,ngrd)**4.d0)
 
     end subroutine compute_inflx
+
+
 
     subroutine  compute_temperature
         integer j,n
@@ -913,10 +942,8 @@ contains
         integer k,j
 
         do k=1,nspc
-            int_src=0.d0
-            do j=0,ngrd-1
-                int_src=int_src+source(j,k)*dx(j)
-            enddo
+                int_src=integrale_src(k)
+
             trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+int_src*dt_face
             trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
             trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
@@ -936,15 +963,9 @@ contains
         integer k,j
          if (print_onthefly_inventory) then
         do k=1,nspc
-            int_src=0.d0
-            do j=0,ngrd-1
-                int_src=int_src+source(j,k)*dx(j)*dt_face
-            enddo
-            int_dens=0.d0
+            int_src=integrale_src(k)*dt_face
+            int_dens=integrale_dens(k)
 
-            do j=0,ngrd-1
-                int_dens=int_dens+dens(ndt,j,k)*dx(j)
-            enddo
             int_dsrf=0d0
             if ((left_surface_model(k).eq."S")) then
             int_dsrf=dsrfl(ndt,k)+int_dsrf
@@ -972,7 +993,7 @@ contains
         integer  ::i, j, k
         real(DP) :: tmp,dt
         real(DP),parameter:: rtfm=5.d-1, rtfp=5.d-1
-        logical :: adjust_reduction_factor=.false.
+
         tmp=0d0
 
         if ((variable_timestep)) then
@@ -1072,14 +1093,14 @@ contains
         do k=1,nspc
             if (inflx_in_pulse(k).ne."N") then
                 if (time.ge.inflx_in_pulse_starttime(k)) then
-                    if (dt>inflx_in_pulse_period(k)/30d0) then
-                        dt=inflx_in_pulse_period(k)/30d0
+                    if (dt>inflx_in_pulse_period(k)/100d0) then
+                        dt=inflx_in_pulse_period(k)/100d0
                     endif
                 endif
             endif
         enddo
 
-
+        if (dt .gt. max_dt_face) dt=max_dt_face
         dt_face=dt
 
 

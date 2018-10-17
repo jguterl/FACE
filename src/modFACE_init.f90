@@ -29,6 +29,7 @@ contains
         call init_temp
         call compute_inflx()
         call init_volume_species
+
         call init_source
         call init_boundary
         call init_reactions
@@ -259,20 +260,85 @@ endif
             enddo
             if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
         enddo
+
+        do k=1,nspc
+            j_diagnostic_depth(k)=ngrd
+            do j=0,ngrd
+                if (x(j).gt.diagnostic_depth(k)+x(0)) then
+                    j_diagnostic_depth(k)=j-1
+
+                endif
+            enddo
+            if (verbose_init) write(iout,*) " j_diagnostic_depth(k)=",j_diagnostic_depth(k)," k=",k
+        enddo
+
         call write_grid
         if (verbose_init) write(iout,*) " -- Initialization x grid completed"
     end subroutine init_grid
+
+
+    subroutine init_src_profile
+
+        real(DP)::s
+        integer:: j,k
+
+        do k=1,nspc
+            do j=0,ngrd
+                src_profile(j,k)=0d0
+
+                if (implantation_model(k).eq.'G') then
+
+                    if (implantation_width(k).gt.0d0) then
+                        src_profile(j,k)=exp(-0.5d0*abs((x(j)-implantation_depth(k))/implantation_width(k))**2.d0)
+                    else
+                        call face_error("implantation_width(k)=0 with G implantation model: k=",k)
+                    endif
+                elseif  (implantation_model(k).eq.'S') then
+
+                    if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)-1) then
+                        src_profile(j,k)=1d0
+                    endif
+
+
+                elseif  (implantation_model(k).eq.'E') then
+                    if (implantation_width(k).gt.0d0) then
+                        src_profile(j,k)=1.d0-erf((x(j)-implantation_depth(k))/(sqrt2*implantation_width(k)))
+                    else
+                        call face_error("implantation_width(k)=0 with E implantation model: k=",k)
+                    endif
+
+
+                else
+
+                    call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
+                endif
+
+            enddo
+            s=integrale_src_profile(k)
+            if (s.le.0d0) then
+                s=1d0
+            endif
+
+            do j=0,ngrd
+                src_profile(j,k)=src_profile(j,k)/s
+            enddo
+
+        enddo
+
+    end subroutine init_src_profile
 
     subroutine init_source()
 
         integer::i,j,k,l
 
+        call init_src_profile
+        call compute_inflx
         !      Initialization of sources
         if (solve_heat_eq) then
             do i=1,ndt
                 do j=0,ngrd
                     do k=1,nspc
-                        srs (i,j,k)=source(  j,k)
+                        srs (i,j,k)=inflx(k)*src_profile(j,k)
                         src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
                         do l=1,nspc
                             srb (i,j,k,l)=srcbin(  j,k,l)
@@ -285,7 +351,7 @@ endif
             do i=1,ndt
                 do j=0,ngrd
                     do k=1,nspc
-                        srs (i,j,k)=source(  j,k)
+                        srs (i,j,k)=inflx(k)*src_profile(j,k)
                         src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
                         jout(i,  k)=jout  (i,  k)+srs(i,j,k)*(1.d0-csours(i,j,k))*dx(j)
                         do l=1,nspc

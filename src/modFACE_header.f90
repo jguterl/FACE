@@ -103,11 +103,14 @@
       ! time
       real(DP):: dt_face    !>@var current solver time step
       real(DP):: min_dt_face   !>@var current solver time step
+      real(DP):: max_dt_face   !>@var current solver time step
       real(DP):: dt0_face ! nominal time step
       real(DP) :: reduction_factor_dt=1d0
+      logical :: adjust_reduction_factor=.false.
+      character(string_length):: adjust_reduction_factor_string
       integer:: Nstep_increase_dt=10
       integer :: solver_step_count=0
-
+      real(DP) :: max_iter=1e9
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
       real(DP):: time_savevol  !
@@ -220,7 +223,9 @@
 !     implantation parameters
       character(lname),allocatable::implantation_model(:)
       real(DP),allocatable::implantation_depth(:)
+      real(DP),allocatable::diagnostic_depth(:)
       integer,allocatable::j_implantation_depth(:)
+      integer,allocatable::j_diagnostic_depth(:)
       real(DP),allocatable::implantation_width(:)
       real(DP),allocatable::enrg(:)
       real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
@@ -319,6 +324,7 @@
 !     ------------------------------------------------------------------
 !     Bulk
       real(DP),allocatable::srs(:,:,:)
+      real(DP),allocatable::src_profile(:,:)
       real(DP),allocatable::srb (:,:,:,:)
       real(DP),allocatable::src (:,:,:)
       real(DP),allocatable::cdif(:,:,:)

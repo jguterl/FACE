@@ -13,96 +13,12 @@
 
       contains
 
-          real(DP) function source(j,k)
-              ! Source rate of incoming species
-              integer j, k
-              real(DP) :: source_rate
-              source=0.d0
-              source_rate=srate(k)
-              if (source_rate.gt.0d0) then
-
-                  if (implantation_model(k).eq.'G'.and.implantation_width(k).ne.0d0) then
-
-                      source=source_rate*exp(-0.5d0*abs((x(j)-implantation_depth(k))/implantation_width(k))**2.d0)
-                      return
-
-                  elseif  (implantation_model(k).eq.'S') then
-
-                      if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)-1) then
-                          source=source_rate
-                      else
-                          source=0d0
-                      endif
-                      return
-
-                  elseif  (implantation_model(k).eq.'E'.and.implantation_width(k).ne.0d0) then
-
-                      source=source_rate*(1.d0-erf((x(j)-implantation_depth(k))/(sqrt2*implantation_width(k))))
-                      return
-
-                  else
-
-                      if (implantation_width(k).eq.0d0) then
-                          call face_error("implantation_width(k)=0 with gaussian-like implantation model: k=",k)
-                      else
-                          call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
-                      endif
-
-                  endif
-
-              elseif (source_rate.lt.0d0) then
-
-                  call face_error("source rate < 0 for k=",k," ; srate(k)=",srate(k))
-              endif
-
-              return
-
-          end function source
-
-               ! implantation rate
-          real(DP) function srate(k)
-              integer k
-              real(DP) r, sig
-              !      data crsc /3.d-20/
-
-              srate=0.0
-              if (inflx(k).gt.0d0) then
-
-                  if (implantation_model(k).eq.'G'.and.implantation_width(k).ne.0d0) then
-
-                      r  =implantation_depth(k)
-                      sig=sqrt2*implantation_width(k)
-                      srate=inflx(k)/(0.5d0*sqrt(pi)*(1.d0+erf(r/sig))*sig)
-                      return
-
-                  elseif (implantation_model(k).eq.'E'.and.implantation_width(k).ne.0d0) then
-
-                      call face_error("implentation model E required proper normalization in FACE source code")
-                      srate=inflx(k)
-                      return
-
-                  elseif  (implantation_model(k).eq.'S') then
-
-                      if (j_implantation_depth(k).gt.0) then
-                          srate=inflx(k)/(x(j_implantation_depth(k))-x(0))
-                      else
-                      srate=0d0
-                      endif
-                      return
-
-                  else
-                      call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
-                  endif
-
-              elseif (inflx(k).lt.0d0) then
-
-                  call face_error("inflx(k) < 0 : k=",k," ;inflx(k)=",inflx(k))
-
-              endif
 
 
-              return
-          end function srate
+
+
+
+
 
 
 
@@ -241,6 +157,41 @@
       end
 
 
+      real(DP) function integrale_dens(k)
+      integer,intent(in) :: k
+      integer ::j
+      real(DP) ::s
+
+      s=0d0
+            do j=0,ngrd-1
+                s=s+0.5d0*(dens(ndt,j,k)+dens(ndt,j+1,k))*dx(j)
+            enddo
+            integrale_dens=s
+            end function integrale_dens
+
+              real(DP) function integrale_src(k)
+      integer,intent(in) :: k
+      integer ::j
+      real(DP) ::s
+
+      s=0d0
+            do j=0,ngrd-1
+                s=s+0.5d0*(src(ndt,j,k)+src(ndt,j+1,k))*dx(j)
+            enddo
+            integrale_src=s
+            end function integrale_src
+
+            real(DP) function integrale_src_profile(k)
+      integer,intent(in) :: k
+      integer ::j
+      real(DP) ::s
+
+      s=0d0
+            do j=0,ngrd-1
+                s=s+0.5d0*(src_profile(j,k)+src_profile(j+1,k))*dx(j)
+            enddo
+            integrale_src_profile=s
+            end function integrale_src_profile
 
 
        subroutine print_source(ifile)
@@ -248,7 +199,7 @@
       write(ifile,*) "#source rate (function source(j,k))"
       write(ifile,*)"xgrid ",(namespc(k)//" ",k=1,nspc)
       do j=1,ngrd
-      write(ifile,*) x(j),(source(j,k),k=1,nspc)
+      write(ifile,*) x(j),(src_profile(j,k),k=1,nspc)
       enddo
       end subroutine print_source
 

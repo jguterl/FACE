@@ -155,6 +155,14 @@ if(variable_timestep_string.eq."yes") then
          else
          call face_error("unknown option for variable_timestep (must be yes or no) : ",variable_timestep_string)
          endif
+         case('adjust_reduction_factor')
+if(adjust_reduction_factor_string.eq."yes") then
+         adjust_reduction_factor=.true.
+         elseif (adjust_reduction_factor_string.eq."no") then
+         adjust_reduction_factor=.false.
+         else
+         call face_error("unknown option for adjust_reduction_factor(must be yes or no) : ",adjust_reduction_factor_string)
+         endif
 end select
     end subroutine check_value_input
 
@@ -183,8 +191,10 @@ end select
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
         call get_keyword_value('end_time', end_time)
+        call get_keyword_value('max_iter', max_iter)
         call get_keyword_value('dt', dt0_face)
         call get_keyword_value('min_dt', min_dt_face)
+         call get_keyword_value('max_dt', max_dt_face)
         call get_keyword_value('variable_timestep', variable_timestep_string)
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
@@ -226,6 +236,7 @@ end select
         call get_keyword_value('nu0', nu)
         call get_keyword_value('implantation_model', implantation_model)
         call get_keyword_value('implantation_depth', implantation_depth)
+        call get_keyword_value('diagnostic_depth', diagnostic_depth)
         call get_keyword_value('implantation_width', implantation_width)
         call get_keyword_value('Eimpact_ion', enrg)
         call get_keyword_value('Gamma_in', inflx_in)
@@ -265,6 +276,7 @@ end select
 !        call get_keyword_value('pulse_period', tpulse)
         call get_keyword_value('iter_solver_max', iter_solver_max)
         call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
+        call get_keyword_value('adjust_reduction_factor', adjust_reduction_factor_string)
           call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
 
         call get_keyword_value('Nprint_run_info', Nprint_run_info)

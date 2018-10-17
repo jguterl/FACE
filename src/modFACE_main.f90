@@ -30,6 +30,9 @@ contains
             case ("print_default_input")
                 call print_version()
                 call write_default_inputfile(default_inputfile,"H+Tr")
+                case ("print_default_input_nohelp")
+                call print_version()
+                call write_default_inputfile_nohelp(default_inputfile,"H+Tr")
 
             case ("default_H") ! default modes-> print out default input file then read file
                 call print_version()

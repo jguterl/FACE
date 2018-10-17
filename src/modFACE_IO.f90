@@ -21,7 +21,7 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (unit_timedata(k), '(23a10)')&
+            write (unit_timedata(k), '(24a10)')&
                 'time',&
                 'tempL',&
                 'tempR',&
@@ -44,7 +44,8 @@ contains
                 'inflx',&
                 'qrad',&
                 'Kdes_l',&
-                'Kdes_r'
+                'Kdes_r',&
+                'diag_flx'
         enddo
     end subroutine open_timedata_files
 
@@ -63,12 +64,12 @@ do k=1,nspc
 
 subroutine save_timedata
     integer::j,k
-    real(DP):: qnty,frmn,rctn
+    real(DP):: qnty,frmn,rctn,diag_flx
     character*256  myfmt1,myfmt2
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(es18.8e2,23es12.3e2)"
+    write(myfmt2,*) "(es18.8e2,24es12.3e2)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -80,6 +81,7 @@ subroutine save_timedata
             frmn=frmn+0.5d0*(src (ndt,j,k)+src (ndt,j+1,k))*dx(j)
             rctn=rctn+0.5d0*(rct (ndt,j,k)+rct (ndt,j+1,k))*dx(j)
         enddo
+        diag_flx=dif_flx(ndt,j_diagnostic_depth(k),k)
 
         write (unit_timedata(k),myfmt2)&
             time, &
@@ -104,7 +106,8 @@ subroutine save_timedata
             inflx(k),&
             rad,&
             Kdes_l(k),&
-            Kdes_r(k)
+            Kdes_r(k),&
+            diag_flx
     enddo
 
 end subroutine save_timedata

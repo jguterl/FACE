@@ -81,6 +81,14 @@ contains
                     face_input%run_mode="print_default_input"
                     k=k+1
                 endif
+            elseif (arg.eq."-pdnh" .or. arg.eq."--print-default-input-no-help") then
+                if (face_input%run_mode.ne."default") then
+                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
+                    stop 'Exiting FACE...'
+                else
+                    face_input%run_mode="print_default_input_nohelp"
+                    k=k+1
+                endif
                     elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
                     verbose_input=.true.
                     k=k+1

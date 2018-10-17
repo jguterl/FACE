@@ -97,11 +97,14 @@ contains
         call set_help('temp_ramp_start_time','Temperature ramp start time','[s]','non-mandatory',"0")
         call set_help('temp_ramp_stop_time ','Temperature ramp stop time','[s]','non-mandatory',"0")
         call set_help('end_time','Simulation time','[s]','mandatory',"1.00e+01")
+        call set_help('max_iter','MAx number of iteration','none','non-mandatory',"1.00e+10")
         call set_help('dt','Nominal time step','[s]','mandatory',"1.00e-03")
         call set_help('min_dt','Minimum time step','[s]','mandatory',"1.00e-06")
+        call set_help('max_dt','Maximum time step','[s]','mandatory',"1.00e+01")
         call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
         call set_help('variable_timestep','Adjust dynamically timestep: yes|no ','none','non-mandatory',"no")
         call set_help('reduction_factor_dt','Reduction factor for variable timestep (=1<->no reduction)','none','non-mandatory',"1")
+        call set_help('adjust_reduction_factor','Adjust Reduction factor to have solver_iter<3','none','non-mandatory',"no")
         call set_help('Nstep_increase_dt','increase dt after N quick converged timestp when dt_face<dt','none','non-mandatory',"10")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
@@ -174,6 +177,7 @@ contains
         call set_help(comment_str)
         call set_help('implantation_model','G: gaussian S:Step E: ERFC ','none','non-mandatory',"S S S","species")
         call set_help('implantation_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
+        call set_help('diagnostic_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
         call set_help('implantation_width' ,'implentation width' ,'[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
 
         call set_help('Eimpact_ion','Impact energy of ionized species','[eV]','non-mandatory',&
@@ -282,6 +286,120 @@ contains
         ihelp=ihelp+1
         Nhelp=ihelp-1
     end subroutine set_help_species
+   subroutine write_default_inputfile_nohelp(filename,mode)
+        character(*)::mode
+        integer,parameter::l=15
+        character(string_length)::str_keyword
+        character(string_length)::str_tmp
+        character(8)::str_type
+        character(3*(l+1)):: strvaluel
+        character(80)::str_def
+        character(26)::str_status
+        character(100)::str_default
+        character(string_length)::str_units
+        character(string_length)::fmt,timestamp
+        character(*)::filename
+        character(l)::str1
+
+        character(3*l)::str_data,str2
+        character(l)::strtmp(3)
+        integer::i,j,idefault,ios
+
+        call set_unit(idefault)
+        open(unit=idefault, file=trim(filename), iostat=ios,action='write')
+        if ( ios /= 0 ) then
+            call face_error('Cannot write into default input file ', trim(filename))
+        endif
+
+        write(iout,*)'Default input file: "', trim(filename) ,'" created'
+        call timestring ( timestamp )
+        write(idefault,*) '#Default input for FACE. Created: ', timestamp
+
+        do i=1,Nhelp
+            if (.not.help(i)%comment) then
+                write(fmt,*)'(a',3*l,')'
+                ! if keyword is n_species then select if the input file should be with only H (1 spc) or H+Tr (3 species)
+                if (help(i)%keyword.eq."n_species") then
+                    if (mode.eq."H") then
+                        write(str_data,fmt) "1"
+                    elseif (mode.eq."H+Tr") then
+                        write(str_data,fmt) "3"
+                    else
+                        call face_error("Unknown mode when writing default input file")
+                    endif
+               else
+                    write(str_data,fmt) adjustl(help(i)%default)
+                endif
+
+                ! write keyword
+                write(str_keyword,*) trim(adjustl(help(i)%keyword)),' '
+                ! write definition
+                write(str_def,*) ' ! ',trim(adjustl(help(i)%def)),' '
+                ! write units
+                !write(str_units,*) trim(adjustl(help(i)%units)),' '
+                ! write_default
+                !write(str_default,'(a8,a)') 'deflt: ',trim(adjustl(help(i)%default))
+                ! write status
+                !if (.not.(help(i)%species)) then
+
+               !     write(str_type,'(a8)')', single'
+               ! else
+                !    write(str_type,'(a8)') ',species'
+
+                !endif
+                !write(str_status,'(a1,a13,a8,a1)') '(',adjustr(trim(help(i)%status)) ,adjustl(str_type),') '
+
+                ! write keyword+value
+                if (.not.(help(i)%species)) then
+                 write(fmt,*)'(a25,a1,a',l+1,')'
+                    write(str_tmp,fmt) (adjustl(help(i)%keyword)),' ',adjustl(str_data)
+                else
+                str2=adjustl(str_data)
+                do j=1,3
+                        call SplitString(str2,str1,str2,' ')
+                        write(fmt,*)'(a14,a1)'
+                        write(strtmp(j),fmt) str1,' '
+
+                enddo
+                write(fmt,*)'(3a',(l+1),')'
+                write(strvaluel,fmt) (strtmp(j),j=1,3)
+
+                    write(fmt,*)'(a25,a1,a)'
+                    write(str_tmp,fmt) (adjustl(help(i)%keyword)),' ',adjustl(strvaluel)
+                endif
+
+
+                if (.not.(help(i)%species)) then
+                 write(fmt,*)'(a45)'
+                 write(idefault,fmt) adjustl(str_tmp)!,str_def,str_status,str_units,trim(str_default)
+                else
+                write(fmt,*)'(a75)'
+                write(idefault,fmt) (adjustl(str_tmp))!,str_def,str_status,str_units,trim(str_default)
+!
+!
+!                    !BUG INTEL FORT below
+!                    !write(fmt,*)'(a30,a1,a',3*(l),'a1,a80,a30,a1,a12,a11,a)'
+!                    !write(idefault,fmt) str_keyword,' ',adjustl(trim(strvaluel)), ' ! ',trim(strdef),trim(strsta),' ',adjustl(trim(struni)),&
+!                    !' default: ',adjustl(trim(help(i)%default))
+!                    write(fmt,*)'(a30,a1,a',3*(l+1),')'!,a80,a30,a1,a12,a11,a)'
+!                    write(str_tmp,fmt) trim(adjustl(help(i)%keyword)),' ',adjustl(strvaluel)
+!                    write(fmt,*)'(a3,a80,a30,a1,a12,a11,a)'
+!                    write(str_tmp2,fmt) " ! ",trim(strdef),trim(str_status)," ",adjustl(trim(struni))," dflt: ",&
+!                    adjustl(trim(help(i)%default))
+!                    write(idefault,'(a,a)') trim(str_tmp),trim(str_tmp2)
+                endif
+            else
+                write(idefault,*) trim(help(i)%def)
+            endif
+
+        enddo
+        !
+        !       write(*,*,'advance=no') adjustl(str_keyword),' ' strvalue ' ','! ',strtype, help(i)%def, ' (',help(i)%status ,') ',help(i)%units,help(i)%
+        !       type(string)
+        !       enddo
+        close(idefault)
+
+    end subroutine write_default_inputfile_nohelp
 
     subroutine write_default_inputfile(filename,mode)
         character(*)::mode
@@ -396,7 +514,7 @@ contains
         !       enddo
         close(idefault)
 
-    end subroutine
+    end subroutine write_default_inputfile
 
 
 

@@ -65,11 +65,8 @@ subroutine run_FACE(face_input,face_output)
         integer :: j,k
         real(DP):: s
         do k=1,nspc
-            s=0d0
-            do j=0,ngrd-1
-                s=s+dens(ndt,j,k)*dx(j)
-            enddo
-            init_inventory(k)%Ntotbulk=s
+
+            init_inventory(k)%Ntotbulk=integrale_dens(k)
             init_inventory(k)%Ntotsrf=0d0
             if (left_surface_model(k).eq."S") then
             init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfl(ndt,k)
@@ -88,11 +85,8 @@ subroutine run_FACE(face_input,face_output)
         integer :: j,k
         real(DP):: s
         do k=1,nspc
-            s=0d0
-            do j=0,ngrd-1
-                s=s+dens(ndt,j,k)*dx(j)
-            enddo
-            final_inventory(k)%Ntotbulk=s
+
+            final_inventory(k)%Ntotbulk=integrale_dens(k)
             final_inventory(k)%Ntotsrf=0d0
             if (left_surface_model(k).eq."S") then
             final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfl(ndt,k)
@@ -237,7 +231,7 @@ subroutine time_loop
 
         iteration=0
 
-        do while (time .lt. end_time)
+        do while ((time .lt. end_time) .AND. (iteration.lt.(int(max_iter))))
 
             call save                                  ! dump data
             call step                                  ! numerical solver
