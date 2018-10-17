@@ -42,6 +42,7 @@
           logical :: verbose_header=.false.
           logical :: verbose_surface=.false.
     logical:: enforce_error=.true.
+    logical:: first_voldump=.true.
 
 
       integer::ngrd

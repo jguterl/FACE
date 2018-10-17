@@ -18,7 +18,7 @@ MODDIR=modules
 
 # compile flags
 FFLAGS =-fbounds-check -fcheck=all -Wall #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons 
-DBGFLAGS = -g -O0   -fbacktrace 
+DBGFLAGS = -pg  -fbacktrace 
 RLSFLAGS = -O3 
 
 
@@ -42,16 +42,16 @@ all: prep release
 
 # debug rules
 $(DBGOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) -c $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
+	$(FC) -cpp ${fopenmp} $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
 
 
 $(DBGOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC) -c $(FFLAGS)  $(DBGFLAGS) -c $< -o $@ 
+	$(FC) -cpp ${fopenmp} $(FFLAGS)  $(DBGFLAGS) -c $< -o $@ 
 
 debug: prep debug_exe
 
 debug_exe: $(DBGOBJECTS_f) $(DBGOBJECTS_f90)
-	$(FC)  $(FFLAGS) $(DBGFLAGS) -o $(BINDIR)/$(EXE_DEBUG) $^
+	$(FC)  -cpp ${fopenmp} $(FFLAGS) $(DBGFLAGS) -o $(BINDIR)/$(EXE_DEBUG) $^
 
 
 # release rules

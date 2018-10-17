@@ -128,8 +128,15 @@ end subroutine save_timedata
         call set_unit(unit_voldata)
         do k=1,nspc
         if (dump_vol_append) then
+
          write (filename, '(a,a, i2.2, a)') trim(dat_folder),'/vol', k, '.dat'
+         if (first_voldump) then
+         open (unit=unit_voldata, file=trim(filename), access='append',status='replace', iostat=ios)
+         first_voldump=.false.
+         else
          open (unit=unit_voldata, file=trim(filename), access='append',status='unknown', iostat=ios)
+         endif
+
         else
          write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
          open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)

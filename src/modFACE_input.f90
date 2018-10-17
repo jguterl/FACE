@@ -115,6 +115,8 @@ contains
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
 
+
+
          case('onthefly_inventory')
          if(print_onthefly_inventory_string.eq."yes") then
          print_onthefly_inventory=.true.
@@ -155,6 +157,11 @@ if(variable_timestep_string.eq."yes") then
          else
          call face_error("unknown option for variable_timestep (must be yes or no) : ",variable_timestep_string)
          endif
+
+         if ((order_solver.gt.1).AND. (variable_timestep)) then
+         call face_error("Cannot have variable timestep when order of numerical time scheme >1 (order_solver>1)")
+         endif
+
          case('adjust_reduction_factor')
 if(adjust_reduction_factor_string.eq."yes") then
          adjust_reduction_factor=.true.
