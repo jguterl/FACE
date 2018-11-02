@@ -18,8 +18,8 @@ MODDIR=modules
 
 # compile flags
 FFLAGS =-fbounds-check -fcheck=all -Wall #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons 
-DBGFLAGS = -pg  -fbacktrace 
-RLSFLAGS = -O3 -pg
+DBGFLAGS =  -fbacktrace 
+RLSFLAGS = -O3 
 
 
 # list source files

@@ -156,7 +156,7 @@ contains
 
         !      initialization of grid arrays
         x(0)=0.d0
-        if (alpha .eq. 1.d0) then
+        if (grid_type.eq."U") then
             dx0=length/ngrd
             do j=1,ngrd
                 x  (j  )=j*dx0
@@ -164,74 +164,74 @@ contains
             enddo
             dx (ngrd)=dx(ngrd-1)
         elseif (grid_type.eq."S") then
-          if (grid_gen_mode.eq."alpha") then
+            if (grid_gen_mode.eq."alpha") then
 
-            ngrd2=ngrd/2
-            if (mod(ngrd,2) .ne. 0) then
-                dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd2-2.d0)
-                x (0)=0.d0
-                dx(0)=dx0
-                do j=1,ngrd2
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)*alpha
-                enddo
-                do j=ngrd2+1,ngrd
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)/alpha
-                enddo
+                ngrd2=ngrd/2
+                if (mod(ngrd,2) .ne. 0) then
+                    dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd2-2.d0)
+                    x (0)=0.d0
+                    dx(0)=dx0
+                    do j=1,ngrd2
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)*alpha
+                    enddo
+                    do j=ngrd2+1,ngrd
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)/alpha
+                    enddo
+                else
+                    dx0=0.5d0*length*(alpha-1.d0)/(alpha**ngrd2-1.d0)
+                    x (0)=0.d0
+                    dx(0)=dx0
+                    do j=1,ngrd2-1
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)*alpha
+                    enddo
+                    x (ngrd2)=x (ngrd2-1)+dx(ngrd2-1)
+                    dx(ngrd2)=dx(ngrd2-1)
+                    do j=ngrd2+1,ngrd
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)/alpha
+                    enddo
+                endif
+                dx (ngrd)=dx(ngrd-1)
+                if (x(ngrd).ne.length) then
+                    call face_error("x(ngrd).ne.length",x(ngrd))
+                endif
+
             else
-                dx0=0.5d0*length*(alpha-1.d0)/(alpha**ngrd2-1.d0)
-                x (0)=0.d0
-                dx(0)=dx0
-                do j=1,ngrd2-1
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)*alpha
-                enddo
-                x (ngrd2)=x (ngrd2-1)+dx(ngrd2-1)
-                dx(ngrd2)=dx(ngrd2-1)
-                do j=ngrd2+1,ngrd
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)/alpha
-                enddo
+                call face_error('Grid generation not implemented for this type of grid',grid_type)
             endif
-            dx (ngrd)=dx(ngrd-1)
-            if (x(ngrd).ne.length) then
-            call face_error("x(ngrd).ne.length",x(ngrd))
+        elseif (grid_type.eq."A") then
+            if (grid_gen_mode.eq."seed") then
+                if (grid_dx0.ge.length) then
+                    call face_error("dx0 cannot be >= than total grid length in this grid mode")
+                endif
+
+                a=1.0000001d0;
+                b=100d0;
+                do while (abs(b-a)>1.d-10)
+                    sa=sum_geo(a,ngrd)-length/grid_dx0
+                    sm=sum_geo((b+a)/2d0,ngrd)-length/grid_dx0
+                    if (sa*sm<0d0) then
+                        b=(a+b)/2d0
+                    else
+                        a=(a+b)/2d0
+                    endif
+                    if (verbose_init) write(iout,*) "a=",a,"b=",b
+                enddo
+                alpha=a
+                if (alpha.gt.99d0) then
+                    alpha=1d0
+                endif
+                dx0=grid_dx0
+                if (verbose_init) write(iout,*) "seed mode: alpha=",alpha," dx0=",dx0
+            elseif (grid_gen_mode.eq."alpha") then
+                dx0=length*(1.d0-alpha)/(1-alpha**ngrd)
+                if (verbose_init) write(iout,*) "alpha mode: alpha=",alpha," dx0=",dx0
+            else
+                call face_error("unknown grid gen mode")
             endif
-
-             else
-            call face_error('Grid generation not implemented for this type of grid',grid_type)
-        endif
-         elseif (grid_type.eq."A") then
-        if (grid_gen_mode.eq."seed") then
-        if (grid_dx0.ge.length) then
-        call face_error("dx0 cannot be >= than total grid length in this grid mode")
-        endif
-
-            a=1.0000001d0;
-            b=100d0;
-do while (abs(b-a)>1.d-10)
-sa=sum_geo(a,ngrd)-length/grid_dx0
-sm=sum_geo((b+a)/2d0,ngrd)-length/grid_dx0
-if (sa*sm<0d0) then
-    b=(a+b)/2d0
-else
-    a=(a+b)/2d0
-endif
-if (verbose_init) write(iout,*) "a=",a,"b=",b
-enddo
-alpha=a
-if (alpha.gt.99d0) then
-alpha=1d0
-endif
-dx0=grid_dx0
-if (verbose_init) write(iout,*) "seed mode: alpha=",alpha," dx0=",dx0
-elseif (grid_gen_mode.eq."alpha") then
-dx0=length*(1.d0-alpha)/(1-alpha**ngrd)
-if (verbose_init) write(iout,*) "alpha mode: alpha=",alpha," dx0=",dx0
-else
-call face_error("unknown grid gen mode")
-endif
 
             x (0)=0.d0
             dx(0)=dx0
@@ -243,7 +243,7 @@ endif
 
             if (abs(x(ngrd)-length)>1d-7) then
 
-            call face_error("x(ngrd).ne.length",x(ngrd))
+                call face_error("x(ngrd).ne.length",x(ngrd))
 
             endif
         else
@@ -255,7 +255,7 @@ endif
             do j=0,ngrd
                 if (x(j).gt.implantation_depth(k)+x(0)) then
                     j_implantation_depth(k)=j-1
-
+                    exit
                 endif
             enddo
             if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
@@ -266,7 +266,7 @@ endif
             do j=0,ngrd
                 if (x(j).gt.diagnostic_depth(k)+x(0)) then
                     j_diagnostic_depth(k)=j-1
-
+                    exit;
                 endif
             enddo
             if (verbose_init) write(iout,*) " j_diagnostic_depth(k)=",j_diagnostic_depth(k)," k=",k
@@ -295,7 +295,7 @@ endif
                     endif
                 elseif  (implantation_model(k).eq.'S') then
 
-                    if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)-1) then
+                    if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)) then
                         src_profile(j,k)=1d0
                     endif
 
@@ -375,33 +375,33 @@ endif
         if (verbose_init) write(iout,*) "Initialization boundary variables"
 
 
-         do k=1,nspc
+        do k=1,nspc
 
-         if(left_surface_model_string(k).eq."S") then
-         left_surface_model(k)=surf_model_S
-         elseif (left_surface_model_string(k).eq."N") then
-         left_surface_model(k)=surf_model_N
-         elseif (left_surface_model_string(k).eq."B") then
-         left_surface_model(k)=surf_model_B
-         else
-          call face_error("Unknown left_surface_model::",left_surface_model_string(k),"at k=",k)
-         endif
-         enddo
-
-
+            if(left_surface_model_string(k).eq."S") then
+                left_surface_model(k)=surf_model_S
+            elseif (left_surface_model_string(k).eq."N") then
+                left_surface_model(k)=surf_model_N
+            elseif (left_surface_model_string(k).eq."B") then
+                left_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown left_surface_model::",left_surface_model_string(k),"at k=",k)
+            endif
+        enddo
 
 
-         do k=1,nspc
-         if (right_surface_model_string(k).eq."S") then
-         right_surface_model(k)=surf_model_S
-         elseif (right_surface_model_string(k).eq."N") then
-         right_surface_model(k)=surf_model_N
-         elseif (right_surface_model_string(k).eq."B") then
-         right_surface_model(k)=surf_model_B
-         else
-          call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
-         endif
-         enddo
+
+
+        do k=1,nspc
+            if (right_surface_model_string(k).eq."S") then
+                right_surface_model(k)=surf_model_S
+            elseif (right_surface_model_string(k).eq."N") then
+                right_surface_model(k)=surf_model_N
+            elseif (right_surface_model_string(k).eq."B") then
+                right_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
+            endif
+        enddo
 
 
         do k=1,nspc
@@ -519,11 +519,11 @@ endif
                     Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**order_desorption_left(k)
                     Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
                     Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
-                    elseif (left_surface_model(k).eq.surf_model_N) then
-            Gabs_l(ndt,k)=0d0                           ! Gabsorp=K(gas)
-            Gdes_l (ndt,k)=0d0          ! Gdesorp=K*ns^2
-            Gb_l (ndt,k)  =dsrfl(ndt,k)               ! Gbulk  =K*ns
-            Gads_l (ndt,k)=0d0
+                elseif (left_surface_model(k).eq.surf_model_N) then
+                    Gabs_l(ndt,k)=0d0                           ! Gabsorp=K(gas)
+                    Gdes_l (ndt,k)=0d0          ! Gdesorp=K*ns^2
+                    Gb_l (ndt,k)  =dsrfl(ndt,k)               ! Gbulk  =K*ns
+                    Gads_l (ndt,k)=0d0
                 elseif (left_surface_model(k).eq.surf_model_B) then
                     Gabs_l (i,k)=0d0
                     Gdes_l (i,k)=Kdes_l(k) *dens(i,0   ,k)**order_desorption_left(k)
@@ -538,8 +538,8 @@ endif
                     Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**order_desorption_right(k)
                     Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
                     Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
-                    elseif(left_surface_model(k).eq.surf_model_N) then
-                 Gabs_r (i,k)=0d0
+                elseif(left_surface_model(k).eq.surf_model_N) then
+                    Gabs_r (i,k)=0d0
                     Gdes_r (i,k)=0d0
                     Gb_r (i,k)  =dsrfr(i,k)
                     Gads_r (i,k)=0d0
@@ -712,48 +712,48 @@ endif
         final_state_file=trim(path_folder)//trim(casename)//".state"
     end subroutine init_path
 
-real(DP) function sum_geo(q,N)
-real(DP),intent(in):: q
-integer,intent(in) :: N
-if (q==1d0) then
-sum_geo=real(N,DP)
-else
-sum_geo=(1-q**real(N,DP))/(1-q)
-endif
-end function sum_geo
+    real(DP) function sum_geo(q,N)
+        real(DP),intent(in):: q
+        integer,intent(in) :: N
+        if (q==1d0) then
+            sum_geo=real(N,DP)
+        else
+            sum_geo=(1-q**real(N,DP))/(1-q)
+        endif
+    end function sum_geo
 
-subroutine init_kbin0
-  integer :: kk,ll,mm,n
-       do kk=1,nspc
-        do ll=1,nspc
-         do mm=1,nspc
-          kbin0(kk,ll,mm)=0.d0
-         enddo
+    subroutine init_kbin0
+        integer :: kk,ll,mm,n
+        do kk=1,nspc
+            do ll=1,nspc
+                do mm=1,nspc
+                    kbin0(kk,ll,mm)=0.d0
+                enddo
+            enddo
         enddo
-       enddo
-       if (nspc.ge.3) then
-       do n=2,nspc-1,2
-        kbin0(1  ,n,1)=-nu(n)*lambda**3*cvlm
-        kbin0(n  ,n,1)=-nu(n)*lambda**3*cvlm
-        kbin0(n+1,n,1)=+nu(n)*lambda**3*cvlm
-       enddo
-       endif
-      end subroutine init_kbin0
+        if (nspc.ge.3) then
+            do n=2,nspc-1,2
+                kbin0(1  ,n,1)=-nu(n)*lambda**3*cvlm
+                kbin0(n  ,n,1)=-nu(n)*lambda**3*cvlm
+                kbin0(n+1,n,1)=+nu(n)*lambda**3*cvlm
+            enddo
+        endif
+    end subroutine init_kbin0
 
-      subroutine init_nuth0
+    subroutine init_nuth0
         integer :: kk,ll,n
-       do kk=1,nspc
-        do ll=1,nspc
-          nuth0(kk,ll)=0.d0
+        do kk=1,nspc
+            do ll=1,nspc
+                nuth0(kk,ll)=0.d0
+            enddo
         enddo
-       enddo
-       if (nspc.ge.3) then
-       do n=3,nspc,2
-        nuth0(1  ,n)=+nu(n)
-        nuth0(n  ,n)=+nu(n)
-        nuth0(n+1,n)=-nu(n)
-       enddo
-       endif
-      end subroutine init_nuth0
+        if (nspc.ge.3) then
+            do n=3,nspc,2
+                nuth0(1  ,n)=+nu(n)
+                nuth0(n  ,n)=+nu(n)
+                nuth0(n+1,n)=-nu(n)
+            enddo
+        endif
+    end subroutine init_nuth0
 
 end module modFACE_init
