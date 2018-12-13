@@ -427,7 +427,7 @@ contains
                 K0abs_l(k)=1.d0
                 K0des_l(k)=nu(k)*lambda**(2*order_desorption_left(k)-2)*csrf
 
-                K0b_l(k)=nu(k)
+                K0b_l(k)=nu(k)*clng
                 K0ads_l(k)=nu(k)*lambda*clng
                 Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
                 Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
@@ -468,7 +468,7 @@ contains
 
                 K0abs_r(k)=1.d0
                 K0des_r(k)=nu(k)*lambda**(2*order_desorption_right(k)-2)*csrf
-                K0b_r(k)=nu(k)
+                K0b_r(k)=nu(k)*clng
                 K0ads_r(k)=nu(k)*lambda*clng
                 Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
                 Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
