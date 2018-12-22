@@ -750,8 +750,8 @@ contains
         if (nspc.ge.3) then
             do n=3,nspc,2
                 nuth0(1  ,n)=+nu(n)
-                nuth0(n  ,n)=+nu(n)
-                nuth0(n+1,n)=-nu(n)
+                nuth0(n-1,n)=+nu(n)
+                nuth0(n  ,n)=-nu(n)
             enddo
         endif
     end subroutine init_nuth0

@@ -76,7 +76,7 @@
               time=time+dt_face
               time_savetime=time_savetime+dt_face
               time_savevol=time_savevol+dt_face
-              call check_positivity_max
+              !call check_positivity_max
               call compute_trace_flux
               call compute_onthefly_inventory
               call print_timestep_info                   ! print info on current time step

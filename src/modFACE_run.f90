@@ -231,7 +231,7 @@ subroutine time_loop
 
         iteration=0
 
-        do while ((time .lt. end_time) .AND. (iteration.lt.(int(max_iter))))
+        do while ((time .lt. end_time) .AND. (iteration.lt.(idint(max_iter))))
 
             call save                                  ! dump data
             call step                                  ! numerical solver
