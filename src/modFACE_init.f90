@@ -114,10 +114,18 @@ contains
             do l=1,nspc
                 do m=1,nspc
                     ebin (k,l,m)=ebinar(k,l,m)
-                    kbin (k,l,m)=kbin0 (k,l,m)*exp(-ee*ebin(k,l,m)/(kb*temp(ndt,0)))
+                    do i=1,ndt
+                        do j=0,ngrd
+                            kbin(i,j,k,l,m)=kbin0(k,l,m)*exp(-ee*ebin(k,l,m)/(kb*temp(i,j)))
+                        enddo
+                    enddo
                 enddo
                 eth  (k,l)=etherm(k,l)
-                nuth (k,l)=nuth0 (k,l)*exp(-ee*eth(k,l)/(kb*temp(ndt,0)))
+                do i=1,ndt
+                    do j=0,ngrd
+                        nuth(i,j,k,l)=nuth0(k,l)*exp(-ee*eth(k,l)/(kb*temp(i,j)))
+                    enddo
+                enddo
             enddo
         enddo
         do i=1,ndt
@@ -125,9 +133,9 @@ contains
                 do k=1,nspc
                     rct(i,j,k)=0.d0
                     do l=1,nspc
-                        rct (i,j,k)=rct   (i,j,k)+nuth  (k,l)*dens(i,j,l)*ctherm(i,j,k,l)
+                        rct (i,j,k)=rct(i,j,k)+nuth(i,j,k,l)*dens(i,j,l)*ctherm(i,j,k,l)
                         do m=1,l
-                            rct (i,j,k)=rct   (i,j,k)+kbin  (k,l,m)*dens(i,j,l)*dens(i,j,m)*cbinar(i,j,k,l,m)
+                            rct(i,j,k)=rct(i,j,k)+kbin(i,j,k,l,m)*dens(i,j,l)*dens(i,j,m)*cbinar(i,j,k,l,m)
                         enddo
                     enddo
                 enddo
@@ -334,36 +342,34 @@ contains
         call init_src_profile
         call compute_inflx
         !      Initialization of sources
-        if (solve_heat_eq) then
-            do i=1,ndt
-                do j=0,ngrd
-                    do k=1,nspc
-                        srs (i,j,k)=inflx(k)*src_profile(j,k)
-                        src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
-                        do l=1,nspc
-                            srb (i,j,k,l)=srcbin(  j,k,l)
-                            src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
-                        enddo
+        do i=1,ndt
+            do j=0,ngrd
+                do k=1,nspc
+                    srs (i,j,k)=inflx(k)*src_profile(j,k)
+                    src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
+                    do l=1,nspc
+                        srb (i,j,k,l)=srcbin(  j,k,l)
+                        src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
                     enddo
                 enddo
             enddo
-        else
-            do i=1,ndt
-                do j=0,ngrd
-                    do k=1,nspc
-                        srs (i,j,k)=inflx(k)*src_profile(j,k)
-                        src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
-                        jout(i,  k)=jout  (i,  k)+srs(i,j,k)*(1.d0-csours(i,j,k))*dx(j)
-                        do l=1,nspc
-                            srb (i,j,k,l)=srcbin(  j,k,l)
-                            src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
-                            jout(i,  k  )=jout  (i,  k  )+srb(i,j,k,l)*dens(i,j,l)*(1.d0-csrbin(i,j,k,l))*dx(j)
-                        enddo
+        enddo
+        do i=1,ndt
+            do k=1,nspc
+                do j=1,ngrd-1
+                    jout(i,k)=jout(i,k)+srs(i,j,k)*(1.d0-csours(i,j,k))*0.5d0*(dx(j-1)+dx(j))
+                    do l=1,nspc
+                        jout(i,k)=jout(i,k)+srb(i,j,k,l)*dens(i,j,l)*(1.d0-csrbin(i,j,k,l))*0.5d0*(dx(j-1)+dx(j))
                     enddo
                 enddo
+                jout(i,k)=jout(i,k)+srs(i,0   ,k)*(1.d0-csours(i,0   ,k))*0.5d0*dx(0   )
+                jout(i,k)=jout(i,k)+srs(i,ngrd,k)*(1.d0-csours(i,ngrd,k))*0.5d0*dx(ngrd)
+                do l=1,nspc
+                    jout(i,k)=jout(i,k)+srb(i,0   ,k,l)*dens(i,0   ,l)*(1.d0-csrbin(i,0   ,k,l))*0.5d0*dx(0   )
+                    jout(i,k)=jout(i,k)+srb(i,ngrd,k,l)*dens(i,ngrd,l)*(1.d0-csrbin(i,ngrd,k,l))*0.5d0*dx(ngrd)
+                enddo
             enddo
-
-        endif
+        enddo
         if (verbose_init) write(iout,*) " -- Initialization source terms completed"
     end subroutine
 
@@ -554,9 +560,7 @@ contains
                     call compute_cap_factor_surface(k,i)
                 endif
 
-                if (solve_heat_eq) then
-                    jout(i,k)=jout(i,k)+Gdes_l(i,k)
-                endif
+                jout(i,k)=jout(i,k)+Gdes_l(i,k)
 
             enddo
         enddo
@@ -733,9 +737,9 @@ contains
         enddo
         if (nspc.ge.3) then
             do n=2,nspc-1,2
-                kbin0(1  ,n,1)=-nu(n)*lambda**3*cvlm
-                kbin0(n  ,n,1)=-nu(n)*lambda**3*cvlm
-                kbin0(n+1,n,1)=+nu(n)*lambda**3*cvlm
+                kbin0(1  ,n,1)=-nu(1)*lambda**3*cvlm
+                kbin0(n  ,n,1)=-nu(1)*lambda**3*cvlm
+                kbin0(n+1,n,1)=+nu(1)*lambda**3*cvlm
             enddo
         endif
     end subroutine init_kbin0
@@ -749,9 +753,9 @@ contains
         enddo
         if (nspc.ge.3) then
             do n=3,nspc,2
-                nuth0(1  ,n)=+nu(n)
-                nuth0(n-1,n)=+nu(n)
-                nuth0(n  ,n)=-nu(n)
+                nuth0(1  ,n)=+nu(1)
+                nuth0(n-1,n)=+nu(1)
+                nuth0(n  ,n)=-nu(1)
             enddo
         endif
     end subroutine init_nuth0

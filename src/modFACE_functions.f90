@@ -35,11 +35,11 @@
       srcbin=0.d0
       do n=3,nspc,2
        if (l .eq. n) then
-        s=crsc*inflx(n)
+        s=crsc*inflx(1)
         rs=s*(1.d0-erf((x(j)-implantation_depth(n))/(sqrt2*implantation_width(n))))
        if ((k .eq. 1) .or. (k .eq. n-1)) then
         srcbin=+rs ! detrap from n -> create 1 free H
-        srcbin=+rs ! detrap from n -> create n-1 empty trap
+                   ! detrap from n -> create n-1 empty trap
         return
         elseif (k .eq. n) then
         srcbin=-rs ! detrap from trap n -> filled trap n disapears
@@ -67,16 +67,15 @@
         if(m.eq.1) then
        if (l.eq.n) then
        if ((k.eq.1).or.(k.eq.n)) then
-        kbinar=-nu(n)*lambda**3*cvlm
-        kbinar=-nu(n)*lambda**3*cvlm
+        kbinar=-nu(1)*lambda**3*cvlm
         return
         elseif (k.eq.n+1) then
-        kbinar=+nu(n)*lambda**3*cvlm
+        kbinar=+nu(1)*lambda**3*cvlm
         return
         endif
 ! this if for multiple H in traps
-!  tmp(1  ,n+1,1)=+rk(n,2)
-!        tmp(n  ,n+1,1)=+rk(n,2)
+!       tmp(1  ,n+1,1)=+rk(n,2)
+!       tmp(n  ,n+1,1)=+rk(n,2)
 !       tmp(n+1,n+1,1)=-rk(n,2)
             endif
               endif
@@ -120,11 +119,10 @@
        do n=3,nspc,2
        if (l .eq. n) then
        if ((k .eq. 1) .or. (k .eq. n-1)) then
-        ktherm=+nu(n)
-        ktherm=+nu(n)
+        ktherm=+nu(1)
         return
         elseif (k .eq. n) then
-        ktherm=-nu(n)
+        ktherm=-nu(1)
         return
         endif
         endif

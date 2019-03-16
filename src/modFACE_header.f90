@@ -318,8 +318,8 @@
 !     ------------------------------------------------------------------
 !       Reaction parameters
 !     ------------------------------------------------------------------
-      real(DP),allocatable:: nuth (:,:)
-      real(DP),allocatable:: kbin (:,:,:)
+      real(DP),allocatable:: nuth (:,:,:,:)
+      real(DP),allocatable:: kbin (:,:,:,:,:)
       real(DP),allocatable::nuth0(:,:)
       real(DP),allocatable:: kbin0(:,:,:)
       real(DP),allocatable::eth  (:,:)

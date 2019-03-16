@@ -94,7 +94,7 @@
 
     subroutine shift_array
     ! shifting time array down in time (current time: ndt, past time: ndt-1,ndt-2,...)
-        integer i,j,k,l
+        integer i,j,k,l,m
         ! volume
         do i=1,ndt-1
             do j=0,ngrd
@@ -112,7 +112,11 @@
                     rct (i,j,k)=rct (i+1,j,k)
                     rate_d (i,j,k)=rate_d (i+1,j,k)
                     do l=1,nspc
-                        srb(i,j,k,l)=srb(i+1,j,k,l)
+                        srb (i,j,k,l)=srb (i+1,j,k,l)
+                        nuth(i,j,k,l)=nuth(i+1,j,k,l)
+                    enddo
+                    do m=1,nspc
+                        kbin(i,j,k,l,m)=kbin(i+1,j,k,l,m)
                     enddo
                 enddo
             enddo

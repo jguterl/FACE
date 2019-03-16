@@ -8,6 +8,7 @@
         module procedure init_zero_rarr2
         module procedure init_zero_rarr3
         module procedure init_zero_rarr4
+        module procedure init_zero_rarr5
         module procedure init_zero_s
         module procedure init_zero_sarr
         module procedure init_zero_i
@@ -58,6 +59,16 @@
         r=0.d0
 
     end subroutine init_zero_rarr4
+
+     subroutine init_zero_rarr5(r)
+        real(DP),allocatable::r(:,:,:,:,:)
+!        integer:: n1,n2,n3,n4,n5,i,j,k,l,m
+         if (.not.allocated(r))  then
+         call face_error("trying to set value to non-allocated variable")
+         endif
+        r=0.d0
+
+    end subroutine init_zero_rarr5
 
     subroutine init_zero_rarr(r)
         real(DP),allocatable::r(:)
@@ -243,7 +254,7 @@
               call face_error('ebin already allocated')
           endif
       if (.not.allocated(kbin)) then
-      allocate(kbin(nspc,nspc,nspc))
+      allocate(kbin(ndt,0:ngrd,nspc,nspc,nspc))
           call init_zero(kbin)
           else
               call face_error('kbin already allocated')
@@ -264,7 +275,7 @@
               call face_error('eth already allocated')
           endif
       if (.not.allocated(nuth)) then
-      allocate(nuth(nspc,nspc))
+      allocate(nuth(ndt,0:ngrd,nspc,nspc))
           call init_zero(nuth)
           else
               call face_error('nuth already allocated')

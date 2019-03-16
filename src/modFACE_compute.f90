@@ -31,17 +31,17 @@ contains
 
                 !     --- 2nd order BDF ---
                 elseif (order_solver.eq.2) then
-                    f(i)=u(i)-a21*dsrfl(ndt-1,k) &
-                        -a22*dsrfl(ndt-2,k)
+                    f(i)=u(i)-a21*dsrfl(ndt-1,k)&
+                             -a22*dsrfl(ndt-2,k)
                     !write(iout,'(a,i3,a,es12.3)',advance="no") "i=",i,"; f(i)=",f(i)
                     f(i)=f(i)-a23*Gsrf_l (ndt  ,k)*dt_face
                     !write(iout,'(a,es12.3)') " Gsrf_l (ndt  ,k)*dt_face =",Gsrf_l (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfl(ndt-1,k)&
-                        -a52*dsrfl(ndt-2,k)&
-                        -a53*dsrfl(ndt-3,k)&
-                        -a54*dsrfl(ndt-4,k)
+                             -a52*dsrfl(ndt-2,k)&
+                             -a53*dsrfl(ndt-3,k)&
+                             -a54*dsrfl(ndt-4,k)
                     f(i)=f(i)-a55*Gsrf_l (ndt  ,k)*dt_face
                 else
                     call face_error("ERROR: order of solver not implemented. order=",order_solver)
@@ -73,9 +73,9 @@ contains
                     !     --- 5th order BDF ---
                     elseif (order_solver.eq.5) then
                         f(i)=u(i)-a51*dens(ndt-1,j,k)&
-                            -a52*dens(ndt-2,j,k)&
-                            -a53*dens(ndt-3,j,k)&
-                            -a54*dens(ndt-4,j,k)
+                                 -a52*dens(ndt-2,j,k)&
+                                 -a53*dens(ndt-3,j,k)&
+                                 -a54*dens(ndt-4,j,k)
                         f(i)=f(i)-a55*rate_d (ndt  ,j,k)*dt_face
 
                     else
@@ -101,16 +101,16 @@ contains
                 !     --- 2nd order BDF ---
                 elseif (order_solver.eq.2) then
                     f(i)=u(i)-a21*dsrfr(ndt-1,k)&
-                        -a22*dsrfr(ndt-2,k)
+                             -a22*dsrfr(ndt-2,k)
                      !   write(iout,'(a,i3,a,es12.3)',advance="no") "i=",i,"; f(i)=",f(i)
                     f(i)=f(i)-a23*Gsrf_r (ndt  ,k)*dt_face
                     ! write(iout,'(a,es12.3)') " Gsrf_r (ndt  ,k)*dt_face =",Gsrf_r (ndt  ,k)*dt_face
                 !     --- 5th order BDF ---
                 elseif (order_solver.eq.5) then
                     f(i)=u(i)-a51*dsrfr(ndt-1,k)&
-                        -a52*dsrfr(ndt-2,k)&
-                        -a53*dsrfr(ndt-3,k)&
-                        -a54*dsrfr(ndt-4,k)
+                             -a52*dsrfr(ndt-2,k)&
+                             -a53*dsrfr(ndt-3,k)&
+                             -a54*dsrfr(ndt-4,k)
                     f(i)=f(i)-a55*Gsrf_r (ndt  ,k)*dt_face
 
                 else
@@ -138,15 +138,15 @@ contains
                     !     --- 2nd order BDF ---
                     elseif (order_solver.eq.2) then
                         f(i)=u(i)-a21*temp(ndt-1,j)&
-                            -a22*temp(ndt-2,j)
+                                 -a22*temp(ndt-2,j)
                         f(i)=f(i)-a23*rate_t (ndt  ,j)*dt_face
 
                     !     --- 5th order BDF ---
                     elseif (order_solver.eq.5) then
-                        f(i)=u(i)-a51*temp(ndt-1,j) &
-                            -a52*temp(ndt-2,j)  &
-                            -a53*temp(ndt-3,j)  &
-                            -a54*temp(ndt-4,j)
+                        f(i)=u(i)-a51*temp(ndt-1,j)&
+                                 -a52*temp(ndt-2,j)&
+                                 -a53*temp(ndt-3,j)&
+                                 -a54*temp(ndt-4,j)
                         f(i)=f(i)-a55*rate_t (ndt  ,j)*dt_face
                     else
                         call face_error("ERROR: order of solver not implemented. order=",order_solver)
@@ -248,8 +248,8 @@ contains
                 cdif(ndt,j,k)=cdif0(k)*exp(-eekb*edif(k)/temp(ndt,j))
                 do l=1,nspc
                     m=1
-                    kbin(k,l,m)=kbin0(k,l,m)*exp(-eekb*ebin(k,l,m)/temp(ndt,j))
-                    nuth(k,l  )=nuth0(k,l  )*exp(-eekb*eth (k,l  )/temp(ndt,j))
+                    kbin(ndt,j,k,l,m)=kbin0(k,l,m)*exp(-eekb*ebin(k,l,m)/temp(ndt,j))
+                    nuth(ndt,j,k,l  )=nuth0(k,l  )*exp(-eekb*eth (k,l  )/temp(ndt,j))
                 enddo
             enddo
         enddo
@@ -292,37 +292,30 @@ contains
         integer,intent(in) :: k
         real(DP) csrs, csrb
         !     --- sources ---
-        if (.not.solve_heat_eq) then
-            do j=0,ngrd
-                src(ndt,j,k)=0.d0
-                if (srs(ndt,j,k) .ne. 0.d0) then
-                    src (ndt,j,k)=src(ndt,j,k)+srs(ndt,j,k)*csours(ndt,j,k)
+        do j=0,ngrd
+            src(ndt,j,k)=0.d0
+            if (srs(ndt,j,k) .ne. 0.d0) then
+                src(ndt,j,k)=src(ndt,j,k)+srs(ndt,j,k)*csours(ndt,j,k)
+            endif
+            do l=1,nspc
+                if (srb(ndt,j,k,l) .ne. 0.d0) then
+                    src(ndt,j,k)=src(ndt,j,k)+srb(ndt,j,k,l)*dens(ndt,j,l)*csrbin(ndt,j,k,l)
                 endif
-                do l=1,nspc
-                    if (srb(ndt,j,k,l) .ne. 0.d0) then
-                        src (ndt,j,k  )=src(ndt,j,k  )+srb(ndt,j,k,l)*dens(ndt,j,l)*csrbin(ndt,j,k,l)
-                    endif
-                enddo
             enddo
-        elseif (solve_heat_eq) then
-            jout(ndt,k)=0.d0
-            do j=0,ngrd
-                src(ndt,j,k)=0.d0
-                if (srs(ndt,j,k) .ne. 0.d0) then
-                    csrs         =csours(ndt,j,k)
-                    src (ndt,j,k)=src   (ndt,j,k)+srs   (ndt,j,k)*csrs
-                    jout(ndt,  k)=jout  (ndt,  k)+srs(ndt,j,k)*(1.d0-csrs)*dx(j)
-                endif
-                do l=1,nspc
-                    if (srb(ndt,j,k,l) .ne. 0.d0) then
-                        csrb           =csrbin(ndt,j,k,l)
-                        src (ndt,j,k  )=src   (ndt,j,k  )+srb   (ndt,j,k,l)*dens(ndt,j,l)*csrb
-                        jout(ndt,  k  )=jout  (ndt,  k  )+srb   (ndt,j,k,l)*dens(ndt,j,l)*(1.d0-csrb)*dx(j)
-                    endif
-                enddo
+        enddo
+        jout(ndt,k)=0.d0
+        do j=1,ngrd-1
+            jout(ndt,k)=jout(ndt,k)+srs(ndt,j,k)*(1.d0-csours(ndt,j,k))*0.5d0*(dx(j-1)+dx(j))
+            do l=1,nspc
+                jout(ndt,k)=jout(ndt,k)+srb(ndt,j,k,l)*dens(ndt,j,l)*(1.d0-csrbin(ndt,j,k,l))*0.5d0*(dx(j-1)+dx(j))
             enddo
-
-        endif
+        enddo
+        jout(ndt,k)=jout(ndt,k)+srs(ndt,0   ,k)*(1.d0-csours(ndt,0   ,k))*0.5d0*dx(0   )
+        jout(ndt,k)=jout(ndt,k)+srs(ndt,ngrd,k)*(1.d0-csours(ndt,ngrd,k))*0.5d0*dx(ngrd)
+        do l=1,nspc
+            jout(ndt,k)=jout(ndt,k)+srb(ndt,0   ,k,l)*dens(ndt,0   ,l)*(1.d0-csrbin(ndt,0   ,k,l))*0.5d0*dx(0   )
+            jout(ndt,k)=jout(ndt,k)+srb(ndt,ngrd,k,l)*dens(ndt,ngrd,l)*(1.d0-csrbin(ndt,ngrd,k,l))*0.5d0*dx(ngrd)
+        enddo
     end subroutine compute_source_rate
 
     subroutine compute_surface_flx(k)
@@ -445,8 +438,8 @@ contains
         endif
 
         ! calculate effective desorptiopn and heat fluxes
+        jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
         if (solve_heat_eq) then
-            jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
             qflx_in=qflx_in+jout(ndt,k)*(ee*Eads_l(k)-2.d0*kb*temp(ndt,0))
         endif
 
@@ -488,31 +481,31 @@ contains
             if (k .eq. 1) then
                 do l=1,nspc
                     m=1
-                    if (kbin(k,l,m) .ne. 0.d0) then
-                        rct(ndt,j,k)=rct(ndt,j,k) +kbin(k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
+                    if (kbin(ndt,j,k,l,m) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+kbin(ndt,j,k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
                     endif
-                    if (nuth(k,l) .ne. 0.d0) then
-                        rct (ndt,j,k)=rct (ndt,j,k)+nuth(k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
+                    if (nuth(ndt,j,k,l) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+nuth(ndt,j,k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
                     endif
                 enddo
             elseif (k .eq. nspc) then
                 do l=k-1,k
                     m=1
-                    if (kbin(k,l,m) .ne. 0.d0) then
-                        rct(ndt,j,k)=rct(ndt,j,k)+kbin(k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
+                    if (kbin(ndt,j,k,l,m) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+kbin(ndt,j,k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
                     endif
-                    if (nuth(k,l) .ne. 0.d0) then
-                        rct (ndt,j,k)=rct (ndt,j,k)+nuth(k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
+                    if (nuth(ndt,j,k,l) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+nuth(ndt,j,k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
                     endif
                 enddo
             else
                 do l=k-1,k+1
                     m=1
-                    if (kbin(k,l,m) .ne. 0.d0) then
-                        rct(ndt,j,k)=rct(ndt,j,k)+kbin(k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
+                    if (kbin(ndt,j,k,l,m) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+kbin(ndt,j,k,l,m)*cbinar(ndt,j,k,l,m)*dens(ndt,j,l)*dens(ndt,j,m)
                     endif
-                    if (nuth(k,l) .ne. 0.d0) then
-                        rct (ndt,j,k)=rct (ndt,j,k)+nuth(k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
+                    if (nuth(ndt,j,k,l) .ne. 0.d0) then
+                        rct(ndt,j,k)=rct(ndt,j,k)+nuth(ndt,j,k,l)*ctherm(ndt,j,k,l)*dens(ndt,j,l)
                     endif
                 enddo
             endif
@@ -523,7 +516,11 @@ contains
         integer j
         rate_t(ndt,0)=(qflx_in-qflx(ndt,0))*2.d0/dx(0)/rhocp+ero_qflx(ndt,0)
         do j=1,ngrd-1
-            rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)+ero_qflx(ndt,j)
+!           rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)+ero_qflx(ndt,j)
+           rate_t(ndt,j)=2.d0*thcond/rhocp&
+                        *((temp(ndt,j-1)*dx(j)+temp(ndt,j+1)*dx(j-1))/(dx(j-1)+dx(j))-temp(ndt,j))&
+                        /(dx(j-1)*dx(j))&
+                        +ero_qflx(ndt,j)
         enddo
         rate_t(ndt,ngrd)=0.d0
 
@@ -713,7 +710,7 @@ endif
     subroutine  compute_temperature
         integer j,n
         !     --- compute new temperature and update arrhenius coeffs in heat eq is not solved.
-        ! if heat eq is solved, then arrhenius coefficients are computed within cpomputation of f functions
+        ! if heat eq is solved, then arrhenius coefficients are computed within computation of f functions
 
         if (.not.solve_heat_eq) then
             if (framp .eq. "none") then
@@ -789,13 +786,13 @@ endif
 
         ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
         if (solve_heat_eq) then
-            call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. Ifheaqt eq not solved, this is done upfront in routine step
+            call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. If heat eq not solved, this is done upfront in routine step
         endif
         ! *** density
         do k=1,nspc
-            call compute_source_rate(k)             ! compute source term for species
+            call compute_source_rate(k)        ! compute source term for species
             call compute_gradient_dens(k)      ! set flx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
-            call compute_reaction_rate(k)           !
+            call compute_reaction_rate(k)      !
             call compute_surface_flx(k)
             call compute_ero_flx(k)
             call compute_diff_flx(k)
@@ -807,7 +804,7 @@ endif
             call compute_gradient_temp ! compute qflx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
             call compute_ero_qflx      ! compute ero_qflx=cero*qflx
             call compute_thermal_qflx  ! compute qflx=kappa*qflx
-            call compute_temp_rate    !
+            call compute_temp_rate     !
         endif
 
     end subroutine compute_eq_rates
