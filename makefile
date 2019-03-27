@@ -1,7 +1,10 @@
 # makefile for FACE20
 # compiler
-FC     = ifort
-
+#FC     = ifort
+.SUFFIXES:
+FC     = gfortran
+fopenmp=-fopenmp 
+FMKL=
 # PROGRAM NAME: FACE
 PROGRAM = FACE20
 # build directory
@@ -11,11 +14,11 @@ SRCDIR=src
 # directory where binary are created
 BINDIR=bin
 OBJDIR=$(BUILDDIR)
-
+MODDIR=modules
 
 # compile flags
-FFLAGS = #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons -fbounds-check
-DBGFLAGS = -g -O0   -fbacktrace 
+FFLAGS =-fbounds-check -fcheck=all -Wall #-qopenmp -mkl=parallel#-Wall -Werror -Wextra -fno-align-commons 
+DBGFLAGS =  -fbacktrace 
 RLSFLAGS = -O3 
 
 
@@ -39,41 +42,41 @@ all: prep release
 
 # debug rules
 $(DBGOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC) -c $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
+	$(FC) -cpp  ${fopenmp} $(FFLAGS) $(DBGFLAGS)  -c $< -o $@ 
 
 
 $(DBGOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC) -c $(FFLAGS)  $(DBGFLAGS) -c $< -o $@ 
+	$(FC) -cpp ${fopenmp} $(FFLAGS)  $(DBGFLAGS) -c $< -o $@ 
 
 debug: prep debug_exe
 
 debug_exe: $(DBGOBJECTS_f) $(DBGOBJECTS_f90)
-	$(FC)  $(FFLAGS) $(DBGFLAGS) -o $(BINDIR)/$(EXE_DEBUG) $^
+	$(FC)  -cpp ${fopenmp} $(FFLAGS) $(DBGFLAGS) -o $(BINDIR)/$(EXE_DEBUG) $^
 
 
 # release rules
 
 $(RLSOBJECTS_f90): $(OBJDIR)/%.o : $(SRCDIR)/%.f90
-	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@ -J$(MODDIR)
 
 
 $(RLSOBJECTS_f): $(OBJDIR)/%.o : $(SRCDIR)/%.f
-	$(FC)  -qopenmp $(FFLAGS) $(RLSFLAGS) -mkl -c $< -o $@
+	$(FC)  -cpp ${fopenmp}  -cpp $(FFLAGS) $(RLSFLAGS) ${FMKL} -c $< -o $@ -J$(MODDIR)
 
 release: prep release_exe
 
 release_exe: $(RLSOBJECTS_f) $(RLSOBJECTS_f90)
-	$(FC) -qopenmp  $(FFLAGS) $(RLSFLAGS) -mkl -o $(BINDIR)/$(EXE_RELEASE) $^
+	$(FC) -cpp ${fopenmp} $(FFLAGS) $(RLSFLAGS) ${FMKL} -o $(BINDIR)/$(EXE_RELEASE) $^
 
 # default
 default: release
 
 # cleaning rules
 clean:
-	@rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.mod $(BINDIR)/$(EXE_RELEASE) $(BINDIR)/$(EXE_DEBUG) 
+	@rm -f $(BUILDDIR)/*.o $(MODDIR)/*.mod $(BINDIR)/$(EXE_RELEASE) $(BINDIR)/$(EXE_DEBUG) 
 
 prep:
-	@mkdir -p $(BUILDDIR) ${BINDIR}
+	@mkdir -p $(BUILDDIR) ${BINDIR} ${MODDIR}
 
 
 

@@ -44,7 +44,7 @@ contains
       ! k,l= species
       real(DP) function csrbin(i,j,k,l)
       integer i, j, k, l, n
-      csrbin=1.0
+      csrbin=1.d0
       if (active_cap) then
       do n=3,nspc,2
        if (l.eq.n) then

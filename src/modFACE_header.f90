@@ -40,7 +40,9 @@
      logical :: verbose_help=.false.
      logical :: verbose_version=.false.
           logical :: verbose_header=.false.
+          logical :: verbose_surface=.false.
     logical:: enforce_error=.true.
+    logical:: first_voldump=.true.
 
 
       integer::ngrd
@@ -50,7 +52,7 @@
     integer:: iout=6
       real(DP) :: tcpustart, tcpufinish,walltime_start,walltime_end
      integer :: Nprint_run_info=2 ! print info on current run every Nprint_run_info steps
-     real(DP),parameter :: min_rate_surface=1d-20
+     real(DP),parameter :: min_rate_surface=1.0d-20
       ! **  Some physical and mathematical constants
       real(DP),parameter ::ee=1.602176462d-19
       real(DP),parameter ::eps0=8.854187817d-12
@@ -77,9 +79,9 @@
       real(DP),parameter ::a54=- 3.d0/25.d0
       real(DP),parameter ::a55= 12.d0/25.d0
 
-      real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3
+      real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3,jac_eps=1d-8
       real(DP) ::solver_fstp=1.d-1
-      integer :: iter_solver_max=100
+      integer :: iter_solver_max=150
       logical :: finalcheck=.true.
 
       character(string_length) :: default_inputfile="default_inputfile.face"
@@ -96,16 +98,24 @@
       real(DP),allocatable:: x(:)
       real(DP),allocatable:: dx(:)
       real(DP) ::alpha
+      real(DP) ::grid_dx0
+      character(string_length) ::grid_type
+      character(string_length) ::grid_gen_mode
       ! time
       real(DP):: dt_face    !>@var current solver time step
       real(DP):: min_dt_face   !>@var current solver time step
+      real(DP):: max_dt_face   !>@var current solver time step
       real(DP):: dt0_face ! nominal time step
       real(DP) :: reduction_factor_dt=1d0
+      logical :: adjust_reduction_factor=.false.
+      character(string_length):: adjust_reduction_factor_string
       integer:: Nstep_increase_dt=10
       integer :: solver_step_count=0
-
+      real(DP) :: max_iter=1e9
       real(DP):: end_time  ! end time of simulations
       real(DP):: time  ! current time of simulations
+      real(DP):: time_savevol  !
+      real(DP):: time_savetime  !
       real(DP):: start_time ! start time  of simulation
 !      real(DP):: cdt   ! factor for solver time step (dt)
       ! temp
@@ -126,7 +136,7 @@
       logical:: dump_time=.true.
       logical:: dump_restart=.true.
 
-      real(DP):: nucut=0
+      real(DP):: nucut=1d99
       real(DP):: delta=0
 
       integer:: iter_solver=0 ! #of solver iterations at each time step
@@ -146,17 +156,23 @@
 !       Flags
       logical:: read_input_file=.true.
       logical:: restore_state_temp=.true.
+      logical::dump_vol_append=.false.
+      logical::dump_srf_append=.false.
+      logical::dump_time_append=.false.
+      logical:: solve_heat_eq=.false.
+      logical:: variable_timestep
       integer::avr
       character(string_length):: input_filename
       character(string_length):: logfile
       character(string_length):: read_restart_file
       character(string_length):: read_state_file
-      character(string_length):: steady_state
+      character(string_length):: steady_state_string
+      logical:: steady_state=.false.
       character(string_length):: framp
-      character(string_length):: solve_heat_eq
+      character(string_length):: solve_heat_eq_string
+      character(string_length):: variable_timestep_string
       character(string_length):: final_state_file
       character(string_length):: casename
-      character(string_length):: pulsed_flux
 
       type inventories
        real(DP)         ::  Nnetbulk
@@ -166,7 +182,7 @@
      end type inventories
 
      type particle_balances
-             real(DP):: Nnet=0,Ninflux=0,Noutflux=0,p_net=0,p_max=0,f_lost=0
+     real(DP):: Nnet=0d0,Ninflux=0d0,Noutflux=0d0,p_net=0d0,p_max=0d0,f_lost=0d0,Noutflux_l=0d0,Noutflux_r=0d0
      end type particle_balances
 
     type outgassing_fluxes
@@ -179,7 +195,7 @@
     end type outgassing_fluxes
 
      type wall_temperatures
-        real(DP)         :: sfr_temp_l,sfr_temp_r
+        real(DP)         :: srf_temp_l,srf_temp_r
         real(DP)         :: mean_temp
         real(DP)         :: max_temp
         real(DP)         :: min_temp
@@ -209,12 +225,17 @@
 !     implantation parameters
       character(lname),allocatable::implantation_model(:)
       real(DP),allocatable::implantation_depth(:)
+      real(DP),allocatable::diagnostic_depth(:)
       integer,allocatable::j_implantation_depth(:)
+      integer,allocatable::j_diagnostic_depth(:)
       real(DP),allocatable::implantation_width(:)
       real(DP),allocatable::enrg(:)
       real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
       real(DP),allocatable::inflx_in_max(:) ! max influx of particles
       real(DP),allocatable::inflx_in(:) ! nominal influx of particles
+      real(DP),allocatable::inflx_in_pulse_period(:) ! max influx of particles
+      real(DP),allocatable::inflx_in_pulse_starttime(:) ! max influx of particles
+      character(lname),allocatable::inflx_in_pulse(:) ! nominal influx of particles
       real(DP),allocatable::gas_pressure(:)
       real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
@@ -227,9 +248,13 @@
 !     ------------------------------------------------------------------
 !
       character(lname),allocatable::namespc(:)
-      character(lname),allocatable::left_surface_model(:)
-      character(lname),allocatable::right_surface_model(:)
-
+      character(lname),allocatable::left_surface_model_string(:)
+      character(lname),allocatable::right_surface_model_string(:)
+      integer,allocatable::left_surface_model(:)
+      integer,allocatable::right_surface_model(:)
+      integer,parameter :: surf_model_B=999
+      integer,parameter :: surf_model_N=998
+      integer,parameter :: surf_model_S=997
 !      Volumetric species terms
       real(DP),allocatable::dens0(:)
       real(DP),allocatable::gxmax(:)
@@ -253,6 +278,9 @@
 
 
 !     Boundary species parameters
+
+      real(DP),allocatable::order_desorption_left(:)
+      real(DP),allocatable::order_desorption_right(:)
       real(DP),allocatable::Eabs_l(:)
       real(DP),allocatable::Edes_l(:)
       real(DP),allocatable::Eb_l(:)
@@ -290,8 +318,8 @@
 !     ------------------------------------------------------------------
 !       Reaction parameters
 !     ------------------------------------------------------------------
-      real(DP),allocatable:: nuth (:,:)
-      real(DP),allocatable:: kbin (:,:,:)
+      real(DP),allocatable:: nuth (:,:,:,:)
+      real(DP),allocatable:: kbin (:,:,:,:,:)
       real(DP),allocatable::nuth0(:,:)
       real(DP),allocatable:: kbin0(:,:,:)
       real(DP),allocatable::eth  (:,:)
@@ -302,11 +330,13 @@
 !     ------------------------------------------------------------------
 !     Bulk
       real(DP),allocatable::srs(:,:,:)
+      real(DP),allocatable::src_profile(:,:)
       real(DP),allocatable::srb (:,:,:,:)
       real(DP),allocatable::src (:,:,:)
       real(DP),allocatable::cdif(:,:,:)
       real(DP),allocatable::rct (:,:,:)
       real(DP),allocatable::ero_flx (:,:,:)  ! erosion flux
+      real(DP),allocatable::dif_flx (:,:,:)  ! erosion flux
 !     Surface
       integer :: error_status=0
 
@@ -339,8 +369,22 @@
       real(DP):: max_Gdes_r
       end type trace_fluxes
       type(trace_fluxes),allocatable :: trace_flux(:)
-      logical :: active_cap=.true.
+
+         type onthefly_inventories
+      real(DP):: int_dens
+      real(DP):: int_dsrf
+      real(DP):: net_int_dens
+      real(DP):: net_int_dsrf
+      real(DP):: int_des
+      real(DP):: int_src
+      end type onthefly_inventories
+      type(onthefly_inventories),allocatable :: onthefly_inventory(:)
+      logical :: active_cap=.false.
+      logical :: print_onthefly_inventory=.false.
+      character(string_length)::print_onthefly_inventory_string
       character(string_length)::active_cap_string
+      character(string_length)::dump_vol_append_string
+      character(string_length)::dump_srf_append_string
 !     ------------------------------------------------------------------
 !       Thermal variables
 !     ------------------------------------------------------------------
@@ -357,7 +401,7 @@
       real(DP)::t1       =0
       real(DP):: t2      =0
       real(DP)::t3       =0
-      real(DP)::tpulse   =0 ! period of plasma pulse
+!      real(DP)::tpulse   =0 ! period of plasma pulse
       real(DP),allocatable::rate_t(:,:)
       real(DP),allocatable::qflx(:,:)
       real(DP),allocatable::ero_qflx(:,:)
@@ -387,7 +431,7 @@ type fluidcode_inputs
         character(string_length)     :: read_state_file  ! restart from this staste file
         character(string_length)     :: final_state_file    ! store final state in this state file
         real(DP)                     :: tempwall            ! temperature of the wall from fluid code
-        character(15)                :: solve_heat_eq       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        character(15)                :: solve_heat_eq_string       ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         character(string_length)      ::casename            ! casename (see below)
         character(string_length)      ::casename_base       ! base to form casename=casename_base_iteration_idx_wall
         character(string_length)      ::input_file            ! casename

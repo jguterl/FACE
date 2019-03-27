@@ -8,6 +8,7 @@
         module procedure init_zero_rarr2
         module procedure init_zero_rarr3
         module procedure init_zero_rarr4
+        module procedure init_zero_rarr5
         module procedure init_zero_s
         module procedure init_zero_sarr
         module procedure init_zero_i
@@ -58,6 +59,16 @@
         r=0.d0
 
     end subroutine init_zero_rarr4
+
+     subroutine init_zero_rarr5(r)
+        real(DP),allocatable::r(:,:,:,:,:)
+!        integer:: n1,n2,n3,n4,n5,i,j,k,l,m
+         if (.not.allocated(r))  then
+         call face_error("trying to set value to non-allocated variable")
+         endif
+        r=0.d0
+
+    end subroutine init_zero_rarr5
 
     subroutine init_zero_rarr(r)
         real(DP),allocatable::r(:)
@@ -166,6 +177,15 @@
               call face_error('ero_flx already allocated')
 
           endif
+
+          if (.not.allocated(dif_flx)) then
+              allocate(dif_flx (ndt,0:ngrd,nspc))
+              call init_zero(dif_flx)
+          else
+              call face_error('dif_flx already allocated')
+
+          endif
+
           if (.not.allocated(rate_t)) then
               allocate(rate_t(ndt,0:ngrd))
               call init_zero(rate_t)
@@ -211,6 +231,14 @@
 
           endif
 
+          if (.not.allocated(src_profile)) then
+              allocate(src_profile (0:ngrd,nspc))
+              call init_zero(src_profile)
+          else
+              call face_error('src_profile already allocated')
+
+          endif
+
          ! reaction parameters
          if (.not.allocated(kbin0)) then
      allocate(kbin0(nspc,nspc,nspc))
@@ -226,7 +254,7 @@
               call face_error('ebin already allocated')
           endif
       if (.not.allocated(kbin)) then
-      allocate(kbin(nspc,nspc,nspc))
+      allocate(kbin(ndt,0:ngrd,nspc,nspc,nspc))
           call init_zero(kbin)
           else
               call face_error('kbin already allocated')
@@ -247,7 +275,7 @@
               call face_error('eth already allocated')
           endif
       if (.not.allocated(nuth)) then
-      allocate(nuth(nspc,nspc))
+      allocate(nuth(ndt,0:ngrd,nspc,nspc))
           call init_zero(nuth)
           else
               call face_error('nuth already allocated')
@@ -480,6 +508,7 @@
           endif
 
 
+
                if (.not.allocated(final_inventory)) then
       allocate(final_inventory(nspc))
 
@@ -492,6 +521,12 @@
 
           else
               call face_error('trace_outgassing already allocated')
+          endif
+          if (.not.allocated(onthefly_inventory)) then
+      allocate(onthefly_inventory(nspc))
+
+          else
+              call face_error('onthefly_inventory already allocated')
           endif
 
 
@@ -533,6 +568,18 @@
           call init_zero(left_surface_model)
           allocate(right_surface_model(nspc))
           call init_zero(right_surface_model)
+          allocate(left_surface_model_string(nspc))
+          call init_zero(left_surface_model_string)
+          allocate(right_surface_model_string(nspc))
+          call init_zero(right_surface_model_string)
+
+
+          allocate(order_desorption_left(nspc))
+          call init_zero(order_desorption_left)
+
+          allocate(order_desorption_right(nspc))
+          call init_zero(order_desorption_right)
+
           allocate(dsrfm(nspc))
           call init_zero(dsrfm)
 
@@ -575,8 +622,14 @@
           allocate(implantation_depth(nspc))
           call init_zero(implantation_depth)
 
+           allocate(diagnostic_depth(nspc))
+          call init_zero(diagnostic_depth)
+
           allocate(j_implantation_depth(nspc))
           call init_zero(j_implantation_depth)
+
+          allocate(j_diagnostic_depth(nspc))
+          call init_zero(j_diagnostic_depth)
 
           allocate(implantation_width(nspc))
           call init_zero(implantation_width)
@@ -587,6 +640,11 @@
           allocate(inflx_in_max(nspc))
           call init_zero(inflx_in_max)
 
+          allocate(inflx_in_pulse(nspc))
+          allocate(inflx_in_pulse_period(nspc))
+          call init_zero(inflx_in_pulse_period)
+allocate(inflx_in_pulse_starttime(nspc))
+          call init_zero(inflx_in_pulse_starttime)
           allocate(inflx_in(nspc))
           call init_zero(inflx_in)
 
@@ -613,6 +671,7 @@ subroutine deallocate_variables()
         if (allocated(cdif)) deallocate(cdif)
 if (allocated(rct)) deallocate(rct)
 if (allocated(ero_flx)) deallocate(ero_flx)
+if (allocated(dif_flx)) deallocate(dif_flx)
 if (allocated(ero_qflx)) deallocate(ero_qflx)
         if (allocated(gprof)) deallocate(gprof)
         if (allocated(gxmax)) deallocate(gxmax)
@@ -641,11 +700,16 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
          if (allocated(implantation_model)) deallocate(implantation_model)
          if (allocated( implantation_depth)) deallocate( implantation_depth)
          if (allocated(j_implantation_depth)) deallocate( j_implantation_depth)
+         if (allocated( diagnostic_depth)) deallocate( diagnostic_depth)
+         if (allocated(j_diagnostic_depth)) deallocate( j_diagnostic_depth)
          if (allocated( implantation_width)) deallocate( implantation_width)
          if (allocated(enrg)) deallocate(enrg)
          if (allocated(inflx)) deallocate(inflx)
          if (allocated(inflx_in_max)) deallocate(inflx_in_max)
          if (allocated(inflx_in)) deallocate(inflx_in)
+         if (allocated(inflx_in_pulse_period)) deallocate(inflx_in_pulse_period)
+         if (allocated(inflx_in_pulse_starttime)) deallocate(inflx_in_pulse_starttime)
+         if (allocated(inflx_in_pulse)) deallocate(inflx_in_pulse)
          if (allocated(gas_pressure)) deallocate(gas_pressure  )
          if (allocated(gas_temp)) deallocate(gas_temp)
          if (allocated(mass)) deallocate( mass)
@@ -656,6 +720,7 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
        if (allocated(srb)) deallocate(srb)
        if (allocated(jout)) deallocate(jout)
        if (allocated(src)) deallocate(src)
+       if (allocated(src_profile)) deallocate(src_profile)
        if (allocated(j0)) deallocate(j0)
        ! reaction
        if (allocated(nuth0)) deallocate(nuth0)
@@ -672,7 +737,8 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
         if (allocated(dsrfr)) deallocate(dsrfr)
        if (allocated(right_surface_model)) deallocate(right_surface_model)
        if (allocated(left_surface_model)) deallocate(left_surface_model)
-
+if (allocated(right_surface_model_string)) deallocate(right_surface_model_string)
+       if (allocated(left_surface_model_string)) deallocate(left_surface_model_string)
       if (allocated(Kabs_l)) deallocate(Kabs_l)
       if (allocated(Kdes_l)) deallocate(Kdes_l)
       if (allocated(Kb_l)) deallocate(Kb_l)
@@ -703,6 +769,7 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
 
 
       if (allocated(trace_flux)) deallocate(trace_flux)
+       if (allocated(onthefly_inventory)) deallocate(onthefly_inventory)
        if (allocated(init_inventory)) deallocate(init_inventory)
        if (allocated(final_inventory)) deallocate(final_inventory)
     end subroutine deallocate_variables

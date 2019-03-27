@@ -65,12 +65,16 @@ subroutine run_FACE(face_input,face_output)
         integer :: j,k
         real(DP):: s
         do k=1,nspc
-            s=0d0
-            do j=0,ngrd
-                s=s+dens(ndt,j,k)*dx(j)
-            enddo
-            init_inventory(k)%Ntotbulk=s
-            init_inventory(k)%Ntotsrf=dsrfl(ndt,k)+dsrfr(ndt,k)
+
+            init_inventory(k)%Ntotbulk=integrale_dens(k)
+            init_inventory(k)%Ntotsrf=0d0
+            if (left_surface_model(k).eq.surf_model_S) then
+            init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfl(ndt,k)
+            endif
+            if (right_surface_model(k).eq.surf_model_S) then
+            init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfr(ndt,k)
+            endif
+
             init_inventory(k)%Nnetbulk=0.d0
             init_inventory(k)%Nnetsrf=0.d0
         enddo
@@ -81,13 +85,17 @@ subroutine run_FACE(face_input,face_output)
         integer :: j,k
         real(DP):: s
         do k=1,nspc
-            s=0d0
-            do j=0,ngrd
-                s=s+dens(ndt,j,k)*dx(j)
-            enddo
-            final_inventory(k)%Ntotbulk=s
-            final_inventory(k)%Ntotsrf=dsrfl(ndt,k)+dsrfr(ndt,k)
+
+            final_inventory(k)%Ntotbulk=integrale_dens(k)
+            final_inventory(k)%Ntotsrf=0d0
+            if (left_surface_model(k).eq.surf_model_S) then
+            final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfl(ndt,k)
+            endif
+             if (right_surface_model(k).eq.surf_model_S) then
+            final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfr(ndt,k)
+            endif
             final_inventory(k)%Nnetbulk=final_inventory(k)%Ntotbulk-init_inventory(k)%Ntotbulk
+
             final_inventory(k)%Nnetsrf =final_inventory(k)%Ntotsrf-init_inventory(k)%Ntotsrf
 
         enddo
@@ -95,6 +103,8 @@ subroutine run_FACE(face_input,face_output)
 
 
     end subroutine compute_final_inventory
+
+
 
     subroutine compute_particle_balance
     ! WARNING: this particle balance is performed for hydrogen assuming that free hydrogen are species k=1 and are trapped in species k=3,5,7,...
@@ -105,7 +115,8 @@ subroutine run_FACE(face_input,face_output)
 
       particle_balance%Nnet=particle_balance%Nnet+final_inventory(1)%Nnetbulk+final_inventory(1)%Nnetsrf
       particle_balance%Noutflux=particle_balance%Noutflux+trace_flux(1)%sum_Gdes_l+trace_flux(1)%sum_Gdes_r
-
+      particle_balance%Noutflux_l=trace_flux(1)%sum_Gdes_l
+      particle_balance%Noutflux_r=trace_flux(1)%sum_Gdes_r
       if (nspc.gt.2) then
       do k=3,nspc,2
       particle_balance%Nnet=particle_balance%Nnet+final_inventory(k)%Nnetbulk+final_inventory(k)%Nnetsrf
@@ -176,8 +187,8 @@ subroutine run_FACE(face_input,face_output)
         type(wall_temperatures),intent(out):: wall_temp
         real(DP)::max_temp,min_temp
         integer::j
-        wall_temp%sfr_temp_l=temp(ndt,0)
-        wall_temp%sfr_temp_r=temp(ndt,ngrd)
+        wall_temp%srf_temp_l=temp(ndt,0)
+        wall_temp%srf_temp_r=temp(ndt,ngrd)
         max_temp=0d0
         do j=0,ngrd
         max_temp=max(max_temp,temp(ndt,j))
@@ -219,10 +230,12 @@ subroutine time_loop
         call print_milestone('starting time iteration')
 
         iteration=0
-        do while (time .le. end_time)
-            call print_timestep_info()                   ! print info on current time step
-            call save()                                  ! dump data
-            call step()                                  ! numerical solver
+
+        do while ((time .lt. end_time) .AND. (iteration.lt.(idint(max_iter))))
+
+            call save                                  ! dump data
+            call step                                  ! numerical solver
+
             call store_restart(trim(restart_filename))   ! store restart if requested
             iteration=iteration+1
         enddo
@@ -259,8 +272,9 @@ call print_line(str)
 enddo
 call print_end_section('Final inventory')
 call print_section('Particle balance')
-      write(str,'(a,es12.3,a,es12.3,a,es12.3)') "Ninflux=",particle_balance%Ninflux,"; Nnet_material=",particle_balance%Nnet,&
-      "; Noutflux=",particle_balance%Noutflux
+ write(str,'(a,es12.3,a,es12.3,a,es12.3,a,es12.3,a,es12.3,a)') "Ninflux=",particle_balance%Ninflux,&
+ "; Nnet_material=",particle_balance%Nnet,"; Noutflux=",particle_balance%Noutflux,&
+      "(" , particle_balance%Noutflux_l,"/", particle_balance%Noutflux_r,")"
      call print_line(str)
       write(str,'(a,es12.3)') "Ninflux-Noutflux-Nnet=",particle_balance%p_net
       call print_line(str)
@@ -276,7 +290,7 @@ write(str,'(a,es12.3,a,es12.3,a,es12.3)') "start_time=",start_time,"; end_time="
 call print_line(str)
 write(str,'(a,i5)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
 call print_line(str)
-write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq
+write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
 call print_line(str)
 call print_end_section('Run features')
 end subroutine print_info_run

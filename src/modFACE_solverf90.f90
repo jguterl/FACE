@@ -11,12 +11,11 @@ module modFACE_solverf90
 contains
     subroutine jac(u,f,fdot,norm)
         integer i, j
-        real(DP):: u(neq), um(neq), up(neq)
-        real(DP):: f(neq), fm(neq), fp(neq)
+        real(DP),intent(in):: u(:), f(:)
+        real(DP)::  um(neq), up(neq), fm(neq), fp(neq)
         real(DP):: fdot(neq,neq)
-        real(DP):: eps, ddu, uud, amax, norm
+        real(DP)::  ddu, uud, amax, norm
         real(DP):: ftran
-        parameter (eps=1.d-3)
         parameter (ftran=1.d-0)
 
         do i=1,neq
@@ -25,11 +24,13 @@ contains
         enddo
 
         do i=1,neq
-            ddu=u(i)*eps
+            ddu=u(i)*jac_eps
             um(i)=u(i)-ddu
             up(i)=u(i)+ddu
+
             call compute_f(um,fm)
             call compute_f(up,fp)
+
             uud=1.d0/(ddu+ddu)
             do j=1,neq
                 fdot(j,i)=(fp(j)-fm(j))*uud
@@ -38,7 +39,7 @@ contains
             up(i)=u(i)
         enddo
         !     --- pseudo-transient continuation ---
-        if (steady_state .eq. "yes") then
+        if (steady_state) then
             do i=1,neq
                 fdot(i,i)=fdot(i,i)-ftran*norm
             enddo
@@ -51,6 +52,7 @@ contains
             enddo
             if (amax .eq. 0.d0) then
                 write (iout,*) '***warning: underflow in Jacobian raw ', i
+                write (iout,*) '***fdot(i,i)= ', fdot(i,i),fp(i)
                 call which_eq(i)
                 fdot(i,i)=-1.d+99
             endif
@@ -67,17 +69,20 @@ contains
         do k=1,nspc
             i=i+1
             u (i)=dsrfl(ndt-1,k)
+            if (isnan(u (i))) call face_error(" dsrfl NaN")
             du(i)=0.d0
             do j=0,ngrd
                 i=i+1
                 u (i)=dens(ndt-1,j,k)
+                if (isnan(u (i))) call face_error(" dens NaN")
                 du(i)=0.d0
             enddo
             i=i+1
             u (i)=dsrfr(ndt-1,k)
+            if (isnan(u (i))) call face_error(" dsrfr NaN")
             du(i)=0.d0
         enddo
-        if (solve_heat_eq .eq. "yes") then
+        if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
                 u (i)=temp(ndt-1,j)
@@ -88,11 +93,13 @@ contains
             call face_error("mismatch in vector size: neq=",neq, 'size(vec)=',i)
 
         endif
+    call check_isNaN(u,'build_vector')
     end subroutine build_vector
 
     subroutine dsolve(du,u,f,fdot)
 
-        real(DP)::  du(neq), u(neq), f(neq), fdot(neq,neq)
+        real(DP),intent(in)::  fdot(:,:), u(:), f(:)
+        real(DP),intent(out) :: du(:)
         real(DP):: a(neq,neq), b(neq)
         integer indx(neq)
         integer n, d, code

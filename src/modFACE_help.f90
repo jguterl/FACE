@@ -48,22 +48,24 @@ contains
         character(15) str4
         character(20) str5
         integer i
-        write(iout,*) ' '
-        write(iout,*) ' *** List of keywords for FACE input file ***'
-        write (str1, '(A30)') 'keyword'
-        write (str2, '(A70)') 'def'
-        write (str3, '(A20)') 'units'
-        write (str4, '(A15)') 'status'
-        write (str5, '(A15)') 'default'
-        write(iout,'(A5,A30,A70,A20,A15,A20)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
-        do i=1,ihelp-1
-            write (str1, '(A30)') help(i)%keyword
-            write (str2, '(A70)') help(i)%def
-            write (str3, '(A20)') help(i)%units
-            write (str4, '(A15)') help(i)%status
-            write (str5, '(A15)') help(i)%default
-            write(iout,'(A5,A30,A70,A20,A15)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
-        enddo
+        write(iout,*) ' Usage of FACE2.0:'
+        write(iout,*) ' -h or --help'
+
+!        write(iout,*) ' *** List of keywords for FACE input file ***'
+!        write (str1, '(A30)') 'keyword'
+!        write (str2, '(A70)') 'def'
+!        write (str3, '(A20)') 'units'
+!        write (str4, '(A15)') 'status'
+!        write (str5, '(A15)') 'default'
+!        write(iout,'(A5,A30,A70,A20,A15,A20)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
+!        do i=1,ihelp-1
+!            write (str1, '(A30)') help(i)%keyword
+!            write (str2, '(A70)') help(i)%def
+!            write (str3, '(A20)') help(i)%units
+!            write (str4, '(A15)') help(i)%status
+!            write (str5, '(A15)') help(i)%default
+!            write(iout,'(A5,A30,A70,A20,A15)') '  - ',adjustl(str1),adjustl(str2),adjustl(str3),adjustl(str4),adjustl(str5)
+!        enddo
     end subroutine print_help
 
         subroutine print_list_keyword
@@ -85,7 +87,7 @@ contains
          help(i)=helper('none','none','none','none','none',.false.,.false.)
         enddo
         ihelp=1
-        call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"2")
+        call set_help('order_solver','Numerical order of solver: 1|2|5','none','non-mandatory',"1")
         call set_help('read_restart_file','read Restart file: yes|no|filename (yes:default "dsave.rst")',&
         'none','non-mandatory',"no")
         call set_help('read_state_file','read state file: yes|no|filename (yes:"face.state").~=read restart file',&
@@ -95,10 +97,14 @@ contains
         call set_help('temp_ramp_start_time','Temperature ramp start time','[s]','non-mandatory',"0")
         call set_help('temp_ramp_stop_time ','Temperature ramp stop time','[s]','non-mandatory',"0")
         call set_help('end_time','Simulation time','[s]','mandatory',"1.00e+01")
+        call set_help('max_iter','MAx number of iteration','none','non-mandatory',"1.00e+10")
         call set_help('dt','Nominal time step','[s]','mandatory',"1.00e-03")
         call set_help('min_dt','Minimum time step','[s]','mandatory',"1.00e-06")
+        call set_help('max_dt','Maximum time step','[s]','mandatory',"1.00e+01")
         call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
-        call set_help('reduction_factor_dt','Reduction factor for timestep (=1<->no reduction)','none','non-mandatory',"1")
+        call set_help('variable_timestep','Adjust dynamically timestep: yes|no ','none','non-mandatory',"no")
+        call set_help('reduction_factor_dt','Reduction factor for variable timestep (=1<->no reduction)','none','non-mandatory',"1")
+        call set_help('adjust_reduction_factor','Adjust Reduction factor to have solver_iter<3','none','non-mandatory',"no")
         call set_help('Nstep_increase_dt','increase dt after N quick converged timestp when dt_face<dt','none','non-mandatory',"10")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
@@ -107,10 +113,16 @@ contains
         call set_help('steady_state','Steady state yes|no','none','non-mandatory',"no")
         call set_help('temp_ramp_filename','Temperature ramp data file (ramp.dat) used if .ne. 0','none','non-mandatory',"none")
         call set_help('solve_heat_equation','yes|no :solve heat equation','none','non-mandatory',"no")
+        call set_help('onthefly_inventory','yes|no','none','non-mandatory',"no")
         comment_str='# ********* Grid parameters ********************************************'
         call set_help(comment_str)
         call set_help('n_cells','Number of cells','none','mandatory',"100")
         call set_help('cell_scaling_factor','Cell width scaling factor','none','mandatory',"1.15305056")
+        call set_help('grid_type','A: antisym (smallest cell at x=0) S: symmetric','none','mandatory',"A")
+        call set_help('grid_gen_mode','grid generation: [alpha]alpha=cell_scaling_factor|[seed]dx0=grid_dx0 ',&
+        'none','non-mandatory',"alpha")
+        call set_help('grid_dx0','grid first cell length','none','non-mandatory',"1e-9")
+
         comment_str='# ********* Parameters for volumetric model and species ***************'
         call set_help(comment_str)
         call set_help('n_species','Number of species','none','mandatory',"3")
@@ -135,6 +147,10 @@ contains
         'mandatory',"S N N","species")
         call set_help('right_surface_model','B: Gamamaout=Kdes*cb^2 S: Gammaout=Kcs^2 N: no flux','[m^-2]',&
         'mandatory',"S N N","species")
+        call set_help('order_desorption_left','order of desorption cs^order or cb ^order','none',&
+        'non-mandatory',"2.0 2.0 2.0","species")
+        call set_help('order_desorption_right','order of desorption cs^order or cb ^order','none',&
+        'non-mandatory',"2.0 2.0 2.0","species")
 
         call set_help('ns0_left','Initial left surface density of species','[m^-2]','non-mandatory',&
             "1.00e+19 0.00e+19 0.00e+19","species")
@@ -161,6 +177,7 @@ contains
         call set_help(comment_str)
         call set_help('implantation_model','G: gaussian S:Step E: ERFC ','none','non-mandatory',"S S S","species")
         call set_help('implantation_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
+        call set_help('diagnostic_depth','implentation  depth','[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
         call set_help('implantation_width' ,'implentation width' ,'[m]','non-mandatory',"5.00e-09 5.00e-09 5.00e-09","species")
 
         call set_help('Eimpact_ion','Impact energy of ionized species','[eV]','non-mandatory',&
@@ -174,6 +191,9 @@ contains
         call set_help('temp_neutral','External temperature of neutral species','[eV]','non-mandatory',&
         "0.00e-00 0.00e+00 0.00e+00","species")
         call set_help('mass','Mass of species','[kg]','non-mandatory',"3.343e-27 0.00e+00 0.00e+00","species")
+        call set_help('Gamma_pulse','pulsed partice flux N: no S: sin R: rectangle','none','non-mandatory',"N N N","species")
+        call set_help('Gamma_pulse_period','Gamma pulse period','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
+        call set_help('Gamma_pulse_starttime','Gamma pulse starttime','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
         comment_str='# ********* Parameters for abliation model ****************************** '
         call set_help(comment_str)
         call set_help('min_ablation_velocity','min ablation speed in addition to sputtering','[m s^-1]','non-mandatory'&
@@ -191,8 +211,8 @@ contains
            comment_str='# ********* Material parameters ************************************** '
         call set_help(comment_str)
         call set_help('lattice_constant','Lattice constant of material','[m]','mandatory',"1.00e-10")
-        call set_help('cristal_volume_factor','Cristal cell volume factor','none','non-mandatory',"1")
-        call set_help('cristal_surface','Surface cell area factor','none','non-mandatory',"1")
+        call set_help('volume_factor','Cristal cell volume factor','none','non-mandatory',"1")
+        call set_help('surface_factor','Surface cell area factor','none','non-mandatory',"1")
         call set_help('lattice_length_factor','Lattice cell length factor','none','non-mandatory',"1")
 
         call set_help('thermal_conductivity','Thermal conductivity','[W m^-1 K^-1]','non-mandatory',"137.0")
@@ -206,19 +226,19 @@ contains
         call set_help('first_ramp_end_time','End of first ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_start_time','Start of second ramp time','[s]','non-mandatory',"1.0e+99")
         call set_help('second_ramp_end_time','End of second ramp time','[s]','non-mandatory',"1.0e+99")
-        call set_help('pulsed_flux','pulse incoming plasma flux: yes|no','none','non-mandatory',"no")
-        call set_help('pulse_period','Pulse period','[s]','non-mandatory',"1.0e+99")
+
 
           comment_str='# ********* Miscelleneaous *********************************************'
         call set_help(comment_str)
         call set_help('active_cap','yes|no','none','non-mandatory',"yes")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
-        call set_help('dump_space_append','yes|no','none','non-mandatory',"no")
-        call set_help('dump_time_append','yes|no ','none','non-mandatory',"no")
+        call set_help('dump_vol_append','yes|no','none','non-mandatory',"no")
+        call set_help('dump_srf_append','yes|no ','none','non-mandatory',"no")
         call set_help('fluid-interface','yes|no','none','non-mandatory',"no")
 
         call set_help('Nprint_run_info','print info on current run every Nprint_run_info steps','none','non-mandatory',"100")
         call set_help('solver_eps','solver: precision norm (norm<eps:exit','none','non-mandatory',"3.d-3")
+        call set_help('jac_eps','jac: precision norm (norm<eps:exit','none','non-mandatory',"1.d-8")
         call set_help('solver_udspl','solver: displacement min vector u','none','non-mandatory',"9.d-1")
         call set_help('solver_fdspl','solver: displacement min function f(u)','none','non-mandatory',"9.d0")
         call set_help('solver_gdspl','solver: displacement min grad u','none','non-mandatory',"1.d-3")
@@ -266,6 +286,120 @@ contains
         ihelp=ihelp+1
         Nhelp=ihelp-1
     end subroutine set_help_species
+   subroutine write_default_inputfile_nohelp(filename,mode)
+        character(*)::mode
+        integer,parameter::l=15
+        character(string_length)::str_keyword
+        character(string_length)::str_tmp
+        character(8)::str_type
+        character(3*(l+1)):: strvaluel
+        character(80)::str_def
+        character(26)::str_status
+        character(100)::str_default
+        character(string_length)::str_units
+        character(string_length)::fmt,timestamp
+        character(*)::filename
+        character(l)::str1
+
+        character(3*l)::str_data,str2
+        character(l)::strtmp(3)
+        integer::i,j,idefault,ios
+
+        call set_unit(idefault)
+        open(unit=idefault, file=trim(filename), iostat=ios,action='write')
+        if ( ios /= 0 ) then
+            call face_error('Cannot write into default input file ', trim(filename))
+        endif
+
+        write(iout,*)'Default input file: "', trim(filename) ,'" created'
+        call timestring ( timestamp )
+        write(idefault,*) '#Default input for FACE. Created: ', timestamp
+
+        do i=1,Nhelp
+            if (.not.help(i)%comment) then
+                write(fmt,*)'(a',3*l,')'
+                ! if keyword is n_species then select if the input file should be with only H (1 spc) or H+Tr (3 species)
+                if (help(i)%keyword.eq."n_species") then
+                    if (mode.eq."H") then
+                        write(str_data,fmt) "1"
+                    elseif (mode.eq."H+Tr") then
+                        write(str_data,fmt) "3"
+                    else
+                        call face_error("Unknown mode when writing default input file")
+                    endif
+               else
+                    write(str_data,fmt) adjustl(help(i)%default)
+                endif
+
+                ! write keyword
+                write(str_keyword,*) trim(adjustl(help(i)%keyword)),' '
+                ! write definition
+                write(str_def,*) ' ! ',trim(adjustl(help(i)%def)),' '
+                ! write units
+                !write(str_units,*) trim(adjustl(help(i)%units)),' '
+                ! write_default
+                !write(str_default,'(a8,a)') 'deflt: ',trim(adjustl(help(i)%default))
+                ! write status
+                !if (.not.(help(i)%species)) then
+
+               !     write(str_type,'(a8)')', single'
+               ! else
+                !    write(str_type,'(a8)') ',species'
+
+                !endif
+                !write(str_status,'(a1,a13,a8,a1)') '(',adjustr(trim(help(i)%status)) ,adjustl(str_type),') '
+
+                ! write keyword+value
+                if (.not.(help(i)%species)) then
+                 write(fmt,*)'(a25,a1,a',l+1,')'
+                    write(str_tmp,fmt) (adjustl(help(i)%keyword)),' ',adjustl(str_data)
+                else
+                str2=adjustl(str_data)
+                do j=1,3
+                        call SplitString(str2,str1,str2,' ')
+                        write(fmt,*)'(a14,a1)'
+                        write(strtmp(j),fmt) str1,' '
+
+                enddo
+                write(fmt,*)'(3a',(l+1),')'
+                write(strvaluel,fmt) (strtmp(j),j=1,3)
+
+                    write(fmt,*)'(a25,a1,a)'
+                    write(str_tmp,fmt) (adjustl(help(i)%keyword)),' ',adjustl(strvaluel)
+                endif
+
+
+                if (.not.(help(i)%species)) then
+                 write(fmt,*)'(a45)'
+                 write(idefault,fmt) adjustl(str_tmp)!,str_def,str_status,str_units,trim(str_default)
+                else
+                write(fmt,*)'(a75)'
+                write(idefault,fmt) (adjustl(str_tmp))!,str_def,str_status,str_units,trim(str_default)
+!
+!
+!                    !BUG INTEL FORT below
+!                    !write(fmt,*)'(a30,a1,a',3*(l),'a1,a80,a30,a1,a12,a11,a)'
+!                    !write(idefault,fmt) str_keyword,' ',adjustl(trim(strvaluel)), ' ! ',trim(strdef),trim(strsta),' ',adjustl(trim(struni)),&
+!                    !' default: ',adjustl(trim(help(i)%default))
+!                    write(fmt,*)'(a30,a1,a',3*(l+1),')'!,a80,a30,a1,a12,a11,a)'
+!                    write(str_tmp,fmt) trim(adjustl(help(i)%keyword)),' ',adjustl(strvaluel)
+!                    write(fmt,*)'(a3,a80,a30,a1,a12,a11,a)'
+!                    write(str_tmp2,fmt) " ! ",trim(strdef),trim(str_status)," ",adjustl(trim(struni))," dflt: ",&
+!                    adjustl(trim(help(i)%default))
+!                    write(idefault,'(a,a)') trim(str_tmp),trim(str_tmp2)
+                endif
+            else
+                write(idefault,*) trim(help(i)%def)
+            endif
+
+        enddo
+        !
+        !       write(*,*,'advance=no') adjustl(str_keyword),' ' strvalue ' ','! ',strtype, help(i)%def, ' (',help(i)%status ,') ',help(i)%units,help(i)%
+        !       type(string)
+        !       enddo
+        close(idefault)
+
+    end subroutine write_default_inputfile_nohelp
 
     subroutine write_default_inputfile(filename,mode)
         character(*)::mode
@@ -380,7 +514,7 @@ contains
         !       enddo
         close(idefault)
 
-    end subroutine
+    end subroutine write_default_inputfile
 
 
 

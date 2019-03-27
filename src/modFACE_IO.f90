@@ -21,7 +21,7 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (unit_timedata(k), '(17a13)')&
+            write (unit_timedata(k), '(24a10)')&
                 'time',&
                 'tempL',&
                 'tempR',&
@@ -42,7 +42,10 @@ contains
                 'Rct',&
                 'rate_d',&
                 'inflx',&
-                'qrad'
+                'qrad',&
+                'Kdes_l',&
+                'Kdes_r',&
+                'diag_flx'
         enddo
     end subroutine open_timedata_files
 
@@ -61,12 +64,12 @@ do k=1,nspc
 
 subroutine save_timedata
     integer::j,k
-    real(DP):: qnty,frmn,rctn
+    real(DP):: qnty,frmn,rctn,diag_flx
     character*256  myfmt1,myfmt2
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(17es13.3)"
+    write(myfmt2,*) "(es18.8e2,24es12.3e2)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -78,6 +81,7 @@ subroutine save_timedata
             frmn=frmn+0.5d0*(src (ndt,j,k)+src (ndt,j+1,k))*dx(j)
             rctn=rctn+0.5d0*(rct (ndt,j,k)+rct (ndt,j+1,k))*dx(j)
         enddo
+        diag_flx=dif_flx(ndt,j_diagnostic_depth(k),k)
 
         write (unit_timedata(k),myfmt2)&
             time, &
@@ -100,7 +104,10 @@ subroutine save_timedata
             rctn,&
             rate_d  (ndt,0,k),&
             inflx(k),&
-            rad
+            rad,&
+            Kdes_l(k),&
+            Kdes_r(k),&
+            diag_flx
     enddo
 
 end subroutine save_timedata
@@ -115,13 +122,27 @@ end subroutine save_timedata
 
         !     --- saving snapshot of volume distributions ---
 
-        write(myfmt1,*)    "(a, 1pe13.4e2, a)"
+        write(myfmt1,*)    "(a, 1pe18.9e2, a)"
         write(myfmt2,*) "(9a13)"
         write(myfmt3,*) "(i13.4, 8es13.4)"
         call set_unit(unit_voldata)
         do k=1,nspc
-            write (filename, '(a,a, i2.2, a, i3.3, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
-            open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)
+        if (dump_vol_append) then
+
+         write (filename, '(a,a, i2.2, a)') trim(dat_folder),'/vol', k, '.dat'
+         if (first_voldump) then
+         open (unit=unit_voldata, file=trim(filename), access='append',status='replace', iostat=ios)
+         first_voldump=.false.
+         else
+         open (unit=unit_voldata, file=trim(filename), access='append',status='unknown', iostat=ios)
+         endif
+
+        else
+         write (filename, '(a,a, i2.2, a, i4.4, a)') trim(dat_folder),'/vol', k, '_', sfln_voldata, '.dat'
+         open (unit=unit_voldata, file=trim(filename), status='replace', iostat=ios)
+        endif
+
+
             if (ios.eq.0) then
 
                 write (unit_voldata,myfmt1) 'time=', time, ' s'
@@ -130,7 +151,7 @@ end subroutine save_timedata
                     ' icell', &
                     '  x',&
                     ' dens',&
-                    'flx',&
+                    'dif_flx',&
                     'ero_flx',&
                     '   src',&
                     '  rct',&
@@ -142,7 +163,7 @@ end subroutine save_timedata
                         j, &
                         x(j), &
                         dens(ndt,j,k), &
-                        flx (ndt,j,k), &
+                        dif_flx (ndt,j,k), &
                         ero_flx(ndt,j,k), &
                         src (ndt,j,k), &
                         rct (ndt,j,k), &
@@ -172,8 +193,15 @@ end subroutine save_timedata
         write(myfmt2,*) "(a8,5(a13))"
         write(myfmt3,*)"(i8.4, 5(1pe13.4e2))"
         call set_unit(unit_heatdata)
-        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
-        open (unit_heatdata, file=trim(filename), status='replace',iostat=ios)
+        if (dump_vol_append) then
+         write (filename, '(a,a)') trim(dat_folder),'/heat.dat'
+         open (unit=unit_heatdata, file=trim(filename), access='append',status='unknown', iostat=ios)
+        else
+         write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
+         open (unit_heatdata, file=trim(filename), status='replace',iostat=ios)
+        endif
+
+
         if (ios.eq.0) then
             write (unit_heatdata, myfmt1) 'time=', time, ' s'
 
@@ -208,13 +236,21 @@ end subroutine save_timedata
         character(string_length)::filename,myfmt1,myfmt2,myfmt3
         integer k,ios,unit_surfdata
         !     --- saving snapshot of surface parameters
-        write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/srf_', sfln_srfdata, '.dat'
         write(myfmt1,*) "(a, 1pe13.4e2, a)"
         write(myfmt2,*) "(12(a13))"
         write(myfmt3,*) "(i13.2, 11(1pe13.4e2))"
         call set_unit(unit_surfdata)
-        open (unit_surfdata, file=trim(filename), status='replace',iostat=ios)
+
+          if (dump_srf_append) then
+         write (filename, '(a,a)') trim(dat_folder),'/srf.dat'
+         open (unit=unit_surfdata, file=trim(filename), access='append',status='unknown', iostat=ios)
+        else
+         write (filename, '(a, a, i4.4, a)') trim(dat_folder),'/srf_', sfln_srfdata, '.dat'
+         open (unit=unit_surfdata, file=trim(filename), status='replace', iostat=ios)
+        endif
+
         if (ios.eq.0) then
+
             write (unit_surfdata, myfmt1) 'time=', time, ' s'
             write (unit_surfdata, myfmt2)&
                 'spc#',&
@@ -262,25 +298,27 @@ end subroutine save_timedata
         real(DP)::tmp
 
         ! dump time data
-        if (dump_space_dt.gt.0d0) then
-            tmp=2.d0*abs(time-dump_time_dt*nint(time/dump_time_dt))
-        else
-            tmp=1d99
-        endif
-        if (dump_space.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+!        if (dump_time_dt.gt.0d0) then
+!            tmp=2.d0*abs(time-dump_time_dt*nint(time/dump_time_dt))
+!        else
+!            tmp=1d99
+!        endif
+        if (dump_time.and.(time_savetime.ge.dump_time_dt.or.time.le.start_time.or.time.ge.end_time)) then
             call save_timedata
+            time_savetime=0d0
         endif
 
         ! dump space data
-        if (dump_space_dt.gt.0d0) then
-            tmp=2.d0*abs(time-dump_space_dt*nint(time/dump_space_dt))
-        else
-            tmp=1d99
-        endif
-        if (dump_time.and.(tmp .lt. dt_face.or.time.le.start_time.or.time.ge.end_time)) then
+!        if (dump_space_dt.gt.0d0) then
+!            tmp=2.d0*abs(time-dump_space_dt*nint(time/dump_space_dt))
+!        else
+!            tmp=1d99
+!        endif
+        if (dump_space.and.(time_savevol.ge.dump_space_dt.or.time.le.start_time.or.time.ge.end_time)) then
             call save_voldata
             call save_srfdata
             call save_heatdata
+            time_savevol=0d0
         endif
 
         ! dump restart file
@@ -607,13 +645,30 @@ integer :: i
 
     subroutine print_timestep_info
 character(string_length)::myfmt,str
+real(DP)::tot=0d0,fin=0d0,fn=0d0
+integer:: k
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
-write(myfmt,*) "('iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
- ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3)"
- write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver
+write(myfmt,*) "('iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
+ ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+ write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), reduction_factor_dt,normf,iter_solver,dt_face
   call print_formatted(str)
+if (print_onthefly_inventory) then
+write(myfmt,*) "(' - onthefly inventory: k=', 1I2,' src+des=', es10.3,' net_int_dens=',",&
+"es10.3,' net_int_dsrf=', es10.3,' tot=', es10.3,' f-n=',es9.3,' f-src=',es9.3)"
+
+do k=1,nspc
+tot=-onthefly_inventory(k)%int_des+onthefly_inventory(k)%int_src&
+-(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf)
+fn=abs(tot)/abs(onthefly_inventory(k)%net_int_dens+onthefly_inventory(k)%net_int_dsrf)
+fin=abs(tot)/abs(onthefly_inventory(k)%int_src)
+write (str, myfmt) k,-onthefly_inventory(k)%int_des+onthefly_inventory(k)%int_src,onthefly_inventory(k)%net_int_dens,&
+onthefly_inventory(k)%net_int_dsrf,tot,fn,fin
+  call print_formatted(str)
+enddo
 endif
+endif
+
 end subroutine print_timestep_info
 
 subroutine print_reduction_timestep_info
@@ -632,5 +687,14 @@ character(*)::str
 write(iout,"(a5,'--- ',a,' ---')")" ", str
 write(iout,"(a)") " "
 end subroutine print_milestone
+
+subroutine print_vector(u,str)
+real(DP),intent(in) :: u(neq)
+integer :: i
+character(*) :: str
+do i=1,neq
+        write(iout,*) str,'(',i,')=',u(i)
+            enddo
+end subroutine print_vector
 
 end module modFACE_IO

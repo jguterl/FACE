@@ -81,14 +81,29 @@ contains
                     face_input%run_mode="print_default_input"
                     k=k+1
                 endif
-            elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
+            elseif (arg.eq."-pdnh" .or. arg.eq."--print-default-input-no-help") then
+                if (face_input%run_mode.ne."default") then
+                    write(*,*) 'ERROR: Current flag incompatible with previous flags (current flag: ',arg,')'
+                    stop 'Exiting FACE...'
+                else
+                    face_input%run_mode="print_default_input_nohelp"
+                    k=k+1
+                endif
+                    elseif (arg.eq."-vi" .or. arg.eq."--verbose-input") then
                     verbose_input=.true.
                     k=k+1
-
+                    elseif (arg.eq."-vs" .or. arg.eq."--verbose-surface") then
+                    verbose_surface=.true.
+                    k=k+1
+                    elseif (arg.eq."-vstp" .or. arg.eq."--verbose-step") then
+                    verbose_step=.true.
+                    k=k+1
                     elseif (arg.eq."-vp" .or. arg.eq."--verbose-parser") then
                     verbose_parser=.true.
                     k=k+1
-
+                    elseif (arg.eq."-vd" .or. arg.eq."--verbose-debug") then
+                    verbose_debug=.true.
+                    k=k+1
                     elseif (arg.eq."-vit" .or. arg.eq."--verbose-init") then
                     verbose_init=.true.
                     k=k+1
@@ -258,7 +273,7 @@ integer:: iter
 
         fluidcode_input%qflx_in=0           ! Heat flux from fluid code
 
-        fluidcode_input%solve_heat_eq="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
+        fluidcode_input%solve_heat_eq_string="no"   ! if solve_heat_eq then use Qin otherwise T=tempwall for the entire bulk
         fluidcode_input%log_file=trim(fluidcode_input%path)//'/'//trim(fluidcode_input%casename)//".log"
 fluidcode_input%log_file="no"
         call wrapper_FACE(fluidcode_input,fluidcode_output)

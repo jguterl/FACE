@@ -74,19 +74,28 @@ contains
 
         ! solve heat equation
         case('solve_heat_equation')
-            if (solve_heat_eq.ne."no".AND.solve_heat_eq.ne."yes") then
+            if (solve_heat_eq_string.ne."no".AND.solve_heat_eq_string.ne."yes") then
                 write(iout,*) "ERROR: solve_heat_equation must be yes or no"
                 stop
+            endif
+            if (solve_heat_eq_string.eq."no") then
+            solve_heat_eq=.false.
+            elseif (solve_heat_eq_string.ne."yes") then
+            solve_heat_eq=.true.
+            call face_error('heat equation solver must be checked!')
             endif
 
 
         ! check steady-state value
-        case('steady_state')
-            if (steady_state.ne."no".AND.steady_state.ne."yes") then
-                write(iout,*) "ERROR: steady_state must be yes or no"
-                stop
-            endif
 
+case('steady_state')
+         if(steady_state_string.eq."yes") then
+         steady_state=.true.
+         elseif (steady_state_string.eq."no") then
+         steady_state=.false.
+         else
+         call face_error("unknown option for steady_state (must be yes or no) : ",steady_state_string)
+         endif
 
         ! check that name of species are unique
         case('species_name')
@@ -100,7 +109,8 @@ contains
        enddo
 
        ! set active_cap (true or false)
-        case('active_cap')
+         case('active_cap')
+
          if(active_cap_string.eq."yes") then
          active_cap=.true.
          elseif (active_cap_string.eq."no") then
@@ -109,11 +119,63 @@ contains
          call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
          endif
 
+
+
+
+
+         case('onthefly_inventory')
+         if(print_onthefly_inventory_string.eq."yes") then
+         print_onthefly_inventory=.true.
+         elseif (print_onthefly_inventory_string.eq."no") then
+         print_onthefly_inventory=.false.
+         else
+         call face_error("unknown option for onthefly_inventory (must be yes or no) : ",print_onthefly_inventory_string)
+         endif
+
+         case('dump_vol_append')
+         if(dump_vol_append_string.eq."yes") then
+         dump_vol_append=.true.
+         elseif (dump_vol_append_string.eq."no") then
+         dump_vol_append=.false.
+         else
+         call face_error("unknown option for dump_vol_append (must be yes or no) : ",dump_vol_append_string)
+         endif
+
+         case('dump_srf_append')
+         if(dump_srf_append_string.eq."yes") then
+         dump_srf_append=.true.
+         elseif (dump_srf_append_string.eq."no") then
+         dump_srf_append=.false.
+         else
+         call face_error("unknown option for dump_srf_append (must be yes or no) : ",dump_srf_append_string)
+         endif
+
 ! check that the reduction factor is >0 and lt 1
 case('reduction_factor_dt')
 if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
 call face_error("reduction factor dt cannot be <=0 and >1: reduction factor dt=",reduction_factor_dt)
 endif
+case('variable_timestep')
+if(variable_timestep_string.eq."yes") then
+         variable_timestep=.true.
+         elseif (variable_timestep_string.eq."no") then
+         variable_timestep=.false.
+         else
+         call face_error("unknown option for variable_timestep (must be yes or no) : ",variable_timestep_string)
+         endif
+
+         if ((order_solver.gt.1).AND. (variable_timestep)) then
+         call face_error("Cannot have variable timestep when order of numerical time scheme >1 (order_solver>1)")
+         endif
+
+         case('adjust_reduction_factor')
+if(adjust_reduction_factor_string.eq."yes") then
+         adjust_reduction_factor=.true.
+         elseif (adjust_reduction_factor_string.eq."no") then
+         adjust_reduction_factor=.false.
+         else
+         call face_error("unknown option for adjust_reduction_factor(must be yes or no) : ",adjust_reduction_factor_string)
+         endif
 end select
     end subroutine check_value_input
 
@@ -137,19 +199,25 @@ end select
         call get_keyword_value('read_restart_file',read_restart_file)
         call get_keyword_value('read_state_file',read_state_file)
         call get_keyword_value('wall_thickness',length)
-        call get_keyword_value('steady_state', steady_state)
+        call get_keyword_value('steady_state', steady_state_string)
         call get_keyword_value('start_time', start_time)
         call get_keyword_value('temp_ramp_start_time', tramp0)
         call get_keyword_value('temp_ramp_stop_time', tramp1)
         call get_keyword_value('end_time', end_time)
+        call get_keyword_value('max_iter', max_iter)
         call get_keyword_value('dt', dt0_face)
         call get_keyword_value('min_dt', min_dt_face)
+         call get_keyword_value('max_dt', max_dt_face)
+        call get_keyword_value('variable_timestep', variable_timestep_string)
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
         call get_keyword_value('dump_time_dt', dump_time_dt)
+         call get_keyword_value('dump_vol_append', dump_vol_append_string)
+         call get_keyword_value('dump_srf_append', dump_srf_append_string)
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
         call get_keyword_value('temp_ramp_filename', framp)
-        call get_keyword_value('solve_heat_equation', solve_heat_eq)
+        call get_keyword_value('solve_heat_equation', solve_heat_eq_string)
+        call get_keyword_value('onthefly_inventory', print_onthefly_inventory_string)
         call get_keyword_value('n_species', nspc)
 
         call get_keyword_value('species_name', namespc)
@@ -163,8 +231,10 @@ end select
         call get_keyword_value('ED', edif)
         call get_keyword_value('Etr', etr )
         call get_keyword_value('Edt', edtr)
-        call get_keyword_value('left_surface_model', left_surface_model)
-        call get_keyword_value('right_surface_model', right_surface_model)
+        call get_keyword_value('left_surface_model', left_surface_model_string)
+        call get_keyword_value('right_surface_model', right_surface_model_string)
+        call get_keyword_value('order_desorption_left', order_desorption_left)
+        call get_keyword_value('order_desorption_right', order_desorption_right)
         call get_keyword_value('ns0_left', dsrfl0)
         call get_keyword_value('ns0_right', dsrfr0)
         call get_keyword_value('ns_max', dsrfm)
@@ -179,10 +249,14 @@ end select
         call get_keyword_value('nu0', nu)
         call get_keyword_value('implantation_model', implantation_model)
         call get_keyword_value('implantation_depth', implantation_depth)
+        call get_keyword_value('diagnostic_depth', diagnostic_depth)
         call get_keyword_value('implantation_width', implantation_width)
         call get_keyword_value('Eimpact_ion', enrg)
         call get_keyword_value('Gamma_in', inflx_in)
         call get_keyword_value('Gamma_in_max', inflx_in_max)
+        call get_keyword_value('Gamma_pulse', inflx_in_pulse)
+        call get_keyword_value('Gamma_pulse_period', inflx_in_pulse_period)
+        call get_keyword_value('Gamma_pulse_starttime', inflx_in_pulse_starttime)
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
@@ -193,11 +267,14 @@ end select
         call get_keyword_value('mat_temp_ramp_start', temp0)
         call get_keyword_value('mat_temp_ramp_stop', temp1)
         call get_keyword_value('lattice_constant', lambda)
-        call get_keyword_value('cristal_volume_factor', cvlm)
-        call get_keyword_value('cristal_surface', csrf)
+        call get_keyword_value('volume_factor', cvlm)
+        call get_keyword_value('surface_factor', csrf)
         call get_keyword_value('lattice_length_factor', clng)
         call get_keyword_value('n_cells', ngrd)
         call get_keyword_value('cell_scaling_factor', alpha)
+        call get_keyword_value('grid_type', grid_type)
+        call get_keyword_value('grid_gen_mode', grid_gen_mode)
+        call get_keyword_value('grid_dx0', grid_dx0)
         call get_keyword_value('thermal_conductivity', thcond)
         call get_keyword_value('heat_capacity', cp)
         call get_keyword_value('density', rho)
@@ -208,14 +285,16 @@ end select
         call get_keyword_value('first_ramp_end_time', t1)
         call get_keyword_value('second_ramp_start_time', t2)
         call get_keyword_value('second_ramp_end_time', t3)
-        call get_keyword_value('pulsed_flux', pulsed_flux)
-        call get_keyword_value('pulse_period', tpulse)
+!        call get_keyword_value('pulsed_flux', pulsed_flux)
+!        call get_keyword_value('pulse_period', tpulse)
         call get_keyword_value('iter_solver_max', iter_solver_max)
         call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
+        call get_keyword_value('adjust_reduction_factor', adjust_reduction_factor_string)
           call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
 
         call get_keyword_value('Nprint_run_info', Nprint_run_info)
         call get_keyword_value('solver_eps',solver_eps)
+        call get_keyword_value('jac_eps',jac_eps)
         call get_keyword_value('solver_udspl',solver_udspl)
         call get_keyword_value('solver_fdspl',solver_fdspl)
         call get_keyword_value('solver_gdspl',solver_gdspl)
@@ -329,6 +408,7 @@ end select
         variable=inputval%r
         if (verbose_input) write(iout,*) 'real:',trim(keyword),'=',(variable(k),k=1,nspc)  ,' : ' ,trim(inputval%status)
         call check_value_input(keyword)
+
         deallocate(inputval%s)
         deallocate(inputval%r)
         deallocate(inputval%i)
@@ -359,7 +439,6 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
 
     subroutine init_input_single()
 
-        call init_zero(steady_state)
         call init_zero(length)
         call init_zero(start_time)
         call init_zero(tramp0)
@@ -372,7 +451,6 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(dump_space_dt)
         call init_zero(dump_restart_dt)
         call init_zero(framp)
-        call init_zero(solve_heat_eq)
         call init_zero(cero_min)
         call init_zero(cero_max)
         call init_zero(gamero)
@@ -384,6 +462,7 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(clng)
         call init_zero( ngrd)
         call init_zero(alpha)
+        call init_zero(grid_dx0)
         call init_zero( thcond)
         call init_zero( cp)
         call init_zero( rho)
@@ -394,86 +473,12 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(t1)
         call init_zero( t2)
         call init_zero( t3)
-        call init_zero(tpulse)
+!        call init_zero(tpulse)
         if (verbose_input) write(iout,*) 'Initialization of single input parameters: OK'
     end subroutine init_input_single
 
 
 
-    !      write (6, 1090) cero_min
-    !      write (6, 1100) cero_max
-    !      write (6, 1110) gamero
-    !      write (6, 1120) ngrd
-    !      write (6, 1130) alpha
-    !      write (6, 1140) thcond
-    !      write (6, 1150) cp
-    !      write (6, 1160) rho
-    !      write (6, 1170) emiss
-    !      write (6, 1180) qform
-    !      write (6, 1190) rad_min
-    !      write (6, 1200) rad_max
-    !      write (6, 1210) t1
-    !      write (6, 1220) t2
-    !      write (6, 1230) t3
-    !      write (6, 1240) tp
-    !
-    !                write (6, 1010) length, start_time, tramp0, tramp1, end_time, dtmin
-    !1010  format (' length of the simulation region: ', 1pe12.5, ' m'/
-    !     + ' start time: ', 1pe12.5, ' s'/
-    !     + ' temperature ramp start: ', 1pe12.5, ' s'/
-    !     + ' temperature ramp stop: ', 1pe12.5, ' s'/
-    !     + ' simulation time: ', 1pe12.5, ' s'/
-    !     + ' minimal time step: ', 1pe12.5, ' s')
-    !            write (6, 1030) nspc
-    !      write (6, 1040) (i, dens0(i), dsrfl0(i), dsrfr0(i), i=1,nspc)
-    !1030  format (' number of species is ', i2)
-    !1040  format (' species of sort ', i2,
-    !     + '  have initial (max) density ', 1pe12.5, ' m^-3',
-    !     + '  initial left  surface density', 1pe12.5, ' m^-2',
-    !     + '  initial right surface density', 1pe12.5, ' m^-2')
-    !            write (6, 1020) tspc, ttm, tstr
-    !1020  format (' spatial parameters saving interval: ', 1pe12.5, ' s'/
-    !     + ' temporal parameters saving interval: ', 1pe12.5, ' s'/
-    !     + ' restart file saving interval: ', 1pe12.5, ' s')
-    !      write (6, 1021) 'Double precision is used'
-    !1021  format (a)
-    !
-    !
-    !
-    !      write (6, 1050) (i, enrg(i), i=1,nspc)
-    !1050  format (' impact energy of species ', i2, ' is ',
-    !     + 1pe12.5, ' eV')
-    !      write (6, 1060) (i, inflx_in(i), i=1,nspc)
-    !1060  format (' min influx of species ', i2, ' is', 1pe12.5,
-    !     +        ' m^-2 s^-1')
-    !      write (6, 1061) (i, inflx_in_max(i), i=1,nspc)
-    !1061  format (' max influx of species ', i2, ' is', 1pe12.5,
-    !     +        ' m^-2 s^-1')
-    !      write (6, 1070) (i, gas_pressure(i), i=1,nspc)
-    !1070  format (' ext. pressure of species ', i2, ' is', 1pe12.5, ' Pa')
-    !      write (6, 1080) (i, tg(i), i=1,nspc)
-    !1080  format (' ext. temperature of species ', i2, ' is', 1pe12.5,
-    !     + ' eV')
-    !1090  format (' min ablation speed is ', 1pe12.5, ' m/s')
-    !1100  format (' max ablation speed is ', 1pe12.5, ' m/s')
-    !1110  format (' sputtering yiled is ', 1pe12.5)
-    !1120  format (' number of grid points is ', i6)
-    !1130  format (' grid scaling factor is ', 1pe12.5)
-    !1140  format (' thermal conductivity is ', 1pe12.5, ' W/(m*K)')
-    !1150  format (' heat capacity is ', 1pe12.5, ' J/(kg*K)')
-    !1160  format (' density factor is ', 1pe12.5, ' kg/m^3')
-    !1170  format (' emissivity is ', 1pe12.5)
-    !1180  format (' heat of formation is ', 1pe12.5, ' eV')
-    !1190  format (' min radiation power is ', 1pe12.5, ' W/m^2')
-    !1200  format (' max radiation power is ', 1pe12.5, ' W/m^2')
-    !1210  format (' end time of first ramp is ', 1pe12.5, ' s')
-    !1220  format (' start time of second ramp is ', 1pe12.5, ' s')
-    !1230  format (' end time of second ramp is ', 1pe12.5, ' s')
-    !1240  format (' pulse period is ', 1pe12.5, ' s')
-    !c
-    !      close (unit=10)
-    !      return
-    !1999  stop ' *** error occured when reading ''face.ini''!'
 
 
 

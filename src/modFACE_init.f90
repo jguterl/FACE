@@ -29,11 +29,13 @@ contains
         call init_temp
         call compute_inflx()
         call init_volume_species
+
         call init_source
         call init_boundary
         call init_reactions
-
+        call compute_onthefly_inventory ! init onthefly inventory
         if (verbose_init) call print_milestone('initialization done')
+        if (verbose_debug) call print_milestone('initialization done')
     end subroutine initialize
 
     subroutine init_misc()
@@ -55,10 +57,11 @@ contains
         iter_solver =0
 
         ! number fo equations to solve
-        if (solve_heat_eq .eq."no") then
-            neq=nspc*(ngrd+3)
-        else
+        if (solve_heat_eq) then
             neq=nspc*(ngrd+3)+ngrd+1
+        else
+
+            neq=nspc*(ngrd+3)
         endif
 
         do k=1,nspc
@@ -71,6 +74,16 @@ contains
             trace_flux(k)%max_Gdes_r=0.d0
             trace_flux(k)%sig_Gdes_l=0.d0
             trace_flux(k)%sig_Gdes_r=0.d0
+        enddo
+
+        do k=1,nspc
+            onthefly_inventory(k)%int_dens=0.d0
+            onthefly_inventory(k)%int_dsrf=0.d0
+            onthefly_inventory(k)%net_int_dens=0.d0
+            onthefly_inventory(k)%net_int_dsrf=0.d0
+            onthefly_inventory(k)%int_des=0.d0
+            onthefly_inventory(k)%int_dens=0.d0
+            onthefly_inventory(k)%int_src=0.d0
         enddo
 
         call open_timedata_files
@@ -95,16 +108,24 @@ contains
         !     ------------------------------------------------------------------
         !      initialization of reaction constatnts
         !     ------------------------------------------------------------------
+        call init_kbin0
+        call init_nuth0
         do k=1,nspc
             do l=1,nspc
                 do m=1,nspc
-                    kbin0(k,l,m)=kbinar(k,l,m)
                     ebin (k,l,m)=ebinar(k,l,m)
-                    kbin (k,l,m)=kbin0 (k,l,m)*exp(-ee*ebin(k,l,m)/(kb*temp(ndt,0)))
+                    do i=1,ndt
+                        do j=0,ngrd
+                            kbin(i,j,k,l,m)=kbin0(k,l,m)*exp(-ee*ebin(k,l,m)/(kb*temp(i,j)))
+                        enddo
+                    enddo
                 enddo
-                nuth0(k,l)=ktherm(k,l)
                 eth  (k,l)=etherm(k,l)
-                nuth (k,l)=nuth0 (k,l)*exp(-ee*eth(k,l)/(kb*temp(ndt,0)))
+                do i=1,ndt
+                    do j=0,ngrd
+                        nuth(i,j,k,l)=nuth0(k,l)*exp(-ee*eth(k,l)/(kb*temp(i,j)))
+                    enddo
+                enddo
             enddo
         enddo
         do i=1,ndt
@@ -112,9 +133,9 @@ contains
                 do k=1,nspc
                     rct(i,j,k)=0.d0
                     do l=1,nspc
-                        rct (i,j,k)=rct   (i,j,k)+nuth  (k,l)*dens(i,j,l)*ctherm(i,j,k,l)
+                        rct (i,j,k)=rct(i,j,k)+nuth(i,j,k,l)*dens(i,j,l)*ctherm(i,j,k,l)
                         do m=1,l
-                            rct (i,j,k)=rct   (i,j,k)+kbin  (k,l,m)*dens(i,j,l)*dens(i,j,m)*cbinar(i,j,k,l,m)
+                            rct(i,j,k)=rct(i,j,k)+kbin(i,j,k,l,m)*dens(i,j,l)*dens(i,j,m)*cbinar(i,j,k,l,m)
                         enddo
                     enddo
                 enddo
@@ -128,108 +149,227 @@ contains
         !      time step initialization
         dt_face=dt0_face
         !      dt=cdt*ttm
+        time_savevol=start_time
+        time_savetime=start_time
         time=start_time
         solver_step_count=0
         if (verbose_init) write(iout,*) "Initialization time parameters: DONE"
     end subroutine init_time
 
 
-    subroutine init_grid()
+    subroutine init_grid
         integer:: j,ngrd2,k
         real(DP)::dx0
+        real(DP):: a,b,sa,sm
 
         !      initialization of grid arrays
         x(0)=0.d0
-        if (alpha .eq. 1.d0) then
+        if (grid_type.eq."U") then
             dx0=length/ngrd
             do j=1,ngrd
                 x  (j  )=j*dx0
                 dx (j-1)=x(j)-x(j-1)
             enddo
             dx (ngrd)=dx(ngrd-1)
-        else
-            ngrd2=ngrd/2
-            if (mod(ngrd,2) .ne. 0) then
-                dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd2-2.d0)
-                x (0)=0.d0
-                dx(0)=dx0
-                do j=1,ngrd2
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)*alpha
-                enddo
-                do j=ngrd2+1,ngrd
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)/alpha
-                enddo
+        elseif (grid_type.eq."S") then
+            if (grid_gen_mode.eq."alpha") then
+
+                ngrd2=ngrd/2
+                if (mod(ngrd,2) .ne. 0) then
+                    dx0=length*(alpha-1.d0)/((1.d0+alpha)*alpha**ngrd2-2.d0)
+                    x (0)=0.d0
+                    dx(0)=dx0
+                    do j=1,ngrd2
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)*alpha
+                    enddo
+                    do j=ngrd2+1,ngrd
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)/alpha
+                    enddo
+                else
+                    dx0=0.5d0*length*(alpha-1.d0)/(alpha**ngrd2-1.d0)
+                    x (0)=0.d0
+                    dx(0)=dx0
+                    do j=1,ngrd2-1
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)*alpha
+                    enddo
+                    x (ngrd2)=x (ngrd2-1)+dx(ngrd2-1)
+                    dx(ngrd2)=dx(ngrd2-1)
+                    do j=ngrd2+1,ngrd
+                        x (j)=x(j-1)+dx(j-1)
+                        dx(j)=dx(j-1)/alpha
+                    enddo
+                endif
+                dx (ngrd)=dx(ngrd-1)
+                if (x(ngrd).ne.length) then
+                    call face_error("x(ngrd).ne.length",x(ngrd))
+                endif
+
             else
-                dx0=0.5d0*length*(alpha-1.d0)/(alpha**ngrd2-1.d0)
-                x (0)=0.d0
-                dx(0)=dx0
-                do j=1,ngrd2-1
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)*alpha
-                enddo
-                x (ngrd2)=x (ngrd2-1)+dx(ngrd2-1)
-                dx(ngrd2)=dx(ngrd2-1)
-                do j=ngrd2+1,ngrd
-                    x (j)=x(j-1)+dx(j-1)
-                    dx(j)=dx(j-1)/alpha
-                enddo
+                call face_error('Grid generation not implemented for this type of grid',grid_type)
             endif
+        elseif (grid_type.eq."A") then
+            if (grid_gen_mode.eq."seed") then
+                if (grid_dx0.ge.length) then
+                    call face_error("dx0 cannot be >= than total grid length in this grid mode")
+                endif
+
+                a=1.0000001d0;
+                b=100d0;
+                do while (abs(b-a)>1.d-10)
+                    sa=sum_geo(a,ngrd)-length/grid_dx0
+                    sm=sum_geo((b+a)/2d0,ngrd)-length/grid_dx0
+                    if (sa*sm<0d0) then
+                        b=(a+b)/2d0
+                    else
+                        a=(a+b)/2d0
+                    endif
+                    if (verbose_init) write(iout,*) "a=",a,"b=",b
+                enddo
+                alpha=a
+                if (alpha.gt.99d0) then
+                    alpha=1d0
+                endif
+                dx0=grid_dx0
+                if (verbose_init) write(iout,*) "seed mode: alpha=",alpha," dx0=",dx0
+            elseif (grid_gen_mode.eq."alpha") then
+                dx0=length*(1.d0-alpha)/(1-alpha**ngrd)
+                if (verbose_init) write(iout,*) "alpha mode: alpha=",alpha," dx0=",dx0
+            else
+                call face_error("unknown grid gen mode")
+            endif
+
+            x (0)=0.d0
+            dx(0)=dx0
+            do j=1,ngrd
+                x (j)=x(j-1)+dx(j-1)
+                dx(j)=dx(j-1)*alpha
+            enddo
             dx (ngrd)=dx(ngrd-1)
+
+            if (abs(x(ngrd)-length)>1d-7) then
+
+                call face_error("x(ngrd).ne.length",x(ngrd))
+
+            endif
+        else
+            call face_error('Unknown type of grid',grid_type)
         endif
         ! find index of depth
         do k=1,nspc
-        j_implantation_depth(k)=ngrd
-        do j=0,ngrd
-        if (x(j).gt.implantation_depth(k)+x(0)) then
-        j_implantation_depth(k)=j-1
-        exit
-        endif
+            j_implantation_depth(k)=ngrd
+            do j=0,ngrd
+                if (x(j).gt.implantation_depth(k)+x(0)) then
+                    j_implantation_depth(k)=j-1
+                    exit
+                endif
+            enddo
+            if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
         enddo
-        if (verbose_init) write(iout,*) " j_implantation_depth(k)=",j_implantation_depth(k)," k=",k
+
+        do k=1,nspc
+            j_diagnostic_depth(k)=ngrd
+            do j=0,ngrd
+                if (x(j).gt.diagnostic_depth(k)+x(0)) then
+                    j_diagnostic_depth(k)=j-1
+                    exit;
+                endif
+            enddo
+            if (verbose_init) write(iout,*) " j_diagnostic_depth(k)=",j_diagnostic_depth(k)," k=",k
         enddo
+
         call write_grid
         if (verbose_init) write(iout,*) " -- Initialization x grid completed"
     end subroutine init_grid
+
+
+    subroutine init_src_profile
+
+        real(DP)::s
+        integer:: j,k
+
+        do k=1,nspc
+            do j=0,ngrd
+                src_profile(j,k)=0d0
+
+                if (implantation_model(k).eq.'G') then
+
+                    if (implantation_width(k).gt.0d0) then
+                        src_profile(j,k)=exp(-0.5d0*abs((x(j)-implantation_depth(k))/implantation_width(k))**2.d0)
+                    else
+                        call face_error("implantation_width(k)=0 with G implantation model: k=",k)
+                    endif
+                elseif  (implantation_model(k).eq.'S') then
+
+                    if ((j_implantation_depth(k).gt.0).and.j.le.j_implantation_depth(k)) then
+                        src_profile(j,k)=1d0
+                    endif
+
+
+                elseif  (implantation_model(k).eq.'E') then
+                    if (implantation_width(k).gt.0d0) then
+                        src_profile(j,k)=1.d0-erf((x(j)-implantation_depth(k))/(sqrt2*implantation_width(k)))
+                    else
+                        call face_error("implantation_width(k)=0 with E implantation model: k=",k)
+                    endif
+
+
+                else
+
+                    call face_error("Unknown implantation model : ",implantation_model(k),"; k=",k)
+                endif
+
+            enddo
+            s=integrale_src_profile(k)
+            if (s.le.0d0) then
+                s=1d0
+            endif
+
+            do j=0,ngrd
+                src_profile(j,k)=src_profile(j,k)/s
+            enddo
+
+        enddo
+
+    end subroutine init_src_profile
 
     subroutine init_source()
 
         integer::i,j,k,l
 
+        call init_src_profile
+        call compute_inflx
         !      Initialization of sources
-        if (solve_heat_eq .eq. "yes") then
-            do i=1,ndt
-                do j=0,ngrd
-                    do k=1,nspc
-                        srs (i,j,k)=source(  j,k)
-                        src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
-                        do l=1,nspc
-                            srb (i,j,k,l)=srcbin(  j,k,l)
-                            src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
-                        enddo
+        do i=1,ndt
+            do j=0,ngrd
+                do k=1,nspc
+                    srs (i,j,k)=inflx(k)*src_profile(j,k)
+                    src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
+                    do l=1,nspc
+                        srb (i,j,k,l)=srcbin(  j,k,l)
+                        src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
                     enddo
                 enddo
             enddo
-        elseif (solve_heat_eq .eq. "no") then
-            do i=1,ndt
-                do j=0,ngrd
-                    do k=1,nspc
-                        srs (i,j,k)=source(  j,k)
-                        src (i,j,k)=srs   (i,j,k)*csours(i,j,k)
-                        jout(i,  k)=jout  (i,  k)+srs(i,j,k)*(1.d0-csours(i,j,k))*dx(j)
-                        do l=1,nspc
-                            srb (i,j,k,l)=srcbin(  j,k,l)
-                            src (i,j,k  )=src   (i,j,k  )+srb(i,j,k,l)*dens(i,j,l)*csrbin(i,j,k,l)
-                            jout(i,  k  )=jout  (i,  k  )+srb(i,j,k,l)*dens(i,j,l)*(1.d0-csrbin(i,j,k,l))*dx(j)
-                        enddo
+        enddo
+        do i=1,ndt
+            do k=1,nspc
+                do j=1,ngrd-1
+                    jout(i,k)=jout(i,k)+srs(i,j,k)*(1.d0-csours(i,j,k))*0.5d0*(dx(j-1)+dx(j))
+                    do l=1,nspc
+                        jout(i,k)=jout(i,k)+srb(i,j,k,l)*dens(i,j,l)*(1.d0-csrbin(i,j,k,l))*0.5d0*(dx(j-1)+dx(j))
                     enddo
                 enddo
+                jout(i,k)=jout(i,k)+srs(i,0   ,k)*(1.d0-csours(i,0   ,k))*0.5d0*dx(0   )
+                jout(i,k)=jout(i,k)+srs(i,ngrd,k)*(1.d0-csours(i,ngrd,k))*0.5d0*dx(ngrd)
+                do l=1,nspc
+                    jout(i,k)=jout(i,k)+srb(i,0   ,k,l)*dens(i,0   ,l)*(1.d0-csrbin(i,0   ,k,l))*0.5d0*dx(0   )
+                    jout(i,k)=jout(i,k)+srb(i,ngrd,k,l)*dens(i,ngrd,l)*(1.d0-csrbin(i,ngrd,k,l))*0.5d0*dx(ngrd)
+                enddo
             enddo
-        else
-            call face_error("Unknown option for solve_heat_eq:", solve_heat_eq)
-            stop
-        endif
+        enddo
         if (verbose_init) write(iout,*) " -- Initialization source terms completed"
     end subroutine
 
@@ -239,69 +379,130 @@ contains
 
         !      surface parameters
         if (verbose_init) write(iout,*) "Initialization boundary variables"
+
+
         do k=1,nspc
-            K0abs_l(k)=1.d0
-            K0des_l(k)=nu(k)*lambda*lambda*csrf
-            K0b_l(k)=nu(k)
-            K0ads_l(k)=nu(k)*lambda*clng
-            K0abs_r(k)=1.d0
-            K0des_r(k)=nu(k)*lambda*lambda*csrf
-            K0b_r(k)=nu(k)
-            K0ads_r(k)=nu(k)*lambda*clng
+
+            if(left_surface_model_string(k).eq."S") then
+                left_surface_model(k)=surf_model_S
+            elseif (left_surface_model_string(k).eq."N") then
+                left_surface_model(k)=surf_model_N
+            elseif (left_surface_model_string(k).eq."B") then
+                left_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown left_surface_model::",left_surface_model_string(k),"at k=",k)
+            endif
+        enddo
+
+
+
+
+        do k=1,nspc
+            if (right_surface_model_string(k).eq."S") then
+                right_surface_model(k)=surf_model_S
+            elseif (right_surface_model_string(k).eq."N") then
+                right_surface_model(k)=surf_model_N
+            elseif (right_surface_model_string(k).eq."B") then
+                right_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
+            endif
+        enddo
+
+
+        do k=1,nspc
+
+
 
             if (mass(k)*gas_temp(k) .ne. 0.d0) then
                 j0(k)=j0(k)+gas_pressure(k)/sqrt(twopi*mass(k)*ee*gas_temp(k))
             endif
 
+
+            if (active_cap) then
+                tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
+                Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
+                tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
+                Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+            else
+                Edes_lc=Edes_l(k)
+                Edes_rc=Edes_r(k)
+            endif
             ! left
-            tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
-            Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
-            tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
-            Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
-            if (left_surface_model(k).eq."S") then
+            if (left_surface_model(k).eq.surf_model_S) then
+                K0abs_l(k)=1.d0
+                K0des_l(k)=nu(k)*lambda**(2*order_desorption_left(k)-2)*csrf
 
-            Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
-            Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
-            Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
-            Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
-elseif (left_surface_model(k).eq."N") then
-        K0abs_l(k)=min_rate_surface
-            K0des_l(k)=min_rate_surface
-            K0b_l(k)=min_rate_surface
-            K0ads_l(k)=min_rate_surface
+                K0b_l(k)=nu(k)*clng
+                K0ads_l(k)=nu(k)*lambda*clng
+                Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
+                Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+                Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
+                Kads_l(k)=      K0ads_l(k)*exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
+            elseif (left_surface_model(k).eq.surf_model_B) then
 
-        Kabs_l(k)=min_rate_surface
-        Kdes_l(k)=min_rate_surface
-        Kb_l(k)=min_rate_surface
-        Kads_l(k)=min_rate_surface
-        else
-        call face_error("Unknown left surface model:",left_surface_model(k))
-        endif
+                K0abs_l(k)=0d0
+                K0des_l(k)=nu(k)*lambda**(3*order_desorption_left(k)-2)*csrf
+                if (verbose_surface) then
+                    write(iout,*) 'init: K0des_l(k)',K0des_l(k),'nu(k)=',nu(k),'csrf=',csrf,' lambda=',lambda
+                endif
+                K0b_l(k)=0d0
+                K0ads_l(k)=0d0
+
+                Kabs_l(k)=min_rate_surface
+                Kdes_l(k)=2.d0*K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
+                if (verbose_surface) then
+                    write(iout,*) 'init: Kdes_l(k)',Kdes_l(k)
+                endif
+                Kb_l(k)=0d0
+                Kads_l(k)=0d0
+            elseif (left_surface_model(k).eq.surf_model_N) then
+                K0abs_l(k)=0d0
+                K0des_l(k)=0d0
+                K0b_l(k)=0d0
+                K0ads_l(k)=0d0
+                Kabs_l(k)=0d0
+                Kdes_l(k)=0d0
+                Kb_l(k)=0d0
+                Kads_l(k)=0d0
+            else
+                call face_error("Unknown left surface model:",left_surface_model(k))
+            endif
 
             !right
-            if (right_surface_model(k).eq."S") then
-!                Kabs_r(k)=j0(k)*K0abs_r(k) *exp(-     ee* Eabs_r(k)          /(kb*temp(ndt,ngrd)))
-!                Kdes_r(k)=2.d0 *K0des_r(k) *exp(-2.d0*ee*(Eabs_r(k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
-!                Kb_r(k)=      K0b_r(k)*exp(-     ee*(Eb_r (k)+Edes_r(k))/(kb*temp(ndt,ngrd)))
-!                Kads_r(k)=      K0ads_r(k) *exp(-     ee*(Eb_r (k)-Eads_r  (k))/(kb*temp(ndt,ngrd)))
+            if (right_surface_model(k).eq.surf_model_S) then
 
-            Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
-            Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
-            Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
-            Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+                K0abs_r(k)=1.d0
+                K0des_r(k)=nu(k)*lambda**(2*order_desorption_right(k)-2)*csrf
+                K0b_r(k)=nu(k)*clng
+                K0ads_r(k)=nu(k)*lambda*clng
+                Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
+                Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+                Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
+                Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
+            elseif (right_surface_model(k).eq.surf_model_B) then
+                K0abs_r(k)=0d0
+                K0des_r(k)=nu(k)*lambda**(3*order_desorption_right(k)-2)*csrf
+                K0b_r(k)=0d0
+                K0ads_r(k)=0d0
 
-elseif (right_surface_model(k).eq."N") then
-        Kabs_r(k)=min_rate_surface
-        Kdes_r(k)=min_rate_surface
-        Kb_r(k)=min_rate_surface
-        Kads_r(k)=min_rate_surface
-            K0abs_r(k)=min_rate_surface
-            K0des_r(k)=min_rate_surface
-            K0b_r(k)=min_rate_surface
-            K0ads_r(k)=min_rate_surface
-        else
-        call face_error("unknown right surface model:",right_surface_model(k))
-        endif
+                Kabs_r(k)=0d0
+                Kdes_r(k)=2.d0*K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
+                Kb_r(k)= 0d0
+                Kads_r(k)=0d0
+            elseif (right_surface_model(k).eq.surf_model_N) then
+                Kabs_r(k)=0d0
+                Kdes_r(k)=0d0
+                Kb_r(k)=0d0
+                Kads_r(k)=0d0
+                K0abs_r(k)=0d0
+                K0des_r(k)=0d0
+                K0b_r(k)=0d0
+                K0ads_r(k)=0d0
+            else
+                call face_error("unknown right surface model:",right_surface_model(k))
+            endif
+
             do i=1,ndt
                 Gsrf_l(i,k)=0.d0
                 Gsrf_r(i,k)=0.d0
@@ -319,23 +520,47 @@ elseif (right_surface_model(k).eq."N") then
 
 
                 ! left
-                Gabs_l (i,k)=Kabs_l(k)
-                Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**2
-                Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
-                Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
-                ! right
-                Gabs_r (i,k)=Kabs_r(k)
-                Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**2
-
-                Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
-
-                Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
-
-                call compute_cap_factor_surface(k,i)
-
-                if (solve_heat_eq .eq. "yes") then
-                    jout(i,k)=jout(i,k)+Gdes_l(i,k)
+                if ((left_surface_model(k).eq.surf_model_S)) then
+                    Gabs_l (i,k)=Kabs_l(k)
+                    Gdes_l (i,k)=Kdes_l(k) *dsrfl(i,k)**order_desorption_left(k)
+                    Gb_l (i,k)  =Kb_l(k)   *dsrfl(i,k)
+                    Gads_l (i,k)=Kads_l(k) *dens(i,0   ,k)
+                elseif (left_surface_model(k).eq.surf_model_N) then
+                    Gabs_l(ndt,k)=0d0                           ! Gabsorp=K(gas)
+                    Gdes_l (ndt,k)=0d0          ! Gdesorp=K*ns^2
+                    Gb_l (ndt,k)  =dsrfl(ndt,k)               ! Gbulk  =K*ns
+                    Gads_l (ndt,k)=0d0
+                elseif (left_surface_model(k).eq.surf_model_B) then
+                    Gabs_l (i,k)=0d0
+                    Gdes_l (i,k)=Kdes_l(k) *dens(i,0   ,k)**order_desorption_left(k)
+                    Gb_l (i,k)  =dsrfl(ndt,k)
+                    Gads_l (i,k)=0d0
                 endif
+
+
+                ! right
+                if ((right_surface_model(k).eq.surf_model_S)) then
+                    Gabs_r (i,k)=Kabs_r(k)
+                    Gdes_r (i,k)=Kdes_r(k) *dsrfr(i,k)**order_desorption_right(k)
+                    Gb_r (i,k)  =Kb_r(k)   *dsrfr(i,k)
+                    Gads_r (i,k)=Kads_r(k) *dens(i,ngrd   ,k)
+                elseif(left_surface_model(k).eq.surf_model_N) then
+                    Gabs_r (i,k)=0d0
+                    Gdes_r (i,k)=0d0
+                    Gb_r (i,k)  =dsrfr(i,k)
+                    Gads_r (i,k)=0d0
+                elseif (right_surface_model(k).eq.surf_model_B) then
+                    Gabs_r (i,k)=0d0
+                    Gdes_r (i,k)=Kdes_r(k) *dens(i,ngrd   ,k)**order_desorption_right(k)
+                    Gb_r (i,k)  =dsrfr(i,k)
+                    Gads_r (i,k)=0d0
+                endif
+
+                if (active_cap) then
+                    call compute_cap_factor_surface(k,i)
+                endif
+
+                jout(i,k)=jout(i,k)+Gdes_l(i,k)
 
             enddo
         enddo
@@ -376,7 +601,7 @@ elseif (right_surface_model(k).eq."N") then
             call read_Tramp_file
         endif
 
-        if (solve_heat_eq .eq. "no") then
+        if (.not.solve_heat_eq) then
             if (framp .ne. 'none') then
                 do j=0,ngrd
                     do i=1,ndt
@@ -403,15 +628,12 @@ elseif (right_surface_model(k).eq."N") then
                 enddo
             endif
          !  solving heat equation -> initial linear profile of T in bulk
-        elseif(solve_heat_eq .eq. "yes") then
+        elseif(solve_heat_eq) then
             do j=0,ngrd
                 do i=1,ndt
                     temp(i,j)=temp0+(temp1-temp0)*x(j)/length
                 enddo
             enddo
-        else
-            call face_error ("Unknown option for solve_heat_eq:", solve_heat_eq)
-
         endif
         if (verbose_init)  write(iout,*) 'Initialization of temperature : DONE '
     end subroutine init_temp
@@ -425,11 +647,22 @@ elseif (right_surface_model(k).eq."N") then
                 do i=1,ndt
                     flx (i,j,k)=0.d0
                     ero_flx (i,j,k)=0.d0
+                    dif_flx (i,j,k)=0.d0
                     cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
                     rate_d (i,j,k)=0.d0
-                    if (gprof(k) .eq. 'S'.or.gprof(k) .eq. 'F') then
+                    if (gprof(k) .eq. 'S') then
+                        if (x(j)>gxmax(k)) then
+                            dens(i,j,k)=0
+                        else
+                            dens(i,j,k)=dens0(k)
+                        endif
+                    elseif(gprof(k) .eq. 'F') then
                         dens(i,j,k)=dens0(k)
                     elseif(gprof(k) .eq. 'G') then
+                        if (gsigm(k)<=0) then
+                            call face_error('gsigm(k)<=0 for gaussian profile')
+                        endif
+
                         dens(i,j,k)=dens0(k) *exp(-0.5d0*abs((x(j)-gxmax(k))/gsigm(k))**2.d0)
                       !  if (verbose_init) write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
                     else
@@ -438,6 +671,7 @@ elseif (right_surface_model(k).eq."N") then
                     if (dens(i,j,k) .lt. 1.d5) then
                         dens(i,j,k)=1.d5
                     endif
+                    if (isnan(dens(i,j,k))) call face_error("dens(i,j,k) is NAN i=",i,"j=",j,"k=",k)
                 enddo
             enddo
         enddo
@@ -482,7 +716,48 @@ elseif (right_surface_model(k).eq."N") then
         final_state_file=trim(path_folder)//trim(casename)//".state"
     end subroutine init_path
 
+    real(DP) function sum_geo(q,N)
+        real(DP),intent(in):: q
+        integer,intent(in) :: N
+        if (q==1d0) then
+            sum_geo=real(N,DP)
+        else
+            sum_geo=(1-q**real(N,DP))/(1-q)
+        endif
+    end function sum_geo
 
+    subroutine init_kbin0
+        integer :: kk,ll,mm,n
+        do kk=1,nspc
+            do ll=1,nspc
+                do mm=1,nspc
+                    kbin0(kk,ll,mm)=0.d0
+                enddo
+            enddo
+        enddo
+        if (nspc.ge.3) then
+            do n=2,nspc-1,2
+                kbin0(1  ,n,1)=-nu(1)*lambda**3*cvlm
+                kbin0(n  ,n,1)=-nu(1)*lambda**3*cvlm
+                kbin0(n+1,n,1)=+nu(1)*lambda**3*cvlm
+            enddo
+        endif
+    end subroutine init_kbin0
 
+    subroutine init_nuth0
+        integer :: kk,ll,n
+        do kk=1,nspc
+            do ll=1,nspc
+                nuth0(kk,ll)=0.d0
+            enddo
+        enddo
+        if (nspc.ge.3) then
+            do n=3,nspc,2
+                nuth0(1  ,n)=+nu(1)
+                nuth0(n-1,n)=+nu(1)
+                nuth0(n  ,n)=-nu(1)
+            enddo
+        endif
+    end subroutine init_nuth0
 
 end module modFACE_init
