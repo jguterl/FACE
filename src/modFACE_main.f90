@@ -37,12 +37,14 @@ contains
             case ("default_H") ! default modes-> print out default input file then read file
                 call print_version()
                 call write_default_inputfile(default_inputfile,"H")
+                call write_default_inputfile_nohelp(default_inputfile,"H")
                 call write_header_log()
                 call run_FACE(face_input,face_output)
 
             case ("default_H+Tr") ! default modes-> print out default input file then read file
                 call print_version()
                 call write_default_inputfile(default_inputfile,"H+Tr")
+                call write_default_inputfile_nohelp(default_inputfile,"H+Tr")
                 call write_header_log()
                 call run_FACE(face_input,face_output)
 

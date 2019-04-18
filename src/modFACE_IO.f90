@@ -21,7 +21,7 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (unit_timedata(k), '(24a10)')&
+            write (unit_timedata(k), '(24a18)')&
                 'time',&
                 'tempL',&
                 'tempR',&
@@ -68,8 +68,8 @@ subroutine save_timedata
     character*256  myfmt1,myfmt2
 
     write(myfmt1,*) &
-        "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i3)"
-    write(myfmt2,*) "(es18.8e2,24es12.3e2)"
+        "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i4)"
+    write(myfmt2,*) "(es22.12e2,24es18.12e2)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -123,8 +123,8 @@ end subroutine save_timedata
         !     --- saving snapshot of volume distributions ---
 
         write(myfmt1,*)    "(a, 1pe18.9e2, a)"
-        write(myfmt2,*) "(9a13)"
-        write(myfmt3,*) "(i13.4, 8es13.4)"
+        write(myfmt2,*) "(9a22)"
+        write(myfmt3,*) "(i22.4, 8es22.12)"
         call set_unit(unit_voldata)
         do k=1,nspc
         if (dump_vol_append) then
@@ -189,15 +189,15 @@ end subroutine save_timedata
         integer j, ios,unit_heatdata
         character(string_length):: filename,myfmt1,myfmt2,myfmt3
 
-        write(myfmt1,*) "(a, 1pe13.4e2, a)"
-        write(myfmt2,*) "(a8,5(a13))"
-        write(myfmt3,*)"(i8.4, 5(1pe13.4e2))"
+        write(myfmt1,*)    "(a, 1pe18.9e2, a)"
+        write(myfmt2,*) "(9a22)"
+        write(myfmt3,*) "(i22.4, 5es22.12)"
         call set_unit(unit_heatdata)
         if (dump_vol_append) then
          write (filename, '(a,a)') trim(dat_folder),'/heat.dat'
          open (unit=unit_heatdata, file=trim(filename), access='append',status='unknown', iostat=ios)
         else
-         write (filename, '(a,a,i3.3, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
+         write (filename, '(a,a,i4.4, a)') trim(dat_folder),'/heat_', sfln_heatdata, '.dat'
          open (unit_heatdata, file=trim(filename), status='replace',iostat=ios)
         endif
 
@@ -206,12 +206,12 @@ end subroutine save_timedata
             write (unit_heatdata, myfmt1) 'time=', time, ' s'
 
             write (unit_heatdata, myfmt2)&
-                '       icell',&
-                '                  x',&
-                '               temp',&
-                '               qflx',&
-                '                rate_t',&
-                '               ero_qflx)'
+                '   icell',&
+                ' x',&
+                '  temp',&
+                '  qflx',&
+                '  rate_t',&
+                ' ero_qflx'
 
             do j=0,ngrd
                 write (unit_heatdata, myfmt3)&
@@ -643,14 +643,20 @@ integer :: i
      write(iout,'(a)') ' '
     end subroutine print_headline
 
-    subroutine print_timestep_info
+    subroutine print_timestep_info(convergence)
+    logical,intent(in)::convergence
 character(string_length)::myfmt,str
 real(DP)::tot=0d0,fin=0d0,fn=0d0
 integer:: k
 
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
-write(myfmt,*) "('iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
+if (convergence) then
+write(myfmt,*) "('++ iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K ; T_r=',es9.2, 'K; "&
  ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+else
+write(myfmt,*) "('-- iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K ; T_r=',es9.2, 'K; "&
+ ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+endif
  write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), reduction_factor_dt,normf,iter_solver,dt_face
   call print_formatted(str)
 if (print_onthefly_inventory) then
@@ -671,16 +677,26 @@ endif
 
 end subroutine print_timestep_info
 
-subroutine print_reduction_timestep_info
+subroutine print_reduction_timestep_info(count_loop)
+integer,intent(in):: count_loop
 character(string_length)::myfmt,str
 
 
-write(myfmt,*) "('dt REDUCTION: iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
- ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3)"
- write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver
+!write(myfmt,*) "('dt REDUCTION: iter=', 1I6,' time=', es9.2, 's;   T_l=',es9.2, 'K;   T_r=',es9.2, 'K;"&
+! ,"dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3)"
+ write(myfmt,*) "('dt REDUCTION: iter=', 1I6,' time=', es9.2, ' dt=', es9.2, 's iloop=',i3)"
+ !write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), dt_face,normf,iter_solver
+  write (str, myfmt) iteration,time, dt_face,count_loop
   call print_formatted(str)
 
 end subroutine print_reduction_timestep_info
+
+subroutine print_steady_timestep_info
+if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
+  call print_formatted('>>>> dt steady due to non-convergence with larger timestep')
+  endif
+
+end subroutine print_steady_timestep_info
 
 subroutine print_milestone(str)
 character(*)::str

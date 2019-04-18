@@ -43,6 +43,11 @@
           logical :: verbose_surface=.false.
     logical:: enforce_error=.true.
     logical:: first_voldump=.true.
+    logical :: compute_spc=.true.
+    logical:: critical_reduction=.false.
+    logical::loop_reduction_old=.false.
+    logical::loop_reduction=.false.
+    integer ::counter_reduction=0
 
 
       integer::ngrd
@@ -103,6 +108,8 @@
       character(string_length) ::grid_gen_mode
       ! time
       real(DP):: dt_face    !>@var current solver time step
+      real(DP):: dt_face_old    !>@var previous solver time step
+      real(DP):: dt_face_last    !>@var last solver time step with successful convergence
       real(DP):: min_dt_face   !>@var current solver time step
       real(DP):: max_dt_face   !>@var current solver time step
       real(DP):: dt0_face ! nominal time step
@@ -137,8 +144,7 @@
       logical:: dump_restart=.true.
 
       real(DP):: nucut=1d99
-      real(DP):: delta=0
-
+      real(DP):: delta=0.d0
       integer:: iter_solver=0 ! #of solver iterations at each time step
       integer::iteration=0
       integer:: order_solver
@@ -168,7 +174,10 @@
       character(string_length):: read_state_file
       character(string_length):: steady_state_string
       logical:: steady_state=.false.
-      character(string_length):: framp
+      character(string_length):: framp_string
+      integer:: framp
+      integer,parameter:: framp_none=999
+      integer,parameter:: framp_readfile=998
       character(string_length):: solve_heat_eq_string
       character(string_length):: variable_timestep_string
       character(string_length):: final_state_file
@@ -179,11 +188,19 @@
         real(DP)         :: Nnetsrf
         real(DP)         :: Ntotbulk
         real(DP)         :: Ntotsrf
+        real(DP)         ::  Enetbulk
+
+        real(DP)         :: Etotbulk
+
      end type inventories
 
      type particle_balances
      real(DP):: Nnet=0d0,Ninflux=0d0,Noutflux=0d0,p_net=0d0,p_max=0d0,f_lost=0d0,Noutflux_l=0d0,Noutflux_r=0d0
      end type particle_balances
+
+     type energy_balances
+     real(DP):: Enet=0d0,Ein=0d0,Eout=0d0,p_net=0d0,p_max=0d0,f_lost=0d0,Eout_l=0d0,Eout_r=0d0
+     end type energy_balances
 
     type outgassing_fluxes
         real(DP)         :: Gdes
@@ -204,6 +221,7 @@
      type(inventories),allocatable :: init_inventory(:)
      type(inventories),allocatable :: final_inventory(:)
      type(particle_balances):: particle_balance
+     type(energy_balances):: energy_balance
      type(outgassing_fluxes):: outgassing_flux
      type(wall_temperatures):: init_wall_temp
       type(wall_temperatures)::final_wall_temp
@@ -213,8 +231,8 @@
 !       Material parameters
 !     ------------------------------------------------------------------
 
-      real(DP):: temp0=300d0
-      real(DP):: temp1=300d0
+      real(DP):: temp_init=300d0
+      real(DP):: temp_final=300d0
       real(DP):: dtemp=0d0
       real(DP):: lambda=0d0
       !
@@ -231,11 +249,38 @@
       real(DP),allocatable::implantation_width(:)
       real(DP),allocatable::enrg(:)
       real(DP),allocatable::inflx(:) ! influx of particles (may differ from nominal particle flux in pulsed_plasma mode)
-      real(DP),allocatable::inflx_in_max(:) ! max influx of particles
-      real(DP),allocatable::inflx_in(:) ! nominal influx of particles
-      real(DP),allocatable::inflx_in_pulse_period(:) ! max influx of particles
-      real(DP),allocatable::inflx_in_pulse_starttime(:) ! max influx of particles
-      character(lname),allocatable::inflx_in_pulse(:) ! nominal influx of particles
+      real(DP),allocatable::Gamma_in_max(:) ! max influx of particles
+      real(DP),allocatable::Gamma_in_base(:) ! nominal influx of particles
+      real(DP),allocatable::Gamma_in_pulse_period(:) ! max influx of particles
+      real(DP),allocatable::Gamma_in_pulse_duration(:) ! max influx of particles
+      real(DP),allocatable::Gamma_in_pulse_starttime(:) ! max influx of particles
+      character(lname),allocatable::Gamma_in_pulse_string(:) ! nominal influx of particles
+      integer,allocatable::Gamma_in_pulse(:) ! nominal influx of particles
+      integer,parameter :: Gamma_in_pulse_R=999
+      integer,parameter :: Gamma_in_pulse_N=998
+      integer,parameter :: Gamma_in_pulse_S=997
+      integer,parameter :: Gamma_in_pulse_B=996
+      character(lname)::T_pulse_string="N" ! nominal influx of particles
+      integer::T_pulse ! nominal influx of particles
+      integer,parameter :: T_pulse_R=999
+      integer,parameter :: T_pulse_N=998
+      integer,parameter :: T_pulse_S=997
+      integer,parameter :: T_pulse_B=996
+
+      real(DP)::T_pulse_period ! max influx of particles
+      real(DP)::T_pulse_duration ! max influx of particles
+      real(DP)::T_pulse_starttime ! max influx of particles
+      real(DP)                    ::Q_in_max ! max heat flux
+      real(DP)                    ::Q_in_base ! nominal heat flux
+      real(DP)                    ::Q_in_pulse_period !
+      real(DP)                    ::Q_in_pulse_duration !
+      real(DP)                    ::Q_in_pulse_starttime !
+      character(lname)::Q_pulse_string ! type of Q pulse
+      integer::Q_in_pulse !
+      integer,parameter :: Q_in_pulse_R=999
+      integer,parameter :: Q_in_pulse_N=998
+      integer,parameter :: Q_in_pulse_S=997
+      integer,parameter :: Q_in_pulse_B=996
       real(DP),allocatable::gas_pressure(:)
       real(DP),allocatable:: gas_temp(:)
       real(DP),allocatable:: mass(:)
@@ -359,6 +404,9 @@
 
       type trace_fluxes
       real(DP):: sum_inflx
+      real(DP):: sum_qflx
+      real(DP):: sum_Q_l
+      real(DP):: sum_Q_r
       real(DP):: sum_Gdes_l
       real(DP):: sig_Gdes_l
       real(DP):: min_Gdes_l
@@ -425,7 +473,7 @@ type fluidcode_inputs
         integer                      :: nspc_fluid                 ! Number of incoming species from fluid code
         integer,allocatable          :: indexspc(:)             ! Index of species in FACE (usually "k" in FACE)
         character(Lname),allocatable :: namespc(:)      ! Name of the incoming species from fluid code
-        real(DP),allocatable         :: inflx_in(:)      ! Particle flux'
+        real(DP),allocatable         :: Gamma_in_base(:)      ! Particle flux'
         real(DP),allocatable         :: Emean(:)        ! Average energy of incoming particle enrg'
         real(DP)                     :: qflx_in                 ! Heat flux from fluid code
         character(string_length)     :: read_state_file  ! restart from this staste file
@@ -446,6 +494,7 @@ type fluidcode_inputs
              type(outgassing_fluxes):: outgassing_flux
              type(wall_temperatures) :: init_wall_temp,final_wall_temp
              type(particle_balances)  :: particle_balance
+             type(energy_balances)  :: energy_balance
              type(inventories),allocatable       :: init_inventory(:),final_inventory(:)
 
            end type fluidcode_outputs
@@ -456,7 +505,7 @@ type fluidcode_inputs
         character(string_length):: input_filename
         logical   :: read_input_file=.true.
         character(string_length)::logfile
-        logical :: couple_fluidcode
+        logical :: couple_fluidcode=.false.
         type(fluidcode_inputs) :: fluidcode_input
         character(string_length)::path
         character(string_length)::casename
@@ -469,6 +518,7 @@ type fluidcode_inputs
         type(outgassing_fluxes):: outgassing_flux
              type(wall_temperatures) :: init_wall_temp,final_wall_temp
              type(particle_balances)  :: particle_balance
+             type(energy_balances)  :: energy_balance
              type(inventories),allocatable       :: init_inventory(:),final_inventory(:)
 
     end type FACE_outputs

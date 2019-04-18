@@ -24,7 +24,7 @@ c c      use modFACE_IO
 c      solver_status: 0: solver step not completed
 c                   : -1: solver step completed with iter_solver=max
 c                   : 1 : solver step completed iwht iter_solver<ideal
-
+       quick_convergence=.false.
        iter_solver=0
        if (verbose_debug) write(iout,*) 'newton_solver'
 
@@ -58,16 +58,19 @@ c     --- newton step reduction ---
        if (u(i).eq.0.0) then
        unorm(i)=0.0
        else
-       unorm(i)=du(i)/u(i)
-       endif
-c       if (abs(unorm(i)) .lt. 1.d-30) then
-c       write (*,*) '***warning: displacement vector is too small at '
+        unorm(i)=du(i)/u(i)
+c     if (verbose_step) write(iout,*) "i=",i," ;unorm=",unorm(i)
+c     endif
+       if (abs(unorm(i)) .lt. 1.d-30) then
+c     write (*,*) '***warning: displacement vector is too small at '
 c     +              , i
-c       endif
-
+        unorm(i)=1d-30
+       endif
+       endif
        if ((-unorm(i) .gt. solver_udspl) .or.
      +     ( unorm(i) .gt. 1.d0/(1.d0-solver_udspl))) then
         idx=i
+      if (verbose_step) write(iout,*) "unorm too large: idx=",idx
        endif
       enddo
 
@@ -87,6 +90,7 @@ c       endif
 
 
       if ((normnew/norm-1.d0) .gt. solver_fdspl) then
+
        do i=1,neq
         du(i)=solver_fstp*du(i)
        enddo
@@ -107,14 +111,14 @@ c       endif
 c     --- check convergence ---
       iter_solver=iter_solver+1
       if (iter_solver .lt. iter_solver_max) then
-c      if ((verbose_step).OR.(verbose_debug)) then
-c      write (iout,*)'-- Newton iter# ',iter_solver,
-c     +' norm ', norm
-c      endif
+      if ((verbose_step).OR.(verbose_debug)) then
+      write (iout,*)'-- Newton iter# ',iter_solver,
+     +' norm ', norm
+      endif
 
        if (norm .gt. solver_eps) then
        if (verbose_debug) then
-c      write(iout,*) 'jump to 5199'
+      write(iout,*) 'jump to 5199'
       endif
        goto 5199
       endif
@@ -138,9 +142,7 @@ c      write(iout,*) 'jump to 5199'
       endif
 
       normf=norm
-      if (verbose_debug) then
-      write(iout,*) 'dsrfr=',dsrfr(ndt,1)
-      endif
+
       end subroutine newton_solver
 
       end module modFACE_solver

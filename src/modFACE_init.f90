@@ -11,7 +11,7 @@ module modFACE_init
     integer ::unit_Tramp=200
 !  real(DP)::K0abs_l(nspc)
 contains
-    subroutine initialize()
+    subroutine initialize
         !     ******************************************************************
         !     * initialization of arrays and parameters                        *
         !     *                                                                *
@@ -27,7 +27,7 @@ contains
         !     call init_seed
         call init_grid
         call init_temp
-        call compute_inflx()
+        call compute_inflx
         call init_volume_species
 
         call init_source
@@ -57,17 +57,28 @@ contains
         iter_solver =0
 
         ! number fo equations to solve
+         if(compute_spc) then
         if (solve_heat_eq) then
             neq=nspc*(ngrd+3)+ngrd+1
         else
 
             neq=nspc*(ngrd+3)
         endif
-
+        else
+        if (solve_heat_eq) then
+            neq=ngrd+1
+        else
+            neq=0
+            call face_error('nspc=0 and no heat eq solving:need at least one equation to solve...')
+        endif
+        endif
         do k=1,nspc
             trace_flux(k)%sum_inflx=0.d0
+            trace_flux(k)%sum_qflx=0.d0
             trace_flux(k)%sum_Gdes_l=0.d0
             trace_flux(k)%sum_Gdes_r=0.d0
+            trace_flux(k)%sum_Q_l=0.d0
+            trace_flux(k)%sum_Q_r=0.d0
             trace_flux(k)%min_Gdes_l=1.d99
             trace_flux(k)%min_Gdes_r=1.d99
             trace_flux(k)%max_Gdes_l=0.d0
@@ -148,6 +159,7 @@ contains
 
         !      time step initialization
         dt_face=dt0_face
+        dt_face_old=dt_face
         !      dt=cdt*ttm
         time_savevol=start_time
         time_savetime=start_time
@@ -335,11 +347,14 @@ contains
 
     end subroutine init_src_profile
 
-    subroutine init_source()
+
+
+    subroutine init_source
 
         integer::i,j,k,l
 
         call init_src_profile
+
         call compute_inflx
         !      Initialization of sources
         do i=1,ndt
@@ -373,7 +388,7 @@ contains
         if (verbose_init) write(iout,*) " -- Initialization source terms completed"
     end subroutine
 
-    subroutine init_boundary()
+    subroutine init_boundary
         integer ::i,k
         real(DP)::tmp, Edes_lc,Edes_rc
 
@@ -381,33 +396,6 @@ contains
         if (verbose_init) write(iout,*) "Initialization boundary variables"
 
 
-        do k=1,nspc
-
-            if(left_surface_model_string(k).eq."S") then
-                left_surface_model(k)=surf_model_S
-            elseif (left_surface_model_string(k).eq."N") then
-                left_surface_model(k)=surf_model_N
-            elseif (left_surface_model_string(k).eq."B") then
-                left_surface_model(k)=surf_model_B
-            else
-                call face_error("Unknown left_surface_model::",left_surface_model_string(k),"at k=",k)
-            endif
-        enddo
-
-
-
-
-        do k=1,nspc
-            if (right_surface_model_string(k).eq."S") then
-                right_surface_model(k)=surf_model_S
-            elseif (right_surface_model_string(k).eq."N") then
-                right_surface_model(k)=surf_model_N
-            elseif (right_surface_model_string(k).eq."B") then
-                right_surface_model(k)=surf_model_B
-            else
-                call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
-            endif
-        enddo
 
 
         do k=1,nspc
@@ -466,7 +454,7 @@ contains
                 Kb_l(k)=0d0
                 Kads_l(k)=0d0
             else
-                call face_error("Unknown left surface model:",left_surface_model(k))
+                call face_error("Init:Unknown left surface model:",left_surface_model(k))
             endif
 
             !right
@@ -570,12 +558,12 @@ contains
     subroutine read_Tramp_file
         integer ios,i
 
-        open(unit=unit_Tramp, file=trim(framp), iostat=ios,action='read',status='old')
+        open(unit=unit_Tramp, file=trim(framp_string), iostat=ios,action='read',status='old')
         if ( ios /= 0 ) then
-            write(iout,*) 'Opening of temperature ramp file "', framp ,'" : FAIL '
+            write(iout,*) 'Opening of temperature ramp file "', framp_string ,'" : FAIL '
             stop
         endif
-        if (verbose_init)  write(iout,*) 'Opening of temperature ramp file "', trim(framp) ,'" : DONE '
+        if (verbose_init)  write(iout,*) 'Opening of temperature ramp file "', trim(framp_string) ,'" : DONE '
 
         read (unit_Tramp, '(i4)') nramp
         allocate(rtime(nramp))
@@ -584,25 +572,31 @@ contains
             read (20, *) rtime(i), rtemp(i)
         enddo
         close(unit_Tramp)
-        write(iout,*) 'Reading of temperature ramp file "', trim(framp) ,'" : DONE '
+        write(iout,*) 'Reading of temperature ramp file "', trim(framp_string) ,'" : DONE '
     end subroutine read_Tramp_file
 
 
-    subroutine init_temp()
+    subroutine init_temp
         integer::i,j,n
-
+ if (verbose_init)  write(iout,*) 'Initialization temperature'
         if (tramp1 .ne. tramp0) then
-            dtemp=(temp1-temp0)/(tramp1-tramp0)
+            dtemp=(temp_final-temp_init)/(tramp1-tramp0)
         else
             dtemp=0.d0
         endif
 
-        if (framp .ne. 'none') then
+        if (framp_string .ne. 'none') then
+            framp=framp_readfile
             call read_Tramp_file
+            else
+            framp=framp_none
         endif
 
         if (.not.solve_heat_eq) then
-            if (framp .ne. 'none') then
+         if (verbose_init)  write(iout,*) 'Not solving heat equation'
+            if (framp.ne. framp_none) then
+
+
                 do j=0,ngrd
                     do i=1,ndt
                         if (rtime(1) .gt. time) then
@@ -621,20 +615,24 @@ contains
                 enddo ! j
 
             else
+            if (verbose_init)  write(iout,*) 'Not reading temperature file'
+
                 do j=0,ngrd
                     do i=1,ndt
-                        temp(i,j)=temp0
+                        temp(i,j)=temp_init
                     enddo
                 enddo
             endif
+
          !  solving heat equation -> initial linear profile of T in bulk
         elseif(solve_heat_eq) then
             do j=0,ngrd
                 do i=1,ndt
-                    temp(i,j)=temp0+(temp1-temp0)*x(j)/length
+                    temp(i,j)=temp_init+(temp_final-temp_init)*x(j)/length
                 enddo
             enddo
         endif
+
         if (verbose_init)  write(iout,*) 'Initialization of temperature : DONE '
     end subroutine init_temp
 
@@ -680,6 +678,7 @@ contains
                 jout(i,k)=0.d0
             enddo
         enddo
+
 
     end subroutine init_volume_species
 
@@ -737,9 +736,10 @@ contains
         enddo
         if (nspc.ge.3) then
             do n=2,nspc-1,2
-                kbin0(1  ,n,1)=-nu(1)*lambda**3*cvlm
-                kbin0(n  ,n,1)=-nu(1)*lambda**3*cvlm
-                kbin0(n+1,n,1)=+nu(1)*lambda**3*cvlm
+                kbin0(1  ,n,1)=-nu(n)*lambda**3*cvlm ! we have introduced variable pre-exponential factor read from the input file> It allows flexible rates
+                                                     ! with no restriction to activation energy only.
+                kbin0(n  ,n,1)=-nu(n)*lambda**3*cvlm
+                kbin0(n+1,n,1)=+nu(n)*lambda**3*cvlm
             enddo
         endif
     end subroutine init_kbin0
@@ -753,9 +753,10 @@ contains
         enddo
         if (nspc.ge.3) then
             do n=3,nspc,2
-                nuth0(1  ,n)=+nu(1)
-                nuth0(n-1,n)=+nu(1)
-                nuth0(n  ,n)=-nu(1)
+                nuth0(1  ,n)=+nu(n)                 ! we have introduce variable pre-exponential factor read from the input file> It allows flexible rates
+                                                    ! with no restriction to activation energy only.
+                nuth0(n-1,n)=+nu(n)
+                nuth0(n  ,n)=-nu(n)
             enddo
         endif
     end subroutine init_nuth0

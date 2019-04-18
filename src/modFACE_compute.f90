@@ -19,13 +19,16 @@ contains
         ! ** build f
         i=0
         ! *** loop over each species
+         if(compute_spc) then
         do k=1,nspc
             i=i+1
 
             ! **** left surface (dsrf)
             if (.not.steady_state) then
                 !     --- 1st order BDF ---
+
                 if (order_solver.eq.1) then
+
                     f(i)=u(i)-a11*dsrfl(ndt-1,k)
                     f(i)=f(i)-a12*Gsrf_l (ndt  ,k)*dt_face
 
@@ -125,6 +128,7 @@ contains
             endif
 
         enddo
+        endif
         ! ** temperature
         if (solve_heat_eq) then
             do j=0,ngrd
@@ -135,6 +139,8 @@ contains
                     if (order_solver.eq.1) then
                         f(i)=u(i)-a11*temp(ndt-1,j)
                         f(i)=f(i)-a12*rate_t (ndt  ,j)*dt_face
+                       ! if (verbose_step) write(iout,*) 'j=',j,' ;temp(ndt-1,j)=',temp(ndt-1,j),&
+                       ! '; rate_t (ndt  ,j)=',rate_t (ndt  ,j)
                     !     --- 2nd order BDF ---
                     elseif (order_solver.eq.2) then
                         f(i)=u(i)-a21*temp(ndt-1,j)&
@@ -196,7 +202,7 @@ contains
     subroutine compute_ero_flx(k)
 
         integer j,k
-
+       if (cero.ne.0d0) then
         ero_flx(ndt,0,k)=-cero*flx(ndt,0,k) ! until now, flx is the density gradient (see line 764)
         do j=1,ngrd-1
             !        ero(ndt,j,k)=-cero*(dx(j)*flx(ndt,j-1,k)+dx(j-1)*flx(ndt,j,k))/(dx(j-1)+dx(j))
@@ -204,7 +210,7 @@ contains
         enddo
         !       ero(ndt,ngrd,k)=-cero*flx(ndt,ngrd,k)
         ero_flx(ndt,ngrd,k)=0.d0 ! no erosion on the right side of the material (only left side is facing plasma)
-
+        endif
     end subroutine compute_ero_flx
 
     subroutine compute_diff_flx(k)
@@ -219,7 +225,7 @@ contains
     subroutine compute_ero_qflx
 
         integer j
-
+        if (cero.ne.0d0) then
         ero_qflx(ndt,0)=-cero*qflx(ndt,0)
         do j=1,ngrd-1
             !        ero_qflx(ndt,j)=-cero*(dx(j)*qflx(ndt,j-1)+dx(j-1)*qflx(ndt,j))/(dx(j-1)+dx(j))
@@ -227,7 +233,7 @@ contains
         enddo
         !       ero_qflx(ndt,ngrd)=-cero*qflx(ndt,ngrd)
         ero_qflx(ndt,ngrd)=0.d0
-
+        endif
     end subroutine compute_ero_qflx
 
     subroutine compute_thermal_qflx
@@ -242,7 +248,7 @@ contains
     subroutine compute_arrhenius_coeffs
 
         integer j,k,l,m
-
+        if(compute_spc) then
         do k=1,nspc
             do j=0,ngrd
                 cdif(ndt,j,k)=cdif0(k)*exp(-eekb*edif(k)/temp(ndt,j))
@@ -253,7 +259,7 @@ contains
                 enddo
             enddo
         enddo
-
+       endif
 
 
     end subroutine compute_arrhenius_coeffs
@@ -275,6 +281,7 @@ contains
 !            enddo
 !
 !        elseif (solve_heat_eq) then
+         if (compute_spc) then
             do k=1,nspc
                 do j=0,ngrd
                     srs(ndt,j,k)=inflx(k)*src_profile(j,k)
@@ -283,7 +290,7 @@ contains
                     enddo
                 enddo
             enddo
- !       endif
+        endif
 
     end subroutine compute_source
 
@@ -292,6 +299,7 @@ contains
         integer,intent(in) :: k
         real(DP) csrs, csrb
         !     --- sources ---
+
         do j=0,ngrd
             src(ndt,j,k)=0.d0
             if (srs(ndt,j,k) .ne. 0.d0) then
@@ -316,6 +324,7 @@ contains
             jout(ndt,k)=jout(ndt,k)+srb(ndt,0   ,k,l)*dens(ndt,0   ,l)*(1.d0-csrbin(ndt,0   ,k,l))*0.5d0*dx(0   )
             jout(ndt,k)=jout(ndt,k)+srb(ndt,ngrd,k,l)*dens(ndt,ngrd,l)*(1.d0-csrbin(ndt,ngrd,k,l))*0.5d0*dx(ngrd)
         enddo
+
     end subroutine compute_source_rate
 
     subroutine compute_surface_flx(k)
@@ -437,11 +446,11 @@ contains
             call compute_cap_factor_surface(k,ndt)
         endif
 
-        ! calculate effective desorptiopn and heat fluxes
+        ! calculate effective desorptiopn and heat fluxes. I'm not sure whether that's correct! is it energy lost by atoms leaving toward surface...
         jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
-        if (solve_heat_eq) then
-            qflx_in=qflx_in+jout(ndt,k)*(ee*Eads_l(k)-2.d0*kb*temp(ndt,0))
-        endif
+        !if (solve_heat_eq) then
+         !   qflx_in=qflx_in+jout(ndt,k)*(ee*Eads_l(k)-2.d0*kb*temp(ndt,0))
+        !endif
 
         ! - net flux onto surface
         if ((left_surface_model(k).eq.surf_model_S))then
@@ -466,9 +475,10 @@ contains
         endif
 
         !     --- low-pass filter ---
-        delta=0d0
-        Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
-        Gsrf_r(ndt,k)=delta*Gsrf_r(ndt-1,k)+(1.d0-delta)*Gsrf_r(ndt,k)
+        if (delta.gt.0) then
+        !Gsrf_l(ndt,k)=delta*Gsrf_l(ndt-1,k)+(1.d0-delta)*Gsrf_l(ndt,k)
+        !Gsrf_r(ndt,k)=delta*Gsrf_r(ndt-1,k)+(1.d0-delta)*Gsrf_r(ndt,k)
+        endif
 
     end subroutine compute_surface_flx
 
@@ -514,20 +524,27 @@ contains
 
     subroutine compute_temp_rate
         integer j
+        if (verbose_debug) then
+        write(iout,*) 'rhocp=',rhocp,'qflx_in=',qflx_in,'ero_qflx(ndt,0)=',ero_qflx(ndt,0)
+        endif
+
         rate_t(ndt,0)=(qflx_in-qflx(ndt,0))*2.d0/dx(0)/rhocp+ero_qflx(ndt,0)
         do j=1,ngrd-1
-!           rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)+ero_qflx(ndt,j)
+          ! rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)!+ero_qflx(ndt,j)
+          ! rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
            rate_t(ndt,j)=2.d0*thcond/rhocp&
                         *((temp(ndt,j-1)*dx(j)+temp(ndt,j+1)*dx(j-1))/(dx(j-1)+dx(j))-temp(ndt,j))&
                         /(dx(j-1)*dx(j))&
                         +ero_qflx(ndt,j)
         enddo
-        rate_t(ndt,ngrd)=0.d0
-
-        do j=0,ngrd
+        rate_t(ndt,ngrd)=0.d0 ! fixed temperature at the right surface
+        !rate_t(ndt,ngrd)=(qflx(ndt,ngrd))*2.d0/dx(ngrd-1)/rhocp+ero_qflx(ndt,ngrd)
+        if (delta.gt.0) then
+        !do j=0,ngrd
             !     --- low-pass filter ---
-            rate_t(ndt,j)=delta*rate_t(ndt-1,j)+(1.d0-delta)*rate_t(ndt,j)
-        enddo
+           ! rate_t(ndt,j)=delta*rate_t(ndt-1,j)+(1.d0-delta)*rate_t(ndt,j)
+        !enddo
+        endif
 
 
 
@@ -542,7 +559,7 @@ contains
 
         if (left_surface_model(k).eq.surf_model_S) then
        if (correct_scheme) then
-         rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))*2d00/dx(0)
+         rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))*2d0/dx(0)
          else
          rate_d(ndt,0,k)=rate_d(ndt,0,k)+(Gb_l(ndt,k)-Gads_l(ndt,k)-dif_flx(ndt,0,k))/dx(0)
         endif
@@ -579,7 +596,7 @@ contains
         endif
         elseif(right_surface_model(k).eq.surf_model_N) then
              if (correct_scheme) then
-             rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(Gb_r(ndt,k)-Gads_r(ndt,k)+dif_flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
+             rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+(dif_flx(ndt,ngrd,k))*2.d0/dx(ngrd-1)
              else
             rate_d(ndt,ngrd,k)=rate_d(ndt,ngrd,k)+dif_flx(ndt,ngrd,k)/dx(ngrd-1)
         endif
@@ -596,7 +613,7 @@ endif
             !     --- reactions ---
             rate_d(ndt,j,k)=rate_d(ndt,j,k)+rct(ndt,j,k)
             !     --- low-pass filter ---
-            !delta=0d0
+
             !rate_d(ndt,j,k)=delta*rate_d(ndt-1,j,k)+(1.d0-delta)*rate_d(ndt,j,k)
 
         enddo
@@ -632,50 +649,51 @@ endif
         real(DP):: cenr
         parameter (cenr=1.d0)
 
-
+if(compute_spc) then
         ! pulsed plasma flow
         do k=1,nspc
-            if (inflx_in_pulse(k).eq."R") then
+            if (Gamma_in_pulse(k).eq.Gamma_in_pulse_R) then !R
                 ! check that the pulse period is not zero
-                if (inflx_in_pulse_period(k).le.0) then
+                if (Gamma_in_pulse_period(k).le.0) then
                     call face_error('Pulsed incoming plasma flux activated but pulse_period =0')
                 endif
 
-                trel=time-inflx_in_pulse_period(k)*int(time/inflx_in_pulse_period(k))
+                trel=time-Gamma_in_pulse_period(k)*int(time/Gamma_in_pulse_period(k))
                 if (trel .le. t1) then ! phase 1 of pulse
                     tmp=trel/t1
 
-                    inflx(k)=inflx_in(k)+(inflx_in_max(k)-inflx_in(k))*tmp
+                    inflx(k)=Gamma_in_base(k)+(Gamma_in_max(k)-Gamma_in_base(k))*tmp
 
                     rad =rad_min +(rad_max -rad_min )*tmp
                     cero=cero_min+(cero_max-cero_min)*tmp
                 elseif (trel .le. t2) then ! phase 2 of pusle
 
-                    inflx(k)=inflx_in_max(k)
+                    inflx(k)=Gamma_in_max(k)
 
                     rad =rad_max
                     cero=cero_max
                 elseif (trel .le. t3) then ! phase 3 of pulse
                     tmp=(trel-t2)/(t3-t2)
 
-                    inflx(k)=inflx_in_max(k)+(inflx_in(k)-inflx_in_max(k))*tmp
+                    inflx(k)=Gamma_in_max(k)+(Gamma_in_base(k)-Gamma_in_max(k))*tmp
 
                     rad =rad_max +(rad_min -rad_max )*tmp
                     cero=cero_max+(cero_min-cero_max)*tmp
                 endif
-            elseif (inflx_in_pulse(k).eq."N") then ! no pulse
-                inflx(k)=inflx_in(k)
+            elseif (Gamma_in_pulse(k).eq.Gamma_in_pulse_N) then ! no pulse
+                inflx(k)=Gamma_in_base(k)
 
-            elseif (inflx_in_pulse(k).eq."S") then
-                if (time.ge.inflx_in_pulse_starttime(k)) then
-                    if (inflx_in_pulse_period(k).le.0d0) then
+            elseif (Gamma_in_pulse(k).eq.Gamma_in_pulse_S) then
+
+                if (time.ge.Gamma_in_pulse_starttime(k)) then
+                    if (Gamma_in_pulse_period(k).le.0d0) then
                         call face_error(' Gamma pulse_period <=0')
                     endif
-                    inflx(k)=inflx_in(k)+(inflx_in_max(k)-inflx_in(k))*&
-                    sin(2d0*pi*(time-inflx_in_pulse_starttime(k))/inflx_in_pulse_period(k))
+                    inflx(k)=Gamma_in_base(k)+(Gamma_in_max(k)-Gamma_in_base(k))*&
+                    sin(2d0*pi*(time-Gamma_in_pulse_starttime(k))/Gamma_in_pulse_period(k))
 
                 else
-                inflx(k)=inflx_in(k)
+                inflx(k)=Gamma_in_base(k)
                 endif
 
             else
@@ -691,42 +709,127 @@ endif
         cero=cero_min
 
 
-        if (gamero.ne.0d0) cero=cero+gamero*inflx(1)*(lambda**3*cvlm) ! sputtering
-
-        ! TODO modif Q flux here
+        if (gamero.ne.0d0) then
+        cero=cero+gamero*inflx(1)*(lambda**3*cvlm) ! sputtering
+        endif
+ endif
         qflx_in=0.d0
+
+        if (Q_in_pulse.eq.Q_in_pulse_R) then
+                ! check that the pulse period is not zero
+                if (Q_in_pulse_period.le.0) then
+                    call face_error('Pulsed incoming heat flux activated but pulse_period =0')
+                endif
+
+                trel=time-Q_in_pulse_period*int(time/Q_in_pulse_period)
+                if (trel .le. t1) then ! phase 1 of pulse
+                    tmp=trel/t1
+
+                    qflx_in=Q_in_base+(Q_in_max-Q_in_base)*tmp
+                elseif (trel .le. t2) then ! phase 2 of pusle
+                    qflx_in=Q_in_max
+                     rad =rad_max
+                    cero=cero_max
+                elseif (trel .le. t3) then ! phase 3 of pulse
+                    tmp=(trel-t2)/(t3-t2)
+
+                    qflx_in=Q_in_max+(Q_in_base-Q_in_max)*tmp
+                     rad =rad_max +(rad_min -rad_max )*tmp
+                    cero=cero_max+(cero_min-cero_max)*tmp
+                endif
+
+            elseif (Q_in_pulse.eq.Q_in_pulse_N) then ! no pulse
+
+                qflx_in=Q_in_base
+                if (verbose_debug) then
+                write(iout,*) 'no pulse: qflx_in=',qflx_in
+                endif
+            elseif (Q_in_pulse.eq.Q_in_pulse_S) then
+
+                if (time.ge.Q_in_pulse_starttime) then
+                    if (Q_in_pulse_period.le.0d0) then
+                        call face_error(' Q pulse_period <=0')
+                    endif
+                    qflx_in=Q_in_base+(Q_in_max-Q_in_base)*&
+                    sin(2d0*pi*(time-Q_in_pulse_starttime)/Q_in_pulse_period)
+
+                else
+                qflx_in=Q_in_base
+                endif
+
+            else
+                call face_error("Unknown mode for Q_in_pulse")
+            endif
+
+          if (qflx_in.lt.0d0) then
+                  call face_error("qflx_in < 0 ;qflx_in=",qflx_in)
+              endif
+
+
+
         do k=1,nspc
             qflx_in=qflx_in+ee*enrg(k)*inflx(k)
         enddo
-        if (rad.ne.0d0)  qflx_in=qflx_in+rad
 
-        if (cero.ne.0d0)  qflx_in=qflx_in-cero*ee*qform/(lambda**3*cvlm)
-        if (emiss.ne.0d0) qflx_in=qflx_in-emiss*sigma_sb*(temp(ndt,0)**4.d0-temp(ndt,ngrd)**4.d0)
+        if (rad.ne.0d0) then
+         qflx_in=qflx_in+rad
+        endif
 
+        if (cero.ne.0d0) then
+          qflx_in=qflx_in-cero*ee*qform/(lambda**3*cvlm)
+        endif
+
+        if (emiss.ne.0d0) then
+        qflx_in=qflx_in-emiss*sigma_sb*(temp(ndt,0)**4.d0-temp(ndt,ngrd)**4.d0)
+        endif
     end subroutine compute_inflx
 
 
 
     subroutine  compute_temperature
         integer j,n
+        real(DP):: temp_tmp
         !     --- compute new temperature and update arrhenius coeffs in heat eq is not solved.
         ! if heat eq is solved, then arrhenius coefficients are computed within computation of f functions
 
         if (.not.solve_heat_eq) then
-            if (framp .eq. "none") then
+            if (framp .eq. framp_none) then
+
+            if (T_pulse.eq.T_pulse_N) then
                 if (time .lt. tramp0) then
                     do j=0,ngrd
-                        temp(ndt,j)=temp0
+                        temp(ndt,j)=temp_init
                     enddo
                 elseif (time .le. tramp1) then
                     do j=0,ngrd
-                        temp(ndt,j)=temp0+dtemp*(time-tramp0)
+                        temp(ndt,j)=temp_init+dtemp*(time-temp_init)
                     enddo
                 else
                     do j=0,ngrd
-                        temp(ndt,j)=temp1
+                        temp(ndt,j)=temp_final
                     enddo
                 endif
+
+            elseif (T_pulse.eq.T_pulse_S) then
+
+                if (time.ge.T_pulse_starttime) then
+                    if (T_pulse_period.le.0d0) then
+                        call face_error(' T pulse_period <=0')
+                    endif
+
+                    temp_tmp=temp_init+(temp_final-temp_init)*&
+                    sin(2d0*pi*(time-T_pulse_starttime)/T_pulse_period)
+                    do j=0,ngrd
+                      temp(ndt,j)=temp_tmp
+                    enddo
+                endif
+
+            else
+                call face_error("Unknown mode for T_pulse:", T_pulse)
+            endif
+
+
+
 
             else ! use temperature ramp file
 
@@ -786,9 +889,12 @@ endif
 
         ! ** update all equations rates (rate_t (temperature), rate_d (density) and surface flux)
         if (solve_heat_eq) then
+            if(compute_spc) then
             call compute_arrhenius_coeffs ! compute trapping,detrapping and diffusion coeff which depend on temperature. If heat eq not solved, this is done upfront in routine step
+            endif
         endif
         ! *** density
+        if(compute_spc) then
         do k=1,nspc
             call compute_source_rate(k)        ! compute source term for species
             call compute_gradient_dens(k)      ! set flx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
@@ -798,7 +904,7 @@ endif
             call compute_diff_flx(k)
             call compute_dens_rate(k)
         enddo
-
+        endif
         ! *** heat conduction
         if (solve_heat_eq) then
             call compute_gradient_temp ! compute qflx (ndt,j,k)=(n(ndt,j+1,k)-n(ndt,j,k)/dx(j))
@@ -820,7 +926,7 @@ endif
         norm=0.d0
         mxel=0.d0
         do i=1,neq
-            if (u(i) .gt. 1.d-10) then
+            if (abs(u(i)) .gt. 1.d-10) then
                 tmp=abs(f(i)/u(i))
             else
                 tmp=0.d0
@@ -830,8 +936,13 @@ endif
                 mxel=tmp
                 idx=i
             endif
+       !     if (verbose_maths) then
+    ! write (iout,*)  'u(i)=',u(i),'; f(eq)=',f(i)
+     !   endif
         enddo
-          !    write (iout,*) 'Max norm element ', mxel, ' at eq', idx
+           if (verbose_maths) then
+     write (iout,*) 'Max norm element ', mxel, ' at eq', idx, '; u(eq)=',u(idx),'; f(eq)=',f(idx)
+        endif
         fnorm=sqrt(norm)
     end function compute_fnorm
 
@@ -903,7 +1014,10 @@ endif
         integer ::i,j,k
         real(DP),intent(in):: u(:)
         i=0
-
+!if (verbose_debug) then
+!            write(iout,*) '--- get_density_values,solve_heat_eq:',solve_heat_eq
+!            endif
+ if(compute_spc) then
         do k=1,nspc
             i=i+1
             dsrfl(ndt,k)=u(i)
@@ -916,11 +1030,16 @@ endif
         !      write(iout,*) "i=",i, " ;dsrfr(ndt,k)=" , dsrfr(ndt,k)
 
         enddo
+endif
+
         if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
                 temp(ndt,j)=u(i)
             enddo
+!            if (verbose_debug) then
+!            write(iout,*) 'after update: temp(ndt,0)=', temp(ndt,0)
+!            endif
 
         endif
 
@@ -936,6 +1055,9 @@ endif
                 int_src=integrale_src(k)
 
             trace_flux(k)%sum_inflx=trace_flux(k)%sum_inflx+int_src*dt_face
+            trace_flux(k)%sum_qflx=trace_flux(k)%sum_qflx+qflx_in*dt_face
+            trace_flux(k)%sum_Q_l=trace_flux(k)%sum_Q_l!-qflx_in*dt_face
+            trace_flux(k)%sum_Q_r=trace_flux(k)%sum_Q_r+qflx(ndt,ngrd)*dt_face
             trace_flux(k)%sum_Gdes_l=trace_flux(k)%sum_Gdes_l+Gdes_l(ndt,k)*dt_face
             trace_flux(k)%sum_Gdes_r=trace_flux(k)%sum_Gdes_r+Gdes_r(ndt,k)*dt_face
             trace_flux(k)%sig_Gdes_l=trace_flux(k)%sig_Gdes_l+Gdes_l(ndt,k)**2
@@ -989,14 +1111,14 @@ endif
 
         if ((variable_timestep)) then
 
-        if (adjust_reduction_factor) then
-        if ((iter_solver.gt.2)) then
-        reduction_factor_dt=reduction_factor_dt/15d0
-        else
-        reduction_factor_dt=reduction_factor_dt*1.2d0
-        endif
-
-        endif
+!        if (adjust_reduction_factor) then
+!        if ((iter_solver.gt.2)) then
+!        reduction_factor_dt=reduction_factor_dt/15d0
+!        else
+!        reduction_factor_dt=reduction_factor_dt*1.2d0
+!        endif
+!
+!        endif
 
 
         if (reduction_factor_dt.gt.1d0) then
@@ -1005,7 +1127,7 @@ endif
 
 
             dt=end_time-time
-
+           if(compute_spc) then
             ! bulk
             do k=1,nspc
                 do j=0,ngrd
@@ -1056,7 +1178,7 @@ endif
                 endif
             enddo
 
-
+endif
 
             ! heat equation
             if (solve_heat_eq) then
@@ -1077,21 +1199,42 @@ endif
             endif
 
 
-            if (dt .lt. min_dt_face) dt=min_dt_face
 
 
 
+if(compute_spc) then
         do k=1,nspc
-            if (inflx_in_pulse(k).ne."N") then
-                if (time.ge.inflx_in_pulse_starttime(k)) then
-                    if (dt>inflx_in_pulse_period(k)/100d0) then
-                        dt=inflx_in_pulse_period(k)/100d0
+            if (Gamma_in_pulse(k).ne.Gamma_in_pulse_N) then
+                if (time.ge.Gamma_in_pulse_starttime(k)) then
+                    if (dt>Gamma_in_pulse_period(k)/100d0) then
+                        dt=Gamma_in_pulse_period(k)/100d0
                     endif
                 endif
             endif
         enddo
+endif
+
+
+
+            if (Q_in_pulse.ne.Q_in_pulse_N) then
+                if (time.ge.Q_in_pulse_starttime) then
+                    if (dt>Q_in_pulse_period/100d0) then
+                        dt=Q_in_pulse_period/100d0
+                    endif
+                endif
+            endif
+
+             if (T_pulse.ne.T_pulse_N) then
+                if (time.ge.T_pulse_starttime) then
+                    if (dt>T_pulse_period/100d0) then
+                        dt=T_pulse_period/100d0
+                    endif
+                endif
+            endif
+
 
         if (dt .gt. max_dt_face) dt=max_dt_face
+        if (dt .lt. min_dt_face) dt=min_dt_face
         dt_face=dt
 
 

@@ -27,7 +27,7 @@
          ! test of coupling mode'
          call FACE_from_fluidcode
 #else
-
+!
           call FACE_standalone
 #endif
 

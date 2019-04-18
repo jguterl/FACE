@@ -179,6 +179,21 @@
             integrale_src=s
             end function integrale_src
 
+             real(DP) function integrale_src_T()
+integrale_src_T=0d0
+            end function integrale_src_T
+
+            real(DP) function integrale_T()
+      integer ::j
+      real(DP) ::s
+
+      s=0d0
+            do j=0,ngrd-1
+                s=s+0.5d0*(temp(ndt,j)+temp(ndt,j+1))*dx(j)
+            enddo
+            integrale_T=s*rhocp
+            end function integrale_T
+
             real(DP) function integrale_src_profile(k)
       integer,intent(in) :: k
       integer ::j

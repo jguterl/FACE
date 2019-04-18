@@ -57,9 +57,14 @@ contains
 
         case('n_species')
             if (nspc<1) then
-                write(iout,*) "ERROR: n_species must be at least equal to 1"
-                stop
+            nspc=1
+            compute_spc=.false. ! we turn off all the computation with R-D equations but we keep nspc=1 to allow allocation of variable (avoid to modify all the output when nspc=0)
+              !  write(iout,*) "ERROR: n_species must be at least equal to 1"
+              !  stop
+            else
+            compute_spc=.true.
             endif
+
             call alloc_input_species()
 
         !check order of the numerical solver
@@ -72,18 +77,124 @@ contains
             endif
 
 
+
+         case('Gamma_pulse')
+         if (verbose_input) write(iout,*) "checking input:",'Gamma_pulse'
+          do k=1,nspc
+
+            if(Gamma_in_pulse_string(k).eq."S") then
+                Gamma_in_pulse(k)=Gamma_in_pulse_S
+
+            elseif (Gamma_in_pulse_string(k).eq."N") then
+                Gamma_in_pulse(k)=Gamma_in_pulse_N
+
+            elseif (Gamma_in_pulse_string(k).eq."B") then
+                Gamma_in_pulse(k)=Gamma_in_pulse_B
+
+            elseif (Gamma_in_pulse_string(k).eq."R") then
+                Gamma_in_pulse(k)=Gamma_in_pulse_R
+
+            else
+                call face_error("Unknown Gamma_in_pulse::",Gamma_in_pulse_string(k),"at k=",k)
+            endif
+        enddo
+
+        case('Q_pulse')
+        if (verbose_input) write(iout,*) "checking input:",'Q_pulse'
+        ! init Q pulse type
+                    if (T_pulse_string.ne."N".AND.Q_pulse_string.ne."N") then
+                call face_error("cannot run T pulse and Q pulse simultaneously")
+
+            endif
+
+            if (Q_pulse_string.ne."N".AND.solve_heat_eq_string.eq."no") then
+                call face_error("cannot run Q pulse without solving heat equation")
+
+            endif
+
+            if(Q_pulse_string.eq."S") then
+                Q_in_pulse=Q_in_pulse_S
+
+            elseif (Q_pulse_string.eq."N") then
+                Q_in_pulse=Q_in_pulse_N
+
+            elseif (Q_pulse_string.eq."B") then
+                Q_in_pulse=Q_in_pulse_B
+
+           elseif (Q_pulse_string.eq."R") then
+                Q_in_pulse=Q_in_pulse_R
+
+            else
+                call face_error("Unknown Q_in_pulse::",Q_pulse_string)
+            endif
+
+          case('T_pulse')
+if (verbose_input) write(iout,*) "checking input:",'T_pulse'
+            if (T_pulse_string.ne."N".AND.Q_pulse_string.ne."N") then
+                call face_error("cannot run T pulse and Q pulse simultaneously")
+            endif
+
+        if (verbose_input)  write(iout,*) 'T_pulse_string:',T_pulse_string
+            if(T_pulse_string.eq."S") then
+                T_pulse=T_pulse_S
+
+            elseif (T_pulse_string.eq."N") then
+                T_pulse=T_pulse_N
+
+            elseif (T_pulse_string.eq."B") then
+                T_pulse=T_pulse_B
+
+           elseif (T_pulse_string.eq."R") then
+                T_pulse=T_pulse_R
+
+            else
+                call face_error("Unknown T_pulse:",T_pulse_string)
+            endif
+
+        case('left_surface_model')
+
+       if (verbose_input) write(iout,*) "checking input:",'left_surface_model'
+        do k=1,nspc
+        if (verbose_input) write(iout,*) "k=",k,"; left_surface_model_string(k)=",left_surface_model_string(k)
+            if(left_surface_model_string(k).eq."S") then
+                left_surface_model(k)=surf_model_S
+            elseif (left_surface_model_string(k).eq."N") then
+                left_surface_model(k)=surf_model_N
+            elseif (left_surface_model_string(k).eq."B") then
+                left_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown left_surface_model:",left_surface_model_string(k),"at k=",k)
+            endif
+        enddo
+
+
+        case('right_surface_model')
+         if (verbose_input) write(iout,*) "checking input:",'right_surface_model'
+         do k=1,nspc
+            if (right_surface_model_string(k).eq."S") then
+                right_surface_model(k)=surf_model_S
+            elseif (right_surface_model_string(k).eq."N") then
+                right_surface_model(k)=surf_model_N
+            elseif (right_surface_model_string(k).eq."B") then
+                right_surface_model(k)=surf_model_B
+            else
+                call face_error("Unknown right_surface_model:" ,right_surface_model_string(k),"at k=",k)
+            endif
+        enddo
         ! solve heat equation
         case('solve_heat_equation')
+        if (verbose_input) write(iout,*) "checking input:",'solve_heat_equation'
             if (solve_heat_eq_string.ne."no".AND.solve_heat_eq_string.ne."yes") then
                 write(iout,*) "ERROR: solve_heat_equation must be yes or no"
                 stop
             endif
             if (solve_heat_eq_string.eq."no") then
             solve_heat_eq=.false.
-            elseif (solve_heat_eq_string.ne."yes") then
+            elseif (solve_heat_eq_string.eq."yes") then
             solve_heat_eq=.true.
-            call face_error('heat equation solver must be checked!')
+            !call face_error('heat equation solver must be checked!')
             endif
+
 
 
         ! check steady-state value
@@ -215,7 +326,7 @@ end select
          call get_keyword_value('dump_vol_append', dump_vol_append_string)
          call get_keyword_value('dump_srf_append', dump_srf_append_string)
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
-        call get_keyword_value('temp_ramp_filename', framp)
+        call get_keyword_value('temp_ramp_filename', framp_string)
         call get_keyword_value('solve_heat_equation', solve_heat_eq_string)
         call get_keyword_value('onthefly_inventory', print_onthefly_inventory_string)
         call get_keyword_value('n_species', nspc)
@@ -252,11 +363,22 @@ end select
         call get_keyword_value('diagnostic_depth', diagnostic_depth)
         call get_keyword_value('implantation_width', implantation_width)
         call get_keyword_value('Eimpact_ion', enrg)
-        call get_keyword_value('Gamma_in', inflx_in)
-        call get_keyword_value('Gamma_in_max', inflx_in_max)
-        call get_keyword_value('Gamma_pulse', inflx_in_pulse)
-        call get_keyword_value('Gamma_pulse_period', inflx_in_pulse_period)
-        call get_keyword_value('Gamma_pulse_starttime', inflx_in_pulse_starttime)
+        call get_keyword_value('Gamma_in_base', Gamma_in_base)
+        call get_keyword_value('Gamma_in_max', Gamma_in_max)
+        call get_keyword_value('Gamma_pulse', Gamma_in_pulse_string)
+        call get_keyword_value('Gamma_pulse_period', Gamma_in_pulse_period)
+        call get_keyword_value('Gamma_pulse_duration', Gamma_in_pulse_duration)
+        call get_keyword_value('Gamma_pulse_starttime', Gamma_in_pulse_starttime)
+        call get_keyword_value('Q_in_base', Q_in_base)
+        call get_keyword_value('Q_in_max', Q_in_max)
+        call get_keyword_value('Q_pulse', Q_pulse_string)
+        call get_keyword_value('Q_pulse_period', Q_in_pulse_period)
+        call get_keyword_value('Q_pulse_duration', Q_in_pulse_duration)
+        call get_keyword_value('Q_pulse_starttime', Q_in_pulse_starttime)
+        call get_keyword_value('T_pulse', T_pulse_string)
+        call get_keyword_value('T_pulse_period', T_pulse_period)
+        call get_keyword_value('T_pulse_duration', T_pulse_duration)
+        call get_keyword_value('T_pulse_starttime', T_pulse_starttime)
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
@@ -264,8 +386,8 @@ end select
         call get_keyword_value('min_ablation_velocity', cero_min)
         call get_keyword_value('max_ablation_velocity', cero_max)
         call get_keyword_value('sputtering_yield', gamero)
-        call get_keyword_value('mat_temp_ramp_start', temp0)
-        call get_keyword_value('mat_temp_ramp_stop', temp1)
+        call get_keyword_value('mat_temp_ramp_start', temp_init)
+        call get_keyword_value('mat_temp_ramp_stop', temp_final)
         call get_keyword_value('lattice_constant', lambda)
         call get_keyword_value('volume_factor', cvlm)
         call get_keyword_value('surface_factor', csrf)
@@ -428,6 +550,7 @@ end select
         call assign_keyword_value_species(keyword,inputval,'s')
         variable=inputval%s
 if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc) ,' : ' ,trim(inputval%status)
+call check_value_input(keyword)
         deallocate(inputval%s)
         deallocate(inputval%r)
         deallocate(inputval%i)
@@ -450,12 +573,11 @@ if (verbose_input) write(iout,*) 'str:',trim(keyword),'=',(variable(k),k=1,nspc)
         call init_zero(dump_time_dt)
         call init_zero(dump_space_dt)
         call init_zero(dump_restart_dt)
-        call init_zero(framp)
         call init_zero(cero_min)
         call init_zero(cero_max)
         call init_zero(gamero)
-        call init_zero( temp0)
-        call init_zero( temp1)
+        call init_zero( temp_init)
+        call init_zero( temp_final)
         call init_zero(lambda)
         call init_zero( cvlm)
         call init_zero(csrf)

@@ -127,34 +127,35 @@ contains
             call face_error('We do not allow FACE to run coupled with fluid code when erosion is on. See coupling module...')
         endif
 
-        ! ** Setup particle flux by overwritting inflx_in
+        ! ** Setup particle flux by overwritting Gamma_in_base
         ! *** first let be sure that pulsed_plasma is not required and thatn ot flux of incomping particles are imposed in the input file
         ! This is not mandatory but we prevent mishandling of input files by user....
         do k=1,nspc
-            if (inflx_in(k).ne.0.d0) then
+            if (Gamma_in_base(k).ne.0.d0) then
                 call face_error(' particles flx in input file must be =0 when running FACE coupled to fluid code: spc k=',&
-                    k,'enrg=',inflx_in(k))
+                    k,'enrg=',Gamma_in_base(k))
             endif
         enddo
-        if (inflx_in_pulse(1).ne."N") then
+        if (Gamma_in_pulse_string(1).ne."N") then
             call face_error('Cannot run pulsed fluxwhen running FACE coupled to fluid code')
         endif
-         ! ** Overwritting inflx_in with input from fluid code.
+         ! ** Overwritting Gamma_in_base with input from fluid code.
 
         do kk=1,fluidcode_input%nspc_fluid
             k=fluidcode_input%indexspc(kk)
-            inflx_in(k)=fluidcode_input%inflx_in(kk)
+            Gamma_in_base(k)=fluidcode_input%Gamma_in_base(kk)
             ! check if the value of the influx is not negative
-            if (fluidcode_input%inflx_in(kk).lt.0) then
-                call face_error("negative influx from fluid code: kk=",kk,"flux=",fluidcode_input%inflx_in(kk))
+            if (fluidcode_input%Gamma_in_base(kk).lt.0) then
+                call face_error("negative influx from fluid code: kk=",kk,"flux=",fluidcode_input%Gamma_in_base(kk))
             endif
 
         enddo
 
         ! temperature/heat flux input
         ! first check that framp is not called because FACE cannot read temperature from ramp file and get Temp/Q flux input from fluid code at the same time...
-        if (framp.ne."none") then
-            call face_error("Incompatibility with fluidcode coupling: cannot read external temperature ramp file: framp=",framp)
+        if (framp_string.ne."none") then
+            call face_error("Incompatibility with fluidcode coupling: cannot read external temperature ramp file: framp_string="&
+            ,framp_string)
         endif
         ! also check that no linear temperature ramp are imposed from the input file
         if (tramp1.ne.0d0.or.tramp0.ne.0d0) then
@@ -174,19 +175,19 @@ contains
                     call face_error('energy of incoming particles must =0 when running FACE coupled to fluid code: spc k='&
                         ,k,'enrg=',enrg(k))
                 endif
-                if (inflx_in(k).ne.0) then
+                if (Gamma_in_base(k).ne.0) then
                     call face_error('flux of incoming particles must be =0 when running FACE coupled to fluid code: spc k='&
-                        ,k,'enrg=',inflx_in(k))
+                        ,k,'enrg=',Gamma_in_base(k))
                 endif
             enddo
 
             ! ** Calculating enrg=qflx_in/flx_in/ee assuming that all the heat flux is carried by the first species
             do k=1,nspc
                 if (k.eq.1) then
-                    if (inflx_in(k).eq.0d0) then ! if influx first species =0 then we set it equal to 1 (should not add much particles!-> 1 m^-2 s^-1)
-                        inflx_in(k)=1d0
+                    if (Gamma_in_base(k).eq.0d0) then ! if influx first species =0 then we set it equal to 1 (should not add much particles!-> 1 m^-2 s^-1)
+                        Gamma_in_base(k)=1d0
                     endif
-                    enrg(k)=fluidcode_input%qflx_in/inflx_in(k)
+                    enrg(k)=fluidcode_input%qflx_in/Gamma_in_base(k)
                 else
                     enrg(k)=0
                 endif
@@ -196,8 +197,8 @@ contains
 
         else
             ! if not solving the heat eq then we just set the entire wall temperature to the temperature from the fluid code
-            temp0=fluidcode_input%tempwall
-            temp1=fluidcode_input%tempwall
+            temp_init=fluidcode_input%tempwall
+            temp_final=fluidcode_input%tempwall
             restore_state_temp=.false. ! do not restore temperature from state file if temperature imposed by Face code
             ! check that the temperature is positive
             if (fluidcode_input%tempwall.le.0d0) then
@@ -213,7 +214,7 @@ contains
 
         if (.not.allocated(fluidcode_input%namespc))allocate(fluidcode_input%namespc(fluidcode_input%nspc_fluid))
         if (.not.allocated(fluidcode_input%indexspc))allocate(fluidcode_input%indexspc(fluidcode_input%nspc_fluid))
-        if (.not.allocated(fluidcode_input%inflx_in))allocate(fluidcode_input%inflx_in(fluidcode_input%nspc_fluid))
+        if (.not.allocated(fluidcode_input%Gamma_in_base))allocate(fluidcode_input%Gamma_in_base(fluidcode_input%nspc_fluid))
         if (.not.allocated(fluidcode_input%Emean))allocate(fluidcode_input%Emean(fluidcode_input%nspc_fluid))
     end subroutine alloc_fluidcode_input
 
@@ -221,7 +222,7 @@ contains
         type(fluidcode_inputs)::fluidcode_input
         if (allocated(fluidcode_input%namespc))deallocate(fluidcode_input%namespc)
         if (allocated(fluidcode_input%indexspc))deallocate(fluidcode_input%indexspc)
-        if (allocated(fluidcode_input%inflx_in))deallocate(fluidcode_input%inflx_in)
+        if (allocated(fluidcode_input%Gamma_in_base))deallocate(fluidcode_input%Gamma_in_base)
         if (allocated(fluidcode_input%Emean))deallocate(fluidcode_input%Emean)
     end subroutine dealloc_fluidcode_input
 

@@ -19,7 +19,7 @@
 					<folderInfo id="photran.managedbuild.config.gnu.fortran.macosx.exe.debug.1408637539." name="/" resourcePath="">
 						<toolChain id="photran.managedbuild.toolchain.gnu.fortran.exe.debug.683729512" name="GCC Fortran" superClass="photran.managedbuild.toolchain.gnu.fortran.exe.debug">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="photran.managedbuild.target.gnu.platform.exe.debug.659149672" name="Debug Platform" osList="solaris,linux,hpux,aix,qnx" superClass="photran.managedbuild.target.gnu.platform.exe.debug"/>
-							<builder buildPath="${workspace_loc:/FACE2.0}/Debug" id="photran.managedbuild.target.gnu.builder.exe.debug.2130284463" keepEnvironmentInBuildfile="false" name="Gnu Make Builder" superClass="photran.managedbuild.target.gnu.builder.exe.debug"/>
+							<builder arguments="debug" buildPath="${workspace_loc:/FACE2.0}/" command="make" enableAutoBuild="false" id="photran.managedbuild.target.gnu.builder.exe.debug.2130284463" incrementalBuildTarget="debug" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="photran.managedbuild.target.gnu.builder.exe.debug"/>
 							<tool id="photran.managedbuild.tool.gnu.c.compiler.exe.debug.1437031914" name="GCC C Compiler" superClass="photran.managedbuild.tool.gnu.c.compiler.exe.debug">
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1989701164" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -59,7 +59,7 @@
 					<folderInfo id="photran.managedbuild.config.gnu.fortran.macosx.exe.release.507929687." name="/" resourcePath="">
 						<toolChain id="photran.managedbuild.toolchain.gnu.fortran.macosx.exe.release.1366255592" name="GCC Fortran" nonInternalBuilderId="photran.managedbuild.target.gnu.builder.macosx.exe.release" superClass="photran.managedbuild.toolchain.gnu.fortran.macosx.exe.release" targetTool="photran.managedbuild.tool.gnu.fortran.linker" unusedChildren="photran.managedbuild.tool.macosx.fortran.linker.macosx.exe.release">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.MachO64" id="photran.managedbuild.target.gnu.platform.fortran.macosx.exe.release.24996646" name="Release Platform" osList="macosx" superClass="photran.managedbuild.target.gnu.platform.fortran.macosx.exe.release"/>
-							<builder buildPath="${workspace_loc:/FACE2.0}/" command="make" id="photran.managedbuild.target.gnu.builder.macosx.exe.release.139994566" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="photran.managedbuild.target.gnu.builder.macosx.exe.release"/>
+							<builder arguments="" buildPath="${workspace_loc:/FACE2.0}/" command="make" id="photran.managedbuild.target.gnu.builder.macosx.exe.release.139994566" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="photran.managedbuild.target.gnu.builder.macosx.exe.release"/>
 							<tool id="photran.managedbuild.tool.gnu.c.compiler.macosx.exe.release.157313754" name="GCC C Compiler" superClass="photran.managedbuild.tool.gnu.c.compiler.macosx.exe.release">
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.591569104" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

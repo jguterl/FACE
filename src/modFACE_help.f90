@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=120
+    integer,parameter::nlines_max_help=121
 
     type helper
         character(string_length)::keyword
@@ -29,7 +29,7 @@ contains
       if (verbose_version) then
         write(iout,*) '###################################'
         call write_short_version
-        write(iout,*) '#  Last modified: 23  March 2018  #'
+        write(iout,*) '#  Last modified: 15  April 2018  #'
         write(iout,*) '#  R.D. Smirnov & J. Guterl       #'
         write(iout,*) '#  email: rsmirnov@eng.ucsd.edu   #'
         write(iout,*) '#  email: guterlj@fusion.gat.com  #'
@@ -50,7 +50,29 @@ contains
         integer i
         write(iout,*) ' Usage of FACE2.0:'
         write(iout,*) ' -h or --help'
-
+        write(iout,*) ' -pg   --print-grid : only print the grid correspondign to the input file. No run'
+        write(iout,*) ' -ps   --print-species:   dump vol and surface after reading restart file or history file if requested'
+        write(iout,*) ' -pdi  --print-default-input:   print default_input.face'
+        write(iout,*) ' -h    --help:'
+        write(iout,*) ' -dh   --default-H: run with default input file with only H'
+        write(iout,*) ' -dhtr --default-H+Tr: run with default input file with only H+Tr'
+        write(iout,*) ' -c    --couple-fluidcode'
+        write(iout,*) ' -in   --inputfile inputfile'
+        write(iout,*) ' -l    --log logfile'
+        write(iout,*) ' -vp --verbose_parser'
+        write(iout,*) ' -vi --verbose_input'
+   write(iout,*) ' -vit --verbose_init'
+    write(iout,*) ' -vstp --verbose_step'
+    write(iout,*) ' -vd --verbose_debug'
+    write(iout,*) ' -vc --verbose_couple'
+    write(iout,*) ' -vr --verbose_restore'
+    write(iout,*) ' -vm --verbose_maths'
+    write(iout,*) ' -vi --verbose_interface'
+    write(iout,*) ' -vhp --verbose_help'
+    write(iout,*) ' -vv --verbose_version'
+    write(iout,*) ' -vh --verbose_header'
+   write(iout,*)  ' -vs --verbose_surface'
+   write(iout,*) '-n --name-case'
 !        write(iout,*) ' *** List of keywords for FACE input file ***'
 !        write (str1, '(A30)') 'keyword'
 !        write (str2, '(A70)') 'def'
@@ -128,7 +150,7 @@ contains
         call set_help('n_species','Number of species','none','mandatory',"3")
         call set_help('species_name','Name of species','none','mandatory',"D H+Tr1 Tr1","species")
         call set_help('n0_profile','Initial density profile is Gaussian (G), step(S), linear(L),peak(P),flat(F)','none'&
-            ,'non-mandatory',"G G G","species")
+            ,'non-mandatory',"F F F","species")
         call set_help('n0','Initial density n0','[m^-3]','non-mandatory',"1.00e+10 1.00e+10 1.00e+10","species")
         call set_help('n0_xmax','Position of maximum of Gaussian profile','[m]','non-mandatory',&
         "0.00e-00 0.00e-00 0.00e-00","species")
@@ -182,7 +204,7 @@ contains
 
         call set_help('Eimpact_ion','Impact energy of ionized species','[eV]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
-        call set_help('Gamma_in','External flux of ionized species','[m^-2 s^-1]','non-mandatory',&
+        call set_help('Gamma_in_base','External flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
         call set_help('Gamma_in_max','Maximal external flux of ionized species','[m^-2 s^-1]','non-mandatory',&
         "0.00e+00 0.00e+00 0.00e+00","species")
@@ -191,9 +213,11 @@ contains
         call set_help('temp_neutral','External temperature of neutral species','[eV]','non-mandatory',&
         "0.00e-00 0.00e+00 0.00e+00","species")
         call set_help('mass','Mass of species','[kg]','non-mandatory',"3.343e-27 0.00e+00 0.00e+00","species")
-        call set_help('Gamma_pulse','pulsed partice flux N: no S: sin R: rectangle','none','non-mandatory',"N N N","species")
+        call set_help('Gamma_pulse','pulsed partice flux N: no S: sin R: rectangle E: ELM','none','non-mandatory',"N N N","species")
         call set_help('Gamma_pulse_period','Gamma pulse period','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
         call set_help('Gamma_pulse_starttime','Gamma pulse starttime','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
+        call set_help('Gamma_pulse_duration','Gamma pulse duration','[s]','non-mandatory',"1.0e+99 1.0e+99 1.0e+99","species")
+
         comment_str='# ********* Parameters for abliation model ****************************** '
         call set_help(comment_str)
         call set_help('min_ablation_velocity','min ablation speed in addition to sputtering','[m s^-1]','non-mandatory'&
@@ -202,12 +226,20 @@ contains
             ,"0.00e-00 ")
         call set_help('sputtering_yield','Sputtering yield','none','non-mandatory',"0")
 
-        comment_str='# ********* Parameters for temperature ********************************** '
+        comment_str='# ********* Parameters for temperature/heat flux ********************************** '
         call set_help(comment_str)
-        call set_help('mat_temp_ramp_start','Material temperature at ramp start (initial at left boundary)','[K]'&
-            ,'non-mandatory',"373")
-        call set_help('mat_temp_ramp_stop','Material temperature at ramp stop  (initial at right boundary)','[K]',&
-           'non-mandatory',"373")
+        call set_help('mat_temp_ramp_start','Material temperature at ramp start','[K]','non-mandatory',"273")
+        call set_help('mat_temp_ramp_stop','Material temperature at ramp stop','[K]','non-mandatory',"273")
+        call set_help('T_pulse','pulsed heat flux N: no S: sin R: rectangle E: ELM','none','non-mandatory',"N")
+        call set_help('T_pulse_period','T pulse period','[s]','non-mandatory',"1.0e+99")
+        call set_help('T_pulse_starttime','T pulse starttime','[s]','non-mandatory',"1.0e+99")
+        call set_help('T_pulse_duration','T pulse duration','[s]','non-mandatory',"1.0e+99")
+        call set_help('Q_pulse','pulsed heat flux N: no S: sin R: rectangle E: ELM','none','non-mandatory',"N")
+        call set_help('Q_pulse_period','Q pulse period','[s]','non-mandatory',"1.0e+99")
+        call set_help('Q_pulse_starttime','Q pulse starttime','[s]','non-mandatory',"1.0e+99")
+        call set_help('Q_pulse_duration','Q pulse duration','[s]','non-mandatory',"1.0e+99")
+        call set_help('Q_in_base','External heat flux','[W.m^-2]','non-mandatory',"0.00e+00")
+        call set_help('Q_in_max','Maximal external heat flux','[W.m^-2]','non-mandatory',"0.00e+00")
            comment_str='# ********* Material parameters ************************************** '
         call set_help(comment_str)
         call set_help('lattice_constant','Lattice constant of material','[m]','mandatory',"1.00e-10")
@@ -306,12 +338,12 @@ contains
         integer::i,j,idefault,ios
 
         call set_unit(idefault)
-        open(unit=idefault, file=trim(filename), iostat=ios,action='write')
+        open(unit=idefault, file="no_help"//trim(filename), iostat=ios,action='write')
         if ( ios /= 0 ) then
-            call face_error('Cannot write into default input file ', trim(filename))
+            call face_error('Cannot write into default input file ', "no_help"//trim(filename))
         endif
 
-        write(iout,*)'Default input file: "', trim(filename) ,'" created'
+        write(iout,*)'Default input file: "', "no_help"//trim(filename) ,'" created'
         call timestring ( timestamp )
         write(idefault,*) '#Default input for FACE. Created: ', timestamp
 

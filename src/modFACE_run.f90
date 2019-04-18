@@ -44,6 +44,8 @@ subroutine run_FACE(face_input,face_output)
         call compute_wall_temp_info(final_wall_temp)
         ! compute the particle balance
         call compute_particle_balance
+        ! compute the energy balance
+        call compute_energy_balance
         ! compute outgassing flux info
         call compute_outgassing_flux
         ! get time at end of run
@@ -67,6 +69,7 @@ subroutine run_FACE(face_input,face_output)
         do k=1,nspc
 
             init_inventory(k)%Ntotbulk=integrale_dens(k)
+             init_inventory(k)%Etotbulk=integrale_T()
             init_inventory(k)%Ntotsrf=0d0
             if (left_surface_model(k).eq.surf_model_S) then
             init_inventory(k)%Ntotsrf=init_inventory(k)%Ntotsrf+dsrfl(ndt,k)
@@ -77,6 +80,8 @@ subroutine run_FACE(face_input,face_output)
 
             init_inventory(k)%Nnetbulk=0.d0
             init_inventory(k)%Nnetsrf=0.d0
+            init_inventory(k)%Enetbulk=0.d0
+
         enddo
 
     end subroutine compute_init_inventory
@@ -87,6 +92,7 @@ subroutine run_FACE(face_input,face_output)
         do k=1,nspc
 
             final_inventory(k)%Ntotbulk=integrale_dens(k)
+            final_inventory(k)%Etotbulk=integrale_T()
             final_inventory(k)%Ntotsrf=0d0
             if (left_surface_model(k).eq.surf_model_S) then
             final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfl(ndt,k)
@@ -95,7 +101,7 @@ subroutine run_FACE(face_input,face_output)
             final_inventory(k)%Ntotsrf=final_inventory(k)%Ntotsrf+dsrfr(ndt,k)
             endif
             final_inventory(k)%Nnetbulk=final_inventory(k)%Ntotbulk-init_inventory(k)%Ntotbulk
-
+            final_inventory(k)%Enetbulk=final_inventory(k)%Etotbulk-init_inventory(k)%Etotbulk
             final_inventory(k)%Nnetsrf =final_inventory(k)%Ntotsrf-init_inventory(k)%Ntotsrf
 
         enddo
@@ -134,6 +140,27 @@ subroutine run_FACE(face_input,face_output)
 
     end subroutine compute_particle_balance
 
+    subroutine compute_energy_balance
+      energy_balance%Ein=trace_flux(1)%sum_qflx
+      energy_balance%Enet=0d0
+      energy_balance%Eout=0d0
+
+      energy_balance%Enet=energy_balance%Enet+final_inventory(1)%Enetbulk
+      energy_balance%Eout=energy_balance%Eout+trace_flux(1)%sum_Q_l+trace_flux(1)%sum_Q_r
+      energy_balance%Eout_l=trace_flux(1)%sum_Q_l
+      energy_balance%Eout_r=trace_flux(1)%sum_Q_r
+
+
+      energy_balance%p_net=energy_balance%Ein-energy_balance%Eout-energy_balance%Enet
+      energy_balance%p_max=max(max(abs(energy_balance%Ein),abs(energy_balance%Eout)),abs(energy_balance%Enet))
+      if (energy_balance%p_max.ne.0d0) then
+      energy_balance%f_lost=abs(energy_balance%p_net)/energy_balance%p_max
+      else
+      energy_balance%f_lost=1d99
+      endif
+
+    end subroutine compute_energy_balance
+
     subroutine output_run(face_output)
     type(FACE_outputs),intent(out) :: face_output
     face_output%cpu_runtime=tcpufinish-tcpustart
@@ -145,6 +172,7 @@ subroutine run_FACE(face_input,face_output)
     FACE_output%final_inventory=final_inventory
     FACE_output%init_inventory=init_inventory
     FACE_output%particle_balance=particle_balance
+    FACE_output%energy_balance=energy_balance
     FACE_output%outgassing_flux=outgassing_flux
     FACE_output%init_wall_temp=init_wall_temp
     FACE_output%final_wall_temp=final_wall_temp
@@ -206,7 +234,8 @@ subroutine run_FACE(face_input,face_output)
 
         type(FACE_inputs),intent(in):: face_input
 
-        call init_input()
+        call init_input
+
         if (face_input%read_input_file) then
             call read_inputfile(face_input%input_filename)
         else
@@ -281,6 +310,16 @@ call print_section('Particle balance')
       write(str,'(a,es12.3)') "Fraction of numerically lost particles =",particle_balance%f_lost
 call print_line(str)
 call print_end_section('Particle balance')
+
+call print_section('Energy balance')
+ write(str,'(a,es12.3,a,es12.3,a,es12.3,a,es12.3,a,es12.3,a)') "Ein=",energy_balance%Ein,&
+ "; Enet_material=",energy_balance%Enet,"; Eout=",energy_balance%Eout
+     call print_line(str)
+      write(str,'(a,es12.3)') "Ein-Eoutflux-Enet=",energy_balance%p_net
+      call print_line(str)
+      write(str,'(a,es12.3)') "Fraction of numerically lost energy =",energy_balance%f_lost
+call print_line(str)
+call print_end_section('Energy balance')
 end subroutine print_summary
 
     subroutine print_info_run
@@ -288,9 +327,10 @@ end subroutine print_summary
 call print_section('Run features')
 write(str,'(a,es12.3,a,es12.3,a,es12.3)') "start_time=",start_time,"; end_time=",end_time," ;dt_face=",dt_face
 call print_line(str)
-write(str,'(a,i5)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
+write(str,'(a,i10)') 'estimated # iterations =', int((end_time-start_time)/dt_face)
 call print_line(str)
-write(str,'(a,i4,a,i4,a,a4)') 'nspc = ', nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
+write(str,'(a,l,a,i4,a,i4,a,a4)') 'compute_spc:',compute_spc,'; nspc = ', &
+nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
 call print_line(str)
 call print_end_section('Run features')
 end subroutine print_info_run

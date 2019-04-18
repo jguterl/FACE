@@ -98,6 +98,9 @@ contains
                     elseif (arg.eq."-vstp" .or. arg.eq."--verbose-step") then
                     verbose_step=.true.
                     k=k+1
+                    elseif (arg.eq."-vm" .or. arg.eq."--verbose-maths") then
+                    verbose_maths=.true.
+                    k=k+1
                     elseif (arg.eq."-vp" .or. arg.eq."--verbose-parser") then
                     verbose_parser=.true.
                     k=k+1
@@ -258,11 +261,11 @@ integer:: iter
 
         !Gamma in
         if (mod(iter,2).eq.0) then
-        fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e21
+        fluidcode_input%Gamma_in_base(1:fluidcode_input%nspc_fluid)=1e21
         fluidcode_input%tempwall=800        ! temperature of the wall from fluid code
         fluidcode_input%dt=1e-3
         else
-        fluidcode_input%inflx_in(1:fluidcode_input%nspc_fluid)=1e20
+        fluidcode_input%Gamma_in_base(1:fluidcode_input%nspc_fluid)=1e20
         fluidcode_input%tempwall=500        ! temperature of the wall from fluid code
         fluidcode_input%dt=1e-2
 
@@ -290,6 +293,7 @@ fluidcode_input%log_file="no"
       type(FACE_outputs)::face_output
 
     call read_arguments(face_input)
+
     call FACE_main(face_input,face_output)
     end subroutine FACE_standalone
 
@@ -334,7 +338,7 @@ subroutine trace_FACE_flx(fluidcode_input,fluidcode_output)
            write(unit_trace_flx,'(3i4,5es12.3)') proc,&
            fluidcode_input%wall_idx,&
            fluidcode_input%iter,&
-           fluidcode_input%inflx_in(1),&
+           fluidcode_input%Gamma_in_base(1),&
            fluidcode_output%outgassing_flux%Gdes,&
            fluidcode_output%outgassing_flux%ave_Gdes,&
            fluidcode_output%outgassing_flux%max_Gdes,&

@@ -65,7 +65,7 @@ contains
         real(DP):: u(:), du(:)
         integer i,k,j
         i=0
-
+if(compute_spc) then
         do k=1,nspc
             i=i+1
             u (i)=dsrfl(ndt-1,k)
@@ -82,6 +82,7 @@ contains
             if (isnan(u (i))) call face_error(" dsrfr NaN")
             du(i)=0.d0
         enddo
+        endif
         if (solve_heat_eq) then
             do j=0,ngrd
                 i=i+1
