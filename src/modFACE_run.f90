@@ -330,6 +330,12 @@ write(str,'(a,i10)') 'estimated # iterations =', int((end_time-start_time)/dt_fa
 call print_line(str)
 write(str,'(a,l,a,i4,a,i4,a,a4)') 'compute_spc:',compute_spc,'; nspc = ', &
 nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
+write(str,'(a,i2)') 'precision:',DP
+#ifdef MKLSOVER
+write(str,'(a,i2)') 'solver: MKLSOLVER'
+#else
+write(str,'(a,i2)') 'solver: internal'
+#endif
 call print_line(str)
 call print_end_section('Run features')
 end subroutine print_info_run
