@@ -330,7 +330,9 @@ write(str,'(a,i10)') 'estimated # iterations =', int((end_time-start_time)/dt_fa
 call print_line(str)
 write(str,'(a,l,a,i4,a,i4,a,a4)') 'compute_spc:',compute_spc,'; nspc = ', &
 nspc,"; ngrid = ",ngrd,"; solve_heat_eq : ",solve_heat_eq_string
+call print_line(str)
 write(str,'(a,i2)') 'precision:',DP
+call print_line(str)
 #ifdef MLKSOLVER
 write(str,'(a)') 'solver: MLKSOLVER'
 #else
