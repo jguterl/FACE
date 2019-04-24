@@ -816,7 +816,7 @@ if(compute_spc) then
                         call face_error(' T pulse_period <=0')
                     endif
 
-                    temp_tmp=temp_init+(temp_final-temp_init)*&
+                    temp_tmp=temp_init+(T_pulse_max-temp_init)*&
                     sin(2d0*pi*(time-T_pulse_starttime)/T_pulse_period)
                     do j=0,ngrd
                       temp(ndt,j)=temp_tmp

@@ -390,6 +390,7 @@ end select
         call get_keyword_value('Q_pulse_duration', Q_in_pulse_duration)
         call get_keyword_value('Q_pulse_starttime', Q_in_pulse_starttime)
         call get_keyword_value('T_pulse', T_pulse_string)
+        call get_keyword_value('T_pulse_max', T_pulse_max)
         call get_keyword_value('T_pulse_period', T_pulse_period)
         call get_keyword_value('T_pulse_duration', T_pulse_duration)
         call get_keyword_value('T_pulse_starttime', T_pulse_starttime)

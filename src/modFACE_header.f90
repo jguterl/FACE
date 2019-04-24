@@ -267,7 +267,7 @@
       integer,parameter :: T_pulse_N=998
       integer,parameter :: T_pulse_S=997
       integer,parameter :: T_pulse_B=996
-
+real(DP)::T_pulse_max ! max influx of particles
       real(DP)::T_pulse_period ! max influx of particles
       real(DP)::T_pulse_duration ! max influx of particles
       real(DP)::T_pulse_starttime ! max influx of particles

@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=123
+    integer,parameter::nlines_max_help=124
 
     type helper
         character(string_length)::keyword
@@ -236,6 +236,7 @@ contains
         call set_help('T_pulse','pulsed heat flux N: no S: sin R: rectangle E: ELM','none','non-mandatory',"N")
         call set_help('T_pulse_period','T pulse period','[s]','non-mandatory',"1.0e+99")
         call set_help('T_pulse_starttime','T pulse starttime','[s]','non-mandatory',"1.0e+99")
+        call set_help('T_pulse_max','T pulse max','[K]','non-mandatory',"0.00")
         call set_help('T_pulse_duration','T pulse duration','[s]','non-mandatory',"1.0e+99")
         call set_help('Q_pulse','pulsed heat flux N: no S: sin R: rectangle E: ELM','none','non-mandatory',"N")
         call set_help('Q_pulse_period','Q pulse period','[s]','non-mandatory',"1.0e+99")
