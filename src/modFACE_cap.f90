@@ -5,7 +5,7 @@ contains
     !    linear cap function to model saturation of total H
     real(DP) function cspcs(i,j,k)
         integer i, j, k
-        if (active_cap) then
+        if (active_cap_bulk) then
             if (dens(i,j,k) .lt. densm(k)) then
                 cspcs=1.d0-dens(i,j,k)/densm(k)
             else
@@ -24,7 +24,7 @@ contains
       real(DP) function csours(i,j,k)
       integer i, j, k, n
       csours=1.0
-      if (active_cap) then
+      if (active_cap_bulk) then
       if (k .eq. 1) then
        csours=cspcs(i,j,1)
       endif
@@ -45,7 +45,7 @@ contains
       real(DP) function csrbin(i,j,k,l)
       integer i, j, k, l, n
       csrbin=1.d0
-      if (active_cap) then
+      if (active_cap_bulk) then
       do n=3,nspc,2
        if (l.eq.n) then
        if ((k.eq.1).or.(k.eq.n-1).or.(k.eq.n)) then
@@ -86,7 +86,7 @@ contains
       integer i, j, k, l, n
 
       ctherm=1.d0
-      if (active_cap) then
+      if (active_cap_bulk) then
           do n=3,nspc,2
               if (l .eq. n) then
                   ctherm=cspcs(i,j,1)
@@ -104,6 +104,7 @@ contains
       integer  :: k,i
 
         ! computing cap factor to mimic saturation by hydrogen
+        if (active_cap_bulk) then
         if (dsrfl(i,k) .lt. dsrfm(k)) then
             cabs_l=1.d0-dsrfl(i,k)/dsrfm(k)
         else
@@ -116,18 +117,19 @@ contains
             cabs_r=0.d0
         endif
 
-        if (dsrfl(i,k) .gt. 0.d0) then
-            cdes_l=1.d0
-        else
-            cdes_l=0.d0
         endif
-
-        if (dsrfr(i,k) .gt. 0.d0) then
-            cdes_r=1.d0
-        else
-            cdes_r=0.d0
-        endif
-
+!        if (dsrfl(i,k) .gt. 0.d0) then
+!            cdes_l=1.d0
+!        else
+!            cdes_l=0.d0
+!        endif
+!
+!        if (dsrfr(i,k) .gt. 0.d0) then
+!            cdes_r=1.d0
+!        else
+!            cdes_r=0.d0
+!        endif
+        if (active_cap_bulk) then
         if ((dsrfl(i,k) .gt. 0.d0) .and. (dens(i,0,k) .lt. densm(k))) then
             cb_l=1.d0-dens(i,0,k)/densm(k)
         else
@@ -139,8 +141,10 @@ contains
         else
             cb_r=0.d0
         endif
-
+        endif
         cads_l=1.d0
         cads_r=1.d0
+        cdes_l=1.d0
+        cdes_r=1.d0
         end subroutine cap_srf_flx
       end module modFACE_cap

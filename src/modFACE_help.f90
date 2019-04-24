@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=121
+    integer,parameter::nlines_max_help=123
 
     type helper
         character(string_length)::keyword
@@ -42,12 +42,12 @@ contains
     end subroutine write_short_version
 
     subroutine print_help()
-        character(30) str1
-        character(70) str2
-        character(20) str3
-        character(15) str4
-        character(20) str5
-        integer i
+       ! character(30) str1
+       ! character(70) str2
+        !character(20) str3
+       ! character(15) str4
+       ! character(20) str5
+        !integer i
         write(iout,*) ' Usage of FACE2.0:'
         write(iout,*) ' -h or --help'
         write(iout,*) ' -pg   --print-grid : only print the grid correspondign to the input file. No run'
@@ -125,7 +125,10 @@ contains
         call set_help('max_dt','Maximum time step','[s]','mandatory',"1.00e+01")
         call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
         call set_help('variable_timestep','Adjust dynamically timestep: yes|no ','none','non-mandatory',"no")
-        call set_help('reduction_factor_dt','Reduction factor for variable timestep (=1<->no reduction)','none','non-mandatory',"1")
+        call set_help('reduction_factor_dt_spc','Reduction factor for variable timestep (spc) (=1<->no reduction)',&
+        'none','non-mandatory',"1")
+        call set_help('reduction_factor_dt_heat','Reduction factor for variable timestep (heat) (=1<->no reduction)',&
+        'none','non-mandatory',"1")
         call set_help('adjust_reduction_factor','Adjust Reduction factor to have solver_iter<3','none','non-mandatory',"no")
         call set_help('Nstep_increase_dt','increase dt after N quick converged timestp when dt_face<dt','none','non-mandatory',"10")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
@@ -262,7 +265,8 @@ contains
 
           comment_str='# ********* Miscelleneaous *********************************************'
         call set_help(comment_str)
-        call set_help('active_cap','yes|no','none','non-mandatory',"yes")
+        call set_help('active_cap_bulk','yes|no','none','non-mandatory',"no")
+        call set_help('active_cap_surface','yes|no','none','non-mandatory',"no")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
         call set_help('dump_vol_append','yes|no','none','non-mandatory',"no")
         call set_help('dump_srf_append','yes|no ','none','non-mandatory',"no")
@@ -323,12 +327,12 @@ contains
         integer,parameter::l=15
         character(string_length)::str_keyword
         character(string_length)::str_tmp
-        character(8)::str_type
+       ! character(8)::str_type
         character(3*(l+1)):: strvaluel
         character(80)::str_def
-        character(26)::str_status
-        character(100)::str_default
-        character(string_length)::str_units
+      !  character(26)::str_status
+        !character(100)::str_default
+        !character(string_length)::str_units
         character(string_length)::fmt,timestamp
         character(*)::filename
         character(l)::str1

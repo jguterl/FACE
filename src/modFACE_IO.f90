@@ -21,7 +21,7 @@ contains
             if (ios.ne.0) then
                 call face_error('Cannot open file ', trim(filename))
             endif
-            write (unit_timedata(k), '(24a18)')&
+            write (unit_timedata(k), '(24a22)')&
                 'time',&
                 'tempL',&
                 'tempR',&
@@ -69,7 +69,7 @@ subroutine save_timedata
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i4)"
-    write(myfmt2,*) "(es22.12e2,24es18.12e2)"
+    write(myfmt2,*) "(es22.12e2,24es22.12e2)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -652,12 +652,12 @@ integer:: k
 if (mod(iteration,Nprint_run_info).eq.0.or.(time.ge.end_time).or.(time.le.start_time)) then
 if (convergence) then
 write(myfmt,*) "('++ iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K ; T_r=',es9.2, 'K; "&
- ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+ ," |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
 else
 write(myfmt,*) "('-- iter=', 1I6,' time=', es14.6, 's;   T_l=',es9.2, 'K ; T_r=',es9.2, 'K; "&
- ,"reduc_fac_dt=', es9.2, 's, |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
+ ," |f|=',es9.2, ' iter_solver=',i3,' dt=',es9.2)"
 endif
- write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd), reduction_factor_dt,normf,iter_solver,dt_face
+ write (str, myfmt) iteration,time, temp(ndt,0), temp(ndt,ngrd),normf,iter_solver,dt_face
   call print_formatted(str)
 if (print_onthefly_inventory) then
 write(myfmt,*) "(' - onthefly inventory: k=', 1I2,' src+des=', es10.3,' net_int_dens=',",&

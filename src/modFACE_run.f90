@@ -64,8 +64,7 @@ subroutine run_FACE(face_input,face_output)
     end subroutine run_FACE
 
     subroutine compute_init_inventory
-        integer :: j,k
-        real(DP):: s
+        integer :: k
         do k=1,nspc
 
             init_inventory(k)%Ntotbulk=integrale_dens(k)
@@ -87,8 +86,7 @@ subroutine run_FACE(face_input,face_output)
     end subroutine compute_init_inventory
 
         subroutine compute_final_inventory
-        integer :: j,k
-        real(DP):: s
+        integer :: k
         do k=1,nspc
 
             final_inventory(k)%Ntotbulk=integrale_dens(k)
@@ -268,7 +266,8 @@ subroutine time_loop
             call store_restart(trim(restart_filename))   ! store restart if requested
             iteration=iteration+1
         enddo
-
+        iteration=iteration-1
+        call print_timestep_info(.true.)
         call print_milestone('time iteration completed')
 
     end subroutine time_loop

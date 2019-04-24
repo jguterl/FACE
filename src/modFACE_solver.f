@@ -15,7 +15,7 @@ c c      use modFACE_IO
 
             subroutine newton_solver(quick_convergence)
             implicit none
-      integer i,ii
+      integer i
       integer  cntl, idx
       logical:: quick_convergence
       real(DP):: u(neq), du(neq), f(neq), fdot(neq,neq)

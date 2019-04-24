@@ -220,14 +220,24 @@ case('steady_state')
        enddo
 
        ! set active_cap (true or false)
-         case('active_cap')
+         case('active_cap_bulk')
 
-         if(active_cap_string.eq."yes") then
-         active_cap=.true.
-         elseif (active_cap_string.eq."no") then
-         active_cap=.false.
+         if(active_cap_bulk_string.eq."yes") then
+         active_cap_bulk=.true.
+         elseif (active_cap_bulk_string.eq."no") then
+         active_cap_bulk=.false.
          else
-         call face_error("unknown option for active_cap (must be yes or no) : ",active_cap_string)
+         call face_error("unknown option for active_cap_bulk (must be yes or no) : ",active_cap_bulk_string)
+         endif
+
+         case('active_cap_surface')
+
+         if(active_cap_surface_string.eq."yes") then
+         active_cap_surface=.true.
+         elseif (active_cap_surface_string.eq."no") then
+         active_cap_surface=.false.
+         else
+         call face_error("unknown option for active_cap_surface (must be yes or no) : ",active_cap_surface_string)
          endif
 
 
@@ -262,9 +272,13 @@ case('steady_state')
          endif
 
 ! check that the reduction factor is >0 and lt 1
-case('reduction_factor_dt')
-if (reduction_factor_dt.le.0d0.or.reduction_factor_dt.gt.1d0) then
-call face_error("reduction factor dt cannot be <=0 and >1: reduction factor dt=",reduction_factor_dt)
+case('reduction_factor_dt_spc')
+if (reduction_factor_dt_spc.le.0d0.or.reduction_factor_dt_spc.gt.1d0) then
+call face_error("reduction factor dt spc cannot be <=0 and >1: reduction factor dt spc=",reduction_factor_dt_spc)
+endif
+case('reduction_factor_dt_heat')
+if (reduction_factor_dt_heat.le.0d0.or.reduction_factor_dt_heat.gt.1d0) then
+call face_error("reduction factor dt heat cannot be <=0 and >1: reduction factor dt heat=",reduction_factor_dt_heat)
 endif
 case('variable_timestep')
 if(variable_timestep_string.eq."yes") then
@@ -382,7 +396,8 @@ end select
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
-        call get_keyword_value('active_cap', active_cap_string)
+        call get_keyword_value('active_cap_surface', active_cap_surface_string)
+         call get_keyword_value('active_cap_bulk', active_cap_bulk_string)
         call get_keyword_value('min_ablation_velocity', cero_min)
         call get_keyword_value('max_ablation_velocity', cero_max)
         call get_keyword_value('sputtering_yield', gamero)
@@ -410,7 +425,8 @@ end select
 !        call get_keyword_value('pulsed_flux', pulsed_flux)
 !        call get_keyword_value('pulse_period', tpulse)
         call get_keyword_value('iter_solver_max', iter_solver_max)
-        call get_keyword_value('reduction_factor_dt', reduction_factor_dt)
+        call get_keyword_value('reduction_factor_dt_spc', reduction_factor_dt_spc)
+        call get_keyword_value('reduction_factor_dt_heat', reduction_factor_dt_heat)
         call get_keyword_value('adjust_reduction_factor', adjust_reduction_factor_string)
           call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
 

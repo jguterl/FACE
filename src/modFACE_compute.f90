@@ -333,7 +333,7 @@ contains
         !     --- surface ---
 
         ! reducing qch when close to surface saturation
-        if (active_cap) then
+        if (active_cap_surface) then
             tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
             Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
             tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
@@ -442,9 +442,8 @@ contains
             Gads_r (ndt,k)=0d0      ! Gadsorb=K*n
         endif
         ! apply cap factor to mimic effects of saturation
-        if (active_cap) then
             call compute_cap_factor_surface(k,ndt)
-        endif
+
 
         ! calculate effective desorptiopn and heat fluxes. I'm not sure whether that's correct! is it energy lost by atoms leaving toward surface...
         jout(ndt,k)=jout(ndt,k)+Gdes_l(ndt,k)
@@ -624,7 +623,7 @@ endif
         integer,intent(in)::k,i
         real(DP) :: cabs_l, cdes_l, cb_l, cads_l
         real(DP) :: cabs_r, cdes_r, cb_r, cads_r
-        if (active_cap) then
+        if (active_cap_bulk) then ! cap in the bulk because we reduce fluxes surface<-> bulk based on density in the bulk
             call cap_srf_flx(k,i,cabs_l, cdes_l, cb_l, cads_l,cabs_r, cdes_r, cb_r, cads_r)
 
             ! multiply surfaces fluxes by cap factors
@@ -948,7 +947,7 @@ if(compute_spc) then
 
     subroutine check_positivity_max
         integer ::j,k
-        real(DP)::tmp
+      !  real(DP)::tmp
         !     --- check for negative densities ---
         do k=1,nspc
             if (dsrfl(ndt,k) .lt. 0.d0) then
@@ -1104,38 +1103,45 @@ endif
     subroutine compute_dt_update
 
         integer  ::i, j, k
-        real(DP) :: tmp,dt
+        real(DP) :: tmp,dt,reduction_factor_dt_spc_,reduction_factor_dt_heat_
         real(DP),parameter:: rtfm=5.d-1, rtfp=5.d-1
 
         tmp=0d0
 
-        if ((variable_timestep)) then
+        if (variable_timestep) then
 
-!        if (adjust_reduction_factor) then
-!        if ((iter_solver.gt.2)) then
-!        reduction_factor_dt=reduction_factor_dt/15d0
+!        if (time.lt.1d-4) then
+!!        if ((iter_solver.gt.2)) then
+!!        reduction_factor_dt=reduction_factor_dt/15d0
+!!        else
+!        reduction_factor_dt_spc_=0.1
+!        reduction_factor_dt_heat_=0.1
 !        else
-!        reduction_factor_dt=reduction_factor_dt*1.2d0
+        reduction_factor_dt_spc_=reduction_factor_dt_spc
+        reduction_factor_dt_heat_=reduction_factor_dt_heat
 !        endif
 !
 !        endif
 
 
-        if (reduction_factor_dt.gt.1d0) then
-        reduction_factor_dt=1d0
+        if (reduction_factor_dt_spc.gt.1d0) then
+        reduction_factor_dt_spc=1d0
         endif
-
+  if (reduction_factor_dt_heat.gt.1d0) then
+        reduction_factor_dt_heat=1d0
+        endif
 
             dt=end_time-time
            if(compute_spc) then
+
             ! bulk
             do k=1,nspc
                 do j=0,ngrd
                     if (rate_d(ndt,j,k) .ne. 0.d0) then
                         if (rate_d(ndt,j,k) .lt. 0.d0) then
-                            tmp=-rtfm*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+                            tmp=-rtfm*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt_spc_
                         else
-                            tmp= rtfp*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt
+                            tmp= rtfp*dens(ndt,j,k)/rate_d(ndt,j,k)*reduction_factor_dt_spc_
                         endif
                     else
                         tmp=dt
@@ -1145,33 +1151,36 @@ endif
                         dt=tmp
                     endif
                 enddo
-
+!write(iout,*) '>>>>>> update dt bulk spc: dt=',dt," ;tmp=",tmp
                 ! left surface
                 if ((left_surface_model(k).eq.surf_model_S)) then
                     if (Gsrf_l (ndt  ,k) .ne. 0.d0) then
                         if (Gsrf_l (ndt  ,k) .lt. 0.d0) then
-                            tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+                            tmp=-rtfm*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt_spc_
                         else
-                            tmp= rtfp*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt
+                            tmp= rtfp*dsrfl(ndt,k)/Gsrf_l (ndt  ,k)*reduction_factor_dt_spc_
                         endif
                     else
                         tmp=dt
                     endif
+                !    write(iout,*) '>>>>>> update dt srfspc: dt=',dt," ;tmp=",tmp
                     if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
                         dt=tmp
                     endif
                 endif
+
                 ! right surface
                 if ((right_surface_model(k).eq.surf_model_S) ) then
                     if (Gsrf_r (ndt  ,k) .ne. 0.d0) then
                         if (Gsrf_r (ndt  ,k) .lt. 0.d0) then
-                            tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+                            tmp=-rtfm*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt_spc_
                         else
-                            tmp= rtfp*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt
+                            tmp= rtfp*dsrfr(ndt,k)/Gsrf_r (ndt  ,k)*reduction_factor_dt_spc_
                         endif
                     else
                         tmp=dt
                     endif
+                !    write(iout,*) '>>>>>> update dt rsrf spc: dt=',dt," ;tmp=",tmp
                     if ((dt .gt. tmp) .and. (tmp .ne. 0.d0)) then
                         dt=tmp
                     endif
@@ -1185,9 +1194,9 @@ endif
                 do j=0,ngrd-1
                     if (rate_t(ndt,j) .ne. 0.d0) then
                         if (rate_t(ndt,j) .lt. 0.d0) then
-                            tmp=-rtfm*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+                            tmp=-rtfm*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt_heat_
                         else
-                            tmp= rtfp*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt
+                            tmp= rtfp*temp(ndt,j)/rate_t(ndt,j)*reduction_factor_dt_heat_
                         endif
                     else
                         tmp=dt
@@ -1239,5 +1248,6 @@ endif
 
 
     endif
+  !  write(iout,*) '>>>>>> update dt: dt_face=',dt_face
 end subroutine compute_dt_update
 end module modFACE_compute

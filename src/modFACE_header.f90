@@ -113,7 +113,8 @@
       real(DP):: min_dt_face   !>@var current solver time step
       real(DP):: max_dt_face   !>@var current solver time step
       real(DP):: dt0_face ! nominal time step
-      real(DP) :: reduction_factor_dt=1d0
+      real(DP) :: reduction_factor_dt_spc=1d0
+      real(DP) :: reduction_factor_dt_heat=1d0
       logical :: adjust_reduction_factor=.false.
       character(string_length):: adjust_reduction_factor_string
       integer:: Nstep_increase_dt=10
@@ -427,10 +428,12 @@
       real(DP):: int_src
       end type onthefly_inventories
       type(onthefly_inventories),allocatable :: onthefly_inventory(:)
-      logical :: active_cap=.false.
+      logical :: active_cap_bulk=.false.
+      logical :: active_cap_surface=.false.
       logical :: print_onthefly_inventory=.false.
       character(string_length)::print_onthefly_inventory_string
-      character(string_length)::active_cap_string
+      character(string_length)::active_cap_surface_string
+      character(string_length)::active_cap_bulk_string
       character(string_length)::dump_vol_append_string
       character(string_length)::dump_srf_append_string
 !     ------------------------------------------------------------------

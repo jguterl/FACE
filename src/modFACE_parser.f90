@@ -201,7 +201,7 @@ endif
 
         open(unit=iuinput, file=trim(filename), iostat=ios,action='read')
         if ( ios /= 0 ) then
-            if (verbose_input) write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
+            write(iout,*) 'Opening of input file "', trim(filename) ,'" : FAIL '
             stop
 
         endif

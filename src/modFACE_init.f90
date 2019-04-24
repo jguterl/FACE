@@ -407,7 +407,7 @@ contains
             endif
 
 
-            if (active_cap) then
+            if (active_cap_surface) then
                 tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
                 Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
                 tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
@@ -544,9 +544,9 @@ contains
                     Gads_r (i,k)=0d0
                 endif
 
-                if (active_cap) then
+
                     call compute_cap_factor_surface(k,i)
-                endif
+
 
                 jout(i,k)=jout(i,k)+Gdes_l(i,k)
 
