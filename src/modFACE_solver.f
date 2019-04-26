@@ -15,7 +15,7 @@ c c      use modFACE_IO
 
             subroutine newton_solver(quick_convergence)
             implicit none
-      integer i
+      integer i,iter_solver_max_
       integer  cntl, idx
       logical:: quick_convergence
       real(DP):: u(neq), du(neq), f(neq), fdot(neq,neq)
@@ -27,7 +27,11 @@ c                   : 1 : solver step completed iwht iter_solver<ideal
        quick_convergence=.false.
        iter_solver=0
        if (verbose_debug) write(iout,*) 'newton_solver'
-
+       if (iteration>10) then
+       iter_solver_max_=iter_solver_max
+       else
+       iter_solver_max_=iter_solver_max_first
+       endif
       call build_vector(u,du)
 
 
@@ -110,7 +114,7 @@ c     +              , i
 
 c     --- check convergence ---
       iter_solver=iter_solver+1
-      if (iter_solver .lt. iter_solver_max) then
+      if (iter_solver .lt. iter_solver_max_) then
       if ((verbose_step).OR.(verbose_debug)) then
       write (iout,*)'-- Newton iter# ',iter_solver,
      +' norm ', norm
@@ -133,7 +137,7 @@ c     --- check convergence ---
       endif
 
       ! update values of densities and temperature only if we are happy with the convergence...
-      if (iter_solver.lt.iter_solver_max) then
+      if (iter_solver.lt.iter_solver_max_) then
       quick_convergence=.true.
       endif
 

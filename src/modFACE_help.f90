@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=124
+    integer,parameter::nlines_max_help=127
 
     type helper
         character(string_length)::keyword
@@ -65,6 +65,7 @@ contains
     write(iout,*) ' -vstp --verbose_step'
     write(iout,*) ' -vd --verbose_debug'
     write(iout,*) ' -vc --verbose_couple'
+    write(iout,*) ' -va --verbose_cap'
     write(iout,*) ' -vr --verbose_restore'
     write(iout,*) ' -vm --verbose_maths'
     write(iout,*) ' -vi --verbose_interface'
@@ -123,7 +124,8 @@ contains
         call set_help('dt','Nominal time step','[s]','mandatory',"1.00e-03")
         call set_help('min_dt','Minimum time step','[s]','mandatory',"1.00e-06")
         call set_help('max_dt','Maximum time step','[s]','mandatory',"1.00e+01")
-        call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"100")
+        call set_help('iter_solver_max','Max internal iteration for solver','none','non-mandatory',"10")
+        call set_help('iter_solver_max_first','Max internal iteration for solver','none','non-mandatory',"100")
         call set_help('variable_timestep','Adjust dynamically timestep: yes|no ','none','non-mandatory',"no")
         call set_help('reduction_factor_dt_spc','Reduction factor for variable timestep (spc) (=1<->no reduction)',&
         'none','non-mandatory',"1")
@@ -189,6 +191,10 @@ contains
         call set_help('Edes_left' ,'Energy of desorption (surface->vacuum)','[eV]','mandatory',&
         "1000 0.00 0.00","species")
         call set_help('Edes_right','Energy of desorption (surface->vacuum)','[eV]','mandatory',&
+        "1000 0.00 0.00","species")
+        call set_help('Edes_satleft' ,'Energy of desorption (surface->vacuum)','[eV]','non-mandatory',&
+        "1000 0.00 0.00","species")
+        call set_help('Edes_satright','Energy of desorption (surface->vacuum)','[eV]','non-mandatory',&
         "1000 0.00 0.00","species")
         call set_help('Eb_left'  ,'Energy of bulk absortion (surface->bulk)','[eV]','mandatory'&
         ,"2.00 0.00 0.00","species")

@@ -334,14 +334,16 @@ contains
 
         ! reducing qch when close to surface saturation
         if (active_cap_surface) then
-            tmp=1.d2*(dsrfl0(k)/dsrfm(k)-1.d0)
-            Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
-            tmp=1.d2*(dsrfr0(k)/dsrfm(k)-1.d0)
-            Edes_rc=Edes_r(k)*0.5d0*(1.d0-erf(tmp))
+                tmp=2d0*(dsrfl(ndt,k)/dsrfm(k)*2d0-1.d0)
+                Edes_lc=Edes_lsat(k)+(Edes_l(k)-Edes_lsat(k))*0.5d0*(1.d0-erf(tmp))
+                tmp=2d0*(dsrfr(ndt,k)/dsrfm(k)*2d0-1.d0)
+                Edes_rc=Edes_rsat(k)+(Edes_r(k)-Edes_rsat(k))*0.5d0*(1.d0-erf(tmp))
+
         else
             Edes_lc=Edes_l(k)
             Edes_rc=Edes_r(k)
         endif
+        if (verbose_cap) write(iout,*) "k=",k,"; cap: Edes=",Edes_lc,Edes_l(k), " dsrfl(k)=",dsrfl(ndt,k),dsrfl(ndt,k)/dsrfm(k)
         !        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
         !        Edes_lc=Edes_l(k)*0.5d0*(1.d0-erf(tmp))
         !        tmp=1.d2*(dsrfr(ndt,k)/dsrfm(k)-1.d0)

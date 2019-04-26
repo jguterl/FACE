@@ -23,6 +23,8 @@ contains
                 if (Gamma_in_pulse(k).ne.Gamma_in_pulse_N) then
                     if ((time+dt_face.ge.Gamma_in_pulse_starttime(k)).and.(time.lt.Gamma_in_pulse_starttime(k))) then
                         dt_face=Gamma_in_pulse_starttime(k)-time
+                        dump_space_dt=Gamma_in_pulse_period(1)/100d0
+                        dump_time_dt=Gamma_in_pulse_period(1)/100d0
                     endif
                 endif
 
@@ -31,11 +33,15 @@ contains
         if (Q_in_pulse.ne.Q_in_pulse_N) then
             if ((time+dt_face.ge.Q_in_pulse_starttime).and.(time.lt.Q_in_pulse_starttime)) then
                 dt_face=Q_in_pulse_starttime-time
+                dump_space_dt=Q_in_pulse_period/100d0
+                dump_time_dt=Q_in_pulse_period/100d0
             endif
         endif
         if (T_pulse.ne.T_pulse_N) then
             if ((time+dt_face.ge.T_pulse_starttime).and.(time.lt.T_pulse_starttime)) then
                 dt_face=T_pulse_starttime-time
+                dump_space_dt=T_pulse_period/100d0
+                dump_time_dt=T_pulse_period/100d0
             endif
         endif
         ! calculate new source and temperature both because of external influx with time dependecy)
@@ -92,7 +98,11 @@ contains
                 call newton_solver(quick_convergence)
                 call print_timestep_info(quick_convergence)                    ! print info on current time step
                 if (.not.quick_convergence) then
-                call face_error('FACE cannot converge properly after dt_face=dt_face_old')
+                dt_face=dt_face/10d0
+                call newton_solver(quick_convergence)
+                endif
+                if (.not.quick_convergence) then
+                call face_error('#1 FACE cannot converge properly after dt_face=dt_face_old')
                 else
             dt_face_last=dt_face
                 endif
@@ -123,7 +133,7 @@ contains
                 counter_reduction=counter_reduction+1
                 endif
         if (.not.quick_convergence) then
-                call face_error('FACE cannot converge properly after dt_face=dt_face_old')
+                call face_error('#2 FACE cannot converge properly after dt_face=dt_face_old')
        else
        dt_face_last=dt_face
        endif

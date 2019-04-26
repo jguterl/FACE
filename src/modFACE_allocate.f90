@@ -595,6 +595,9 @@
           allocate(Edes_l(nspc))
           call init_zero(Edes_l)
 
+          allocate(Edes_lsat(nspc))
+          call init_zero(Edes_lsat)
+
           allocate(Eb_l(nspc))
           call init_zero(Eb_l)
 
@@ -606,6 +609,8 @@
 
           allocate(Edes_r(nspc))
           call init_zero(Edes_r)
+          allocate(Edes_rsat(nspc))
+          call init_zero(Edes_rsat)
 
           allocate(Eb_r(nspc))
           call init_zero(Eb_r)
@@ -688,10 +693,12 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
 
         if (allocated(Eabs_l)) deallocate(Eabs_l)
         if (allocated(Edes_l)) deallocate(Edes_l)
+        if (allocated(Edes_lsat)) deallocate(Edes_lsat)
          if (allocated(Eb_l)) deallocate(Eb_l)
         if (allocated(Eads_l))  deallocate(Eads_l)
          if (allocated(Eabs_r)) deallocate(Eabs_r)
         if (allocated(Edes_r))  deallocate(Edes_r)
+        if (allocated(Edes_rsat))  deallocate(Edes_rsat)
         if (allocated(Eb_r))  deallocate(Eb_r)
          if (allocated(Eads_r)) deallocate(Eads_r)
 

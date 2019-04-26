@@ -69,7 +69,7 @@ subroutine save_timedata
 
     write(myfmt1,*) &
         "('+', ' time=', es12.2e3, ' s; T_l=', es12.3,' K; dt=', es12.2, ' s; number of iterations ', i4)"
-    write(myfmt2,*) "(es22.12e2,24es22.12e2)"
+    write(myfmt2,*) "(es22.11e3,24es22.11e3)"
     if (verbose_step) write (iout, myfmt1) time, temp(ndt,0), dt_face, iter_solver
 
     do k=1,nspc
@@ -114,7 +114,7 @@ end subroutine save_timedata
 
 ! ** volume data
 
-    subroutine save_voldata()
+    subroutine save_voldata
 
         integer j, k,ios,unit_voldata
 
@@ -316,8 +316,10 @@ end subroutine save_timedata
 !        endif
         if (dump_space.and.(time_savevol.ge.dump_space_dt.or.time.le.start_time.or.time.ge.end_time)) then
             call save_voldata
-            call save_srfdata
+            !call save_srfdata
+            if (solve_heat_eq) then
             call save_heatdata
+            endif
             time_savevol=0d0
         endif
 

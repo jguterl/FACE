@@ -32,6 +32,7 @@
            logical::verbose_input=.false.
     logical::verbose_init=.false.
     logical :: verbose_step=.false.
+    logical :: verbose_cap=.false.
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.
     logical :: verbose_restore=.false.
@@ -87,6 +88,7 @@
       real(DP) ::solver_eps=3.d-3, solver_udspl=9.d-1, solver_fdspl=9.d0, solver_gdspl=1.d-3,jac_eps=1d-8
       real(DP) ::solver_fstp=1.d-1
       integer :: iter_solver_max=150
+      integer :: iter_solver_max_first=150
       logical :: finalcheck=.true.
 
       character(string_length) :: default_inputfile="default_inputfile.face"
@@ -329,11 +331,13 @@ real(DP)::T_pulse_max ! max influx of particles
       real(DP),allocatable::order_desorption_right(:)
       real(DP),allocatable::Eabs_l(:)
       real(DP),allocatable::Edes_l(:)
+      real(DP),allocatable::Edes_lsat(:)
       real(DP),allocatable::Eb_l(:)
       real(DP),allocatable::Eads_l(:)
 
       real(DP),allocatable::Eabs_r(:)
       real(DP),allocatable::Edes_r(:)
+      real(DP),allocatable::Edes_rsat(:)
       real(DP),allocatable::Eb_r(:)
       real(DP),allocatable::Eads_r(:)
 

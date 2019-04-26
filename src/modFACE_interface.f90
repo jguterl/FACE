@@ -107,6 +107,9 @@ contains
                     elseif (arg.eq."-vd" .or. arg.eq."--verbose-debug") then
                     verbose_debug=.true.
                     k=k+1
+                    elseif (arg.eq."-va" .or. arg.eq."--verbose-cap") then
+                    verbose_cap=.true.
+                    k=k+1
                     elseif (arg.eq."-vit" .or. arg.eq."--verbose-init") then
                     verbose_init=.true.
                     k=k+1
