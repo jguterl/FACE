@@ -1119,18 +1119,18 @@ endif
 !        reduction_factor_dt_spc_=0.1
 !        reduction_factor_dt_heat_=0.1
 !        else
-        reduction_factor_dt_spc_=reduction_factor_dt_spc
+        reduction_factor_dt_spc_=reduction_factor_dt_spc/reduction_factor_dt_spc_correction
         reduction_factor_dt_heat_=reduction_factor_dt_heat
 !        endif
 !
 !        endif
 
 
-        if (reduction_factor_dt_spc.gt.1d0) then
-        reduction_factor_dt_spc=1d0
+        if (reduction_factor_dt_spc_.gt.1d0) then
+        reduction_factor_dt_spc_=1d0
         endif
-  if (reduction_factor_dt_heat.gt.1d0) then
-        reduction_factor_dt_heat=1d0
+  if (reduction_factor_dt_heat_.gt.1d0) then
+        reduction_factor_dt_heat_=1d0
         endif
 
             dt=end_time-time

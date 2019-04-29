@@ -164,7 +164,7 @@
       real(DP):: normf=0.d0
       character(string_length)::restart_filename
 
-
+       real(DP)::reduction_factor_dt_spc_correction=1d0
 !       Flags
       logical:: read_input_file=.true.
       logical:: restore_state_temp=.true.

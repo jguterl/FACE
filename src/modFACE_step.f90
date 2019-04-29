@@ -102,10 +102,11 @@ contains
         else
 
             if (critical_reduction.or.(.not.adjust_reduction_factor)) then
+
                 if (dt_face.ge.dt_face_old) then
-                dt_face=dt_face_old/10d0
+                dt_face=dt_face_old
                 else
-                dt_face=dt_face/100d0
+                dt_face=dt_face/10d0
                 endif
                 call print_steady_timestep_info
                 call newton_solver(quick_convergence)
@@ -171,6 +172,9 @@ contains
         call compute_onthefly_inventory
         !call print_timestep_info                   ! print info on current time step
         dt_face_old=dt_face
+        if (critical_reduction) then
+         reduction_factor_dt_spc_correction=10d0
+        endif
         call compute_dt_update
         if (dt_face.le.dt_face_old) then
         critical_reduction=.false.
