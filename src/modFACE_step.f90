@@ -103,9 +103,9 @@ contains
 
             if (critical_reduction.or.(.not.adjust_reduction_factor)) then
                 if (dt_face.ge.dt_face_old) then
-                dt_face=dt_face_old
+                dt_face=dt_face_old/10d0
                 else
-                dt_face=dt_face/10d0
+                dt_face=dt_face/100d0
                 endif
                 call print_steady_timestep_info
                 call newton_solver(quick_convergence)
