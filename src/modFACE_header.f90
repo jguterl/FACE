@@ -117,8 +117,8 @@
       real(DP):: dt0_face ! nominal time step
       real(DP) :: reduction_factor_dt_spc=1d0
       real(DP) :: reduction_factor_dt_heat=1d0
-      logical :: adjust_reduction_factor=.false.
-      character(string_length):: adjust_reduction_factor_string
+      logical :: timestep_adjusted_reduction=.false.
+      character(string_length):: timestep_adjusted_reduction_string
       integer:: Nstep_increase_dt=10
       integer :: solver_step_count=0
       real(DP) :: max_iter=1e9

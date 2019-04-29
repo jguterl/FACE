@@ -318,13 +318,13 @@ if(variable_timestep_string.eq."yes") then
          call face_error("Cannot have variable timestep when order of numerical time scheme >1 (order_solver>1)")
          endif
 
-         case('adjust_reduction_factor')
-if(adjust_reduction_factor_string.eq."yes") then
-         adjust_reduction_factor=.true.
-         elseif (adjust_reduction_factor_string.eq."no") then
-         adjust_reduction_factor=.false.
+         case('timestep_adjusted_reduction')
+if(timestep_adjusted_reduction_string.eq."yes") then
+         timestep_adjusted_reduction=.true.
+         elseif (timestep_adjusted_reduction_string.eq."no") then
+         timestep_adjusted_reduction=.false.
          else
-         call face_error("unknown option for adjust_reduction_factor(must be yes or no) : ",adjust_reduction_factor_string)
+         call face_error("unknown option for timestep_adjusted_reduction(must be yes or no) : ",timestep_adjusted_reduction_string)
          endif
 end select
     end subroutine check_value_input
@@ -459,7 +459,7 @@ end select
         call get_keyword_value('iter_solver_max_first', iter_solver_max_first)
         call get_keyword_value('reduction_factor_dt_spc', reduction_factor_dt_spc)
         call get_keyword_value('reduction_factor_dt_heat', reduction_factor_dt_heat)
-        call get_keyword_value('adjust_reduction_factor', adjust_reduction_factor_string)
+        call get_keyword_value('timestep_adjusted_reduction', timestep_adjusted_reduction_string)
           call get_keyword_value('Nstep_increase_dt',Nstep_increase_dt)
 
         call get_keyword_value('Nprint_run_info', Nprint_run_info)

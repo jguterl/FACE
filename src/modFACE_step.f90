@@ -96,14 +96,15 @@ contains
 
 
         if (quick_convergence) then
-        reduction_factor_dt_spc_correction=1d0
+
+        reduction_factor_dt_spc_correction=reduction_factor_dt_spc_correction/1.2d0
         critical_reduction=.false.
             counter_reduction=0
             dt_face_last=dt_face
             if (verbose_step) write(iout,*) "dt_face=",dt_face, " ; dt_face_last=",dt_face_last
         else
 
-            if (critical_reduction.or.(.not.adjust_reduction_factor)) then
+            if (critical_reduction.or.(.not.timestep_adjusted_reduction)) then
                reduction_factor_dt_spc_correction=reduction_factor_dt_spc_correction*10d0
 
                 if (dt_face.ge.dt_face_old) then

@@ -131,7 +131,7 @@ contains
         'none','non-mandatory',"1")
         call set_help('reduction_factor_dt_heat','Reduction factor for variable timestep (heat) (=1<->no reduction)',&
         'none','non-mandatory',"1")
-        call set_help('adjust_reduction_factor','Adjust Reduction factor to have solver_iter<3','none','non-mandatory',"no")
+        call set_help('timestep_adjusted_reduction','Adjust Reduction factor to have solver_iter<3','none','non-mandatory',"no")
         call set_help('Nstep_increase_dt','increase dt after N quick converged timestp when dt_face<dt','none','non-mandatory',"10")
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
