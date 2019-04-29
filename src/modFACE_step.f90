@@ -104,7 +104,7 @@ contains
             if (critical_reduction.or.(.not.adjust_reduction_factor)) then
 
                 if (dt_face.ge.dt_face_old) then
-                dt_face=dt_face_old/1.2d0
+                dt_face=dt_face_old/10d0
                 else
                 dt_face=dt_face/10d0
                 endif
@@ -121,6 +121,7 @@ contains
                 else
                 dt_face_last=dt_face
                 endif
+                critical_reduction=.false.
             else
                 count_loop=1
 
