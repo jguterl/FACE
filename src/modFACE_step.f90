@@ -23,8 +23,12 @@ contains
                 if (Gamma_in_pulse(k).ne.Gamma_in_pulse_N) then
                     if ((time+dt_face.ge.Gamma_in_pulse_starttime(k)).and.(time.lt.Gamma_in_pulse_starttime(k))) then
                         dt_face=Gamma_in_pulse_starttime(k)-time
+                        if (dump_space_dt.gt.Gamma_in_pulse_period(1)/100d0) then
                         dump_space_dt=Gamma_in_pulse_period(1)/100d0
+                        endif
+                        if (dump_time_dt.gt.Gamma_in_pulse_period(1)/100d0) then
                         dump_time_dt=Gamma_in_pulse_period(1)/100d0
+                        endif
                     endif
                 endif
 
@@ -33,15 +37,24 @@ contains
         if (Q_in_pulse.ne.Q_in_pulse_N) then
             if ((time+dt_face.ge.Q_in_pulse_starttime).and.(time.lt.Q_in_pulse_starttime)) then
                 dt_face=Q_in_pulse_starttime-time
+                if (dump_space_dt.gt.Q_in_pulse_period/100d0) then
                 dump_space_dt=Q_in_pulse_period/100d0
+                endif
+                if (dump_time_dt.gt.Q_in_pulse_period/100d0) then
                 dump_time_dt=Q_in_pulse_period/100d0
+                endif
+
             endif
         endif
         if (T_pulse.ne.T_pulse_N) then
             if ((time+dt_face.ge.T_pulse_starttime).and.(time.lt.T_pulse_starttime)) then
                 dt_face=T_pulse_starttime-time
+                if (dump_space_dt.gt.T_pulse_period/100d0) then
                 dump_space_dt=T_pulse_period/100d0
+                endif
+                if (dump_time_dt.gt.T_pulse_period/100d0) then
                 dump_time_dt=T_pulse_period/100d0
+                endif
             endif
         endif
         ! calculate new source and temperature both because of external influx with time dependecy)
