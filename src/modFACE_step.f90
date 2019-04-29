@@ -104,7 +104,7 @@ contains
             if (critical_reduction.or.(.not.adjust_reduction_factor)) then
 
                 if (dt_face.ge.dt_face_old) then
-                dt_face=dt_face_old
+                dt_face=dt_face_old/1.2d0
                 else
                 dt_face=dt_face/10d0
                 endif
@@ -113,12 +113,13 @@ contains
                 call print_timestep_info(quick_convergence)                    ! print info on current time step
                 if (.not.quick_convergence) then
                 dt_face=dt_face/10d0
+                call print_steady_timestep_info
                 call newton_solver(quick_convergence)
                 endif
                 if (.not.quick_convergence) then
                 call face_error('#1 FACE cannot converge properly after dt_face=dt_face_old')
                 else
-            dt_face_last=dt_face
+                dt_face_last=dt_face
                 endif
             else
                 count_loop=1
