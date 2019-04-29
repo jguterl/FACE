@@ -199,6 +199,31 @@ if (verbose_input) write(iout,*) "checking input:",'T_pulse'
 
         ! check steady-state value
 
+
+         case('dump_space')
+         if(dump_space_string.eq."yes") then
+         dump_space=.true.
+         elseif (dump_space_string.eq."no") then
+         dump_space=.false.
+         else
+         call face_error("unknown option for dump_space (must be yes or no) : ",dump_space_string)
+         endif
+         case('dump_time')
+         if(dump_time_string.eq."yes") then
+         dump_time=.true.
+         elseif (dump_time_string.eq."no") then
+         dump_time=.false.
+         else
+         call face_error("unknown option for dump_time (must be yes or no) : ",dump_time_string)
+         endif
+         case('dump_restart')
+         if(dump_restart_string.eq."yes") then
+         dump_restart=.true.
+         elseif (dump_restart_string.eq."no") then
+         dump_restart=.false.
+         else
+         call face_error("unknown option for dump_restart (must be yes or no) : ",dump_restart_string)
+         endif
 case('steady_state')
          if(steady_state_string.eq."yes") then
          steady_state=.true.
@@ -337,9 +362,12 @@ end select
         call get_keyword_value('filter_freq', nucut)
         call get_keyword_value('dump_space_dt', dump_space_dt)
         call get_keyword_value('dump_time_dt', dump_time_dt)
+        call get_keyword_value('dump_space', dump_space_string)
+        call get_keyword_value('dump_time', dump_time_string)
          call get_keyword_value('dump_vol_append', dump_vol_append_string)
          call get_keyword_value('dump_srf_append', dump_srf_append_string)
         call get_keyword_value('dump_restart_dt', dump_restart_dt)
+        call get_keyword_value('dump_restart', dump_restart_string)
         call get_keyword_value('temp_ramp_filename', framp_string)
         call get_keyword_value('solve_heat_equation', solve_heat_eq_string)
         call get_keyword_value('onthefly_inventory', print_onthefly_inventory_string)

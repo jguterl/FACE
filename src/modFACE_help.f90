@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=127
+    integer,parameter::nlines_max_help=130
 
     type helper
         character(string_length)::keyword
@@ -136,7 +136,10 @@ contains
         call set_help('filter_freq','Low-pass filter cut-off frequency','[s^-1]','non-mandatory',"1e99")
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
         call set_help('dump_time_dt','Temporal parameters saving time interval','[s]','non-mandatory',"0.00e-00")
+        call set_help('dump_space','Spatial parameters saving','none','non-mandatory',"no")
+        call set_help('dump_time','Temporal parameters saving','none','non-mandatory',"no")
         call set_help('dump_restart_dt','Restart file saving time interval','[s]','non-mandatory',"1")
+        call set_help('dump_restart','Restart file saving','none','non-mandatory',"no")
         call set_help('steady_state','Steady state yes|no','none','non-mandatory',"no")
         call set_help('temp_ramp_filename','Temperature ramp data file (ramp.dat) used if .ne. 0','none','non-mandatory',"none")
         call set_help('solve_heat_equation','yes|no :solve heat equation','none','non-mandatory',"no")

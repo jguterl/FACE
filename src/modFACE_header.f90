@@ -142,9 +142,12 @@
       real(DP):: dump_space_dt=0
       real(DP):: dump_time_dt=0
       real(DP):: dump_restart_dt=0
-      logical:: dump_space=.true.
-      logical:: dump_time=.true.
-      logical:: dump_restart=.true.
+      logical:: dump_space=.false.
+      logical:: dump_time=.false.
+      logical:: dump_restart=.false.
+      character(string_length):: dump_space_string
+      character(string_length):: dump_time_string
+      character(string_length):: dump_restart_string
 
       real(DP):: nucut=1d99
       real(DP):: delta=0.d0
