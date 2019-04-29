@@ -1119,6 +1119,9 @@ endif
 !        reduction_factor_dt_spc_=0.1
 !        reduction_factor_dt_heat_=0.1
 !        else
+        if (reduction_factor_dt_spc_correction.lt.1d0) then
+        reduction_factor_dt_spc_correction=1d0
+        endif
         reduction_factor_dt_spc_=reduction_factor_dt_spc/reduction_factor_dt_spc_correction
         reduction_factor_dt_heat_=reduction_factor_dt_heat
 !        endif
