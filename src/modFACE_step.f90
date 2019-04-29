@@ -96,25 +96,26 @@ contains
 
 
         if (quick_convergence) then
+        reduction_factor_dt_spc_correction=1d0
+        critical_reduction=.false.
             counter_reduction=0
             dt_face_last=dt_face
             if (verbose_step) write(iout,*) "dt_face=",dt_face, " ; dt_face_last=",dt_face_last
         else
 
             if (critical_reduction.or.(.not.adjust_reduction_factor)) then
+               reduction_factor_dt_spc_correction=reduction_factor_dt_spc_correction*10d0
 
                 if (dt_face.ge.dt_face_old) then
-                dt_face=dt_face_old/10d0
-                else
-                dt_face=dt_face/10d0
+                dt_face=dt_face_old
                 endif
                 call print_steady_timestep_info
                 call newton_solver(quick_convergence)
                 call print_timestep_info(quick_convergence)                    ! print info on current time step
                 if (.not.quick_convergence) then
                 dt_face=dt_face/10d0
-                call print_steady_timestep_info
                 call newton_solver(quick_convergence)
+                call print_timestep_info(quick_convergence)
                 endif
                 if (.not.quick_convergence) then
                 call face_error('#1 FACE cannot converge properly after dt_face=dt_face_old')
@@ -122,6 +123,7 @@ contains
                 dt_face_last=dt_face
                 endif
                 critical_reduction=.false.
+
             else
                 count_loop=1
 
@@ -174,9 +176,7 @@ contains
         call compute_onthefly_inventory
         !call print_timestep_info                   ! print info on current time step
         dt_face_old=dt_face
-        if (critical_reduction) then
-         reduction_factor_dt_spc_correction=10d0
-        endif
+
         call compute_dt_update
         if (dt_face.le.dt_face_old) then
         critical_reduction=.false.
