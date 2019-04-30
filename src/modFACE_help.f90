@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=130
+    integer,parameter::nlines_max_help=133
 
     type helper
         character(string_length)::keyword
@@ -179,9 +179,12 @@ contains
         'mandatory',"S N N","species")
         call set_help('order_desorption_left','order of desorption cs^order or cb ^order','none',&
         'non-mandatory',"2.0 2.0 2.0","species")
+        call set_help('order_desorption_left_sat','order of desorption cs^order or cb ^order at saturation','none',&
+        'non-mandatory',"1.0 1.0 1.0","species")
         call set_help('order_desorption_right','order of desorption cs^order or cb ^order','none',&
         'non-mandatory',"2.0 2.0 2.0","species")
-
+        call set_help('order_desorption_right_sat','order of desorption cs^order or cb ^order at saturation','none',&
+        'non-mandatory',"1.0 1.0 1.0","species")
         call set_help('ns0_left','Initial left surface density of species','[m^-2]','non-mandatory',&
             "1.00e+19 0.00e+19 0.00e+19","species")
         call set_help('ns0_right','Initial right surface density of species','[m^-2]','non-mandatory',&
@@ -277,6 +280,7 @@ contains
         call set_help(comment_str)
         call set_help('active_cap_bulk','yes|no','none','non-mandatory',"no")
         call set_help('active_cap_surface','yes|no','none','non-mandatory',"no")
+        call set_help('active_cap_order_desorption','yes|no','none','non-mandatory',"no")
         call set_help('verbose','yes|no','none','non-mandatory',"yes")
         call set_help('dump_vol_append','yes|no','none','non-mandatory',"no")
         call set_help('dump_srf_append','yes|no ','none','non-mandatory',"no")

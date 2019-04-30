@@ -332,6 +332,8 @@ real(DP)::T_pulse_max ! max influx of particles
 
       real(DP),allocatable::order_desorption_left(:)
       real(DP),allocatable::order_desorption_right(:)
+      real(DP),allocatable::order_desorption_left_sat(:)
+      real(DP),allocatable::order_desorption_right_sat(:)
       real(DP),allocatable::Eabs_l(:)
       real(DP),allocatable::Edes_l(:)
       real(DP),allocatable::Edes_lsat(:)
@@ -437,9 +439,11 @@ real(DP)::T_pulse_max ! max influx of particles
       type(onthefly_inventories),allocatable :: onthefly_inventory(:)
       logical :: active_cap_bulk=.false.
       logical :: active_cap_surface=.false.
+      logical :: active_cap_order_desorption=.false.
       logical :: print_onthefly_inventory=.false.
       character(string_length)::print_onthefly_inventory_string
       character(string_length)::active_cap_surface_string
+      character(string_length)::active_cap_order_desorption_string
       character(string_length)::active_cap_bulk_string
       character(string_length)::dump_vol_append_string
       character(string_length)::dump_srf_append_string

@@ -329,7 +329,7 @@ contains
 
     subroutine compute_surface_flx(k)
         integer::k
-        real(DP):: tmp,Edes_rc,Edes_lc
+        real(DP):: tmp,Edes_rc,Edes_lc,order_desorption_leftc,order_desorption_rightc
         !     --- surface ---
 
         ! reducing qch when close to surface saturation
@@ -342,6 +342,20 @@ contains
         else
             Edes_lc=Edes_l(k)
             Edes_rc=Edes_r(k)
+            order_desorption_leftc=order_desorption_left(k)
+            order_desorption_rightc=order_desorption_right(k)
+        endif
+        if (active_cap_order_desorption) then
+            tmp=2d0*(dsrfl(ndt,k)/dsrfm(k)*2d0-1.d0)
+                order_desorption_leftc=order_desorption_left_sat(k)+&
+                (order_desorption_left(k)-order_desorption_left_sat(k))*0.5d0*(1.d0-erf(tmp))
+                tmp=2d0*(dsrfl(ndt,k)/dsrfm(k)*2d0-1.d0)
+                order_desorption_rightc=order_desorption_right_sat(k)+&
+                (order_desorption_right(k)-order_desorption_right_sat(k))*0.5d0*(1.d0-erf(tmp))
+
+        else
+            order_desorption_leftc=order_desorption_left(k)
+            order_desorption_rightc=order_desorption_right(k)
         endif
         if (verbose_cap) write(iout,*) "k=",k,"; cap: Edes=",Edes_lc,Edes_l(k), " dsrfl(k)=",dsrfl(ndt,k),dsrfl(ndt,k)/dsrfm(k)
         !        tmp=1.d2*(dsrfl(ndt,k)/dsrfm(k)-1.d0)
@@ -351,13 +365,15 @@ contains
         ! calculate rates of surface processes
         ! - left surface
         if (left_surface_model(k).eq.surf_model_S) then
-
+            K0des_l(k)=nu(k)*lambda**(2*order_desorption_leftc-2)*csrf
             Kabs_l(k)=j0(k)*K0abs_l(k)*exp(-  ee*Eabs_l(k) /(kb*temp(ndt,0)))
             Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
             Kb_l(k)=        K0b_l(k)  *exp(-  ee*Eb_l(k)   /(kb*temp(ndt,0)))
             Kads_l(k)=      K0ads_l(k) *exp(-  ee*Eads_l(k) /(kb*temp(ndt,0)))
         elseif (left_surface_model(k).eq.surf_model_B) then
             Kabs_l(k)=min_rate_surface
+            K0des_l(k)=nu(k)*lambda**(2*order_desorption_leftc-2)*csrf
+            K0des_l(k)=nu(k)*lambda**(2*order_desorption_leftc-2)*csrf
             Kdes_l(k)=2.d0 *K0des_l(k)*exp(-  ee*Edes_lc /(kb*temp(ndt,0)))
             Kb_l(k)= min_rate_surface
             Kads_l(k)= min_rate_surface
@@ -374,13 +390,14 @@ contains
 
         ! - right surface
         if (right_surface_model(k).eq.surf_model_S) then
-
+            K0des_r(k)=nu(k)*lambda**(2*order_desorption_rightc-2)*csrf
             Kabs_r(k)=j0(k)*K0abs_r(k)*exp(-  ee*Eabs_r(k) /(kb*temp(ndt,0)))
             Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
             Kb_r(k)=        K0b_r(k)  *exp(-  ee*Eb_r(k)   /(kb*temp(ndt,0)))
             Kads_r(k)=      K0ads_r(k)*exp(-  ee*Eads_r(k) /(kb*temp(ndt,0)))
         elseif (right_surface_model(k).eq.surf_model_B) then
             Kabs_r(k)=0d0
+            K0des_r(k)=nu(k)*lambda**(2*order_desorption_rightc-2)*csrf
             Kdes_r(k)=2.d0 *K0des_r(k)*exp(-  ee*Edes_rc /(kb*temp(ndt,0)))
             Kb_r(k)= 0d0
             Kads_r(k)=0d0
@@ -399,13 +416,13 @@ contains
 
         if ((left_surface_model(k).eq.surf_model_S)) then
             Gabs_l (ndt,k)=Kabs_l(k)
-            Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_left(k)
+            Gdes_l (ndt,k)=Kdes_l(k)*dsrfl(ndt,k)**order_desorption_leftc
 
             Gb_l (ndt,k)  =Kb_l(k)  *dsrfl(ndt,k)
             Gads_l (ndt,k)=Kads_l(k)*dens(ndt,0   ,k)
 
             if (verbose_surface) then
-                write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^order=',dsrfl(ndt,k)**order_desorption_left(k)
+                write(iout,*) 'Kdesl=', Kdes_l(k), 'Kdesl=', K0des_l(k),';ns^order=',dsrfl(ndt,k)**order_desorption_leftc
                 write(iout,*) 'Kadsl=', Kads_l(k), ';K0ads_l(k)',K0ads_l(k),'dens(ndt,0   ,k)=',dens(ndt,0   ,k)
             endif
        elseif (left_surface_model(k).eq.surf_model_N) then
@@ -417,9 +434,9 @@ contains
         elseif (left_surface_model(k).eq.surf_model_B) then
 
             Gabs_l (ndt,k)=0d0
-            Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_left(k)
+            Gdes_l (ndt,k)=Kdes_l(k)*dens(ndt,0   ,k)**order_desorption_leftc
             if (verbose_surface) then
-                write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^order=',dens(ndt,0,k)**order_desorption_left(k)
+                write(iout,*) 'Kdesl=', Kdes_l(k),'K0desl=', K0des_l(k), 'n^order=',dens(ndt,0,k)**order_desorption_leftc
             endif
             Gb_l (ndt,k)  =dsrfl(ndt,k)
             Gads_l (ndt,k)=0d0
@@ -429,17 +446,17 @@ contains
         ! - right surface
         if ((right_surface_model(k).eq.surf_model_S))then
             Gabs_r (ndt,k)=Kabs_r(k)                           ! Gabsorp=K(gas)
-            Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+            Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_rightc          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =Kb_r(k)  *dsrfr(ndt,k)              ! Gbulk  =K*ns
             Gads_r (ndt,k)=Kads_r(k)*dens(ndt,ngrd,k)          ! Gadsorb=K*nb
         elseif (right_surface_model(k).eq.surf_model_N) then
               Gabs_r (ndt,k)=0d0                           ! Gabsorp=K(gas)
-            Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+            Gdes_r (ndt,k)=Kdes_r(k)*dsrfr(ndt,k)**order_desorption_rightc          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =0d0               ! Gbulk  =K*ns
             Gads_r (ndt,k)=0d0
         elseif (right_surface_model(k).eq.surf_model_B) then
             Gabs_r (ndt,k)=0d0                          ! Gabsorp=K(gas)
-            Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_right(k)          ! Gdesorp=K*ns^2
+            Gdes_r (ndt,k)=Kdes_r(k)*dens(ndt,ngrd,k)**order_desorption_rightc          ! Gdesorp=K*ns^2
             Gb_r (ndt,k)  =dsrfr(ndt,k)             ! Gbulk  =K*ns
             Gads_r (ndt,k)=0d0      ! Gadsorb=K*n
         endif

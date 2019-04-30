@@ -254,6 +254,15 @@ case('steady_state')
          else
          call face_error("unknown option for active_cap_bulk (must be yes or no) : ",active_cap_bulk_string)
          endif
+  case('active_cap_order_desorption')
+
+         if(active_cap_order_desorption_string.eq."yes") then
+         active_cap_order_desorption=.true.
+         elseif (active_cap_order_desorption_string.eq."no") then
+         active_cap_order_desorption=.false.
+         else
+         call face_error("unknown option for active_cap_order_desorption (must be yes or no) : ",active_cap_order_desorption_string)
+         endif
 
          case('active_cap_surface')
 
@@ -388,6 +397,8 @@ end select
         call get_keyword_value('right_surface_model', right_surface_model_string)
         call get_keyword_value('order_desorption_left', order_desorption_left)
         call get_keyword_value('order_desorption_right', order_desorption_right)
+        call get_keyword_value('order_desorption_left_sat', order_desorption_left_sat)
+        call get_keyword_value('order_desorption_right_sat', order_desorption_right_sat)
         call get_keyword_value('ns0_left', dsrfl0)
         call get_keyword_value('ns0_right', dsrfr0)
         call get_keyword_value('ns_max', dsrfm)
@@ -427,6 +438,7 @@ end select
         call get_keyword_value('pressure_neutral', gas_pressure)
         call get_keyword_value('temp_neutral', gas_temp)
         call get_keyword_value('mass', mass)
+        call get_keyword_value('active_cap_order_desorption', active_cap_order_desorption_string)
         call get_keyword_value('active_cap_surface', active_cap_surface_string)
          call get_keyword_value('active_cap_bulk', active_cap_bulk_string)
         call get_keyword_value('min_ablation_velocity', cero_min)
