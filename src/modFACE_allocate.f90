@@ -683,11 +683,15 @@ allocate(Gamma_in_max(nspc))
 subroutine deallocate_variables
  write(iout,*) "deallocation: check 0"
         if (allocated(namespc)) deallocate(namespc)
+        write(iout,*) "deallocation: check 1.1"
         if (allocated(dens0)) deallocate(dens0)
+        write(iout,*) "deallocation: check 1.2"
         if (allocated(dens)) deallocate(dens)
+        write(iout,*) "deallocation: check 1.3"
         if (allocated(flx)) deallocate(flx)
-         write(iout,*) "deallocation: check 1"
+         write(iout,*) "deallocation: check 1.4"
         if (allocated(qflx)) deallocate(qflx)
+        write(iout,*) "deallocation: check 1.5"
         if (allocated(rate_d)) deallocate(rate_d)
         if (allocated(rate_t)) deallocate(rate_t)
         if (allocated(cdif)) deallocate(cdif)
