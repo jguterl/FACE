@@ -29,6 +29,7 @@ contains
         call init_temp
         call compute_inflx
         call init_volume_species
+        call init_volume_properties
 
         call init_source
         call init_boundary
@@ -636,7 +637,7 @@ contains
         if (verbose_init)  write(iout,*) 'Initialization of temperature : DONE '
     end subroutine init_temp
 
-    subroutine init_volume_species()
+    subroutine init_volume_species
 
         integer:: i,j,k
         do k=1,nspc
@@ -681,6 +682,39 @@ contains
 
 
     end subroutine init_volume_species
+
+     subroutine init_volume_properties
+
+        integer:: i,j,k
+
+            if (verbose_init) write(iout,*) 'initilization profile of thermal conductivity : ',thcond_profile_string
+            do j=0,ngrd
+
+
+                    cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
+
+                    if (thcond_profile_string .eq. 'S') then
+                        if (x(j)>thcond_xmax) then
+                            thcond(j)=thcond_region2
+                        else
+                            thcond(j)=thcond_region1
+                        endif
+                    elseif(thcond_profile_string .eq. 'F') then
+                        thcond(j)=thcond_region1
+                    elseif(thcond_profile_string .eq. 'L') then
+                        thcond(j)=(thcond_region2-thcond_region1)*x(j)/x(ngrd)+thcond_region1
+                      !  if (verbose_init) write(iout,*)"dens0(k)=",dens0(k),"gxmax(k)=",gxmax(k),"gsigm(k)=",gsigm(k)
+                    else
+                        call face_error('unknow option for thcond_profile:',thcond_profile_string)
+                    endif
+
+                    if ( thcond(j).lt.0) call face_error("thcond(j)<0=",thcond(j))
+                enddo
+
+
+
+
+    end subroutine init_volume_properties
 
     subroutine init_casename(case_name)
         character(*)::case_name

@@ -240,7 +240,7 @@ contains
 
         integer j
         do j=0,ngrd
-            qflx(ndt,j)=thcond*qflx(ndt,j)
+            qflx(ndt,j)=thcond(j)*qflx(ndt,j)
         enddo
 
     end subroutine compute_thermal_qflx
@@ -550,7 +550,7 @@ contains
         do j=1,ngrd-1
           ! rate_t(ndt,j)=(qflx(ndt,j-1)-qflx(ndt,j))/(0.5d0*(dx(j-1)+dx(j))*rhocp)!+ero_qflx(ndt,j)
           ! rate_d(ndt,j,k)=rate_d(ndt,j,k)+(dif_flx(ndt,j-1,k)-dif_flx(ndt,j,k))/(0.5d0*(dx(j-1)+dx(j)))
-           rate_t(ndt,j)=2.d0*thcond/rhocp&
+           rate_t(ndt,j)=2.d0*thcond(j)/rhocp&
                         *((temp(ndt,j-1)*dx(j)+temp(ndt,j+1)*dx(j-1))/(dx(j-1)+dx(j))-temp(ndt,j))&
                         /(dx(j-1)*dx(j))&
                         +ero_qflx(ndt,j)

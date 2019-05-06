@@ -164,6 +164,14 @@
 
           endif
 
+          if (.not.allocated(thcond)) then
+              allocate(thcond(0:ngrd))
+              call init_zero(thcond)
+          else
+              call face_error('thcond already allocated')
+
+          endif
+
           if (.not.allocated(rct)) then
               allocate(rct (ndt,0:ngrd,nspc))
               call init_zero(rct)
@@ -681,6 +689,7 @@ subroutine deallocate_variables()
         if (allocated(rate_d)) deallocate(rate_d)
         if (allocated(rate_t)) deallocate(rate_t)
         if (allocated(cdif)) deallocate(cdif)
+        if (allocated(thcond)) deallocate(thcond)
 if (allocated(rct)) deallocate(rct)
 if (allocated(ero_flx)) deallocate(ero_flx)
 if (allocated(dif_flx)) deallocate(dif_flx)

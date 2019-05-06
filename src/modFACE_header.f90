@@ -450,7 +450,11 @@ real(DP)::T_pulse_max ! max influx of particles
 !     ------------------------------------------------------------------
 !       Thermal variables
 !     ------------------------------------------------------------------
-      real(DP):: thcond  =0
+      real(DP),allocatable:: thcond(:)
+      character(string_length)::thcond_profile_string
+      real(DP)::thcond_region1=0
+      real(DP)::thcond_region2=0
+      real(DP)::thcond_xmax=0
       real(DP):: rho     =0
       real(DP):: cp      =0
       real(DP)::rhocp    =0

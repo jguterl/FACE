@@ -6,7 +6,7 @@ module modFACE_help
     !      use modFACE_parser,only:input_line,nlines
     implicit none
     integer,save:: ihelp,Nhelp
-    integer,parameter::nlines_max_help=133
+    integer,parameter::nlines_max_help=137
 
     type helper
         character(string_length)::keyword
@@ -264,6 +264,9 @@ contains
         call set_help('lattice_length_factor','Lattice cell length factor','none','non-mandatory',"1")
 
         call set_help('thermal_conductivity','Thermal conductivity','[W m^-1 K^-1]','non-mandatory',"137.0")
+        call set_help('thermal_conductivity_region2','Thermal conductivity','[W m^-1 K^-1]','non-mandatory',"137.0")
+        call set_help('thermal_conductivity_profile','Thermal conductivity profile [S F L]','none','non-mandatory',"F")
+        call set_help('thermal_conductivity_xmax','Thermal conductivity xmax [S F L]','[m]','non-mandatory',"1e+3")
         call set_help('heat_capacity','Heat capacity','[J kg^-1 K^-1]','non-mandatory',"1.400e+02")
         call set_help('density','Density','[kg m^-3]','non-mandatory',"1.930e+04")
         call set_help('emissivity','Emissivity','???','non-mandatory',"0")
