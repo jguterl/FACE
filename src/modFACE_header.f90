@@ -32,6 +32,7 @@
            logical::verbose_input=.false.
     logical::verbose_init=.false.
     logical :: verbose_step=.false.
+    logical :: verbose_allocate=.false.
     logical :: verbose_cap=.false.
     logical :: verbose_debug=.false.
     logical :: verbose_couple=.false.

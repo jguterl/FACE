@@ -681,23 +681,23 @@ allocate(Gamma_in_max(nspc))
     end subroutine alloc_input_species
 
 subroutine deallocate_variables
- write(iout,*) "deallocation: check 0"
+if (verbose_allocate) write(iout,*) "deallocation: check 0"
         if (allocated(namespc)) deallocate(namespc)
-        write(iout,*) "deallocation: check 1.1"
+       if (verbose_allocate) write(iout,*) "deallocation: check 1.1"
         if (allocated(dens0)) deallocate(dens0)
-        write(iout,*) "deallocation: check 1.2"
+       if (verbose_allocate) write(iout,*) "deallocation: check 1.2"
         if (allocated(dens)) deallocate(dens)
-        write(iout,*) "deallocation: check 1.3"
+        if (verbose_allocate)write(iout,*) "deallocation: check 1.3"
         if (allocated(flx)) deallocate(flx)
-         write(iout,*) "deallocation: check 1.4"
+        if (verbose_allocate) write(iout,*) "deallocation: check 1.4"
         if (allocated(qflx)) deallocate(qflx)
-        write(iout,*) "deallocation: check 1.5"
+       if (verbose_allocate) write(iout,*) "deallocation: check 1.5"
         if (allocated(rate_d)) deallocate(rate_d)
         if (allocated(rate_t)) deallocate(rate_t)
         if (allocated(cdif)) deallocate(cdif)
 
         if (allocated(thcond)) deallocate(thcond)
-        write(iout,*) "deallocation: check 2"
+        if (verbose_allocate) write(iout,*) "deallocation: check 2"
 if (allocated(rct)) deallocate(rct)
 if (allocated(ero_flx)) deallocate(ero_flx)
 if (allocated(dif_flx)) deallocate(dif_flx)
@@ -726,7 +726,7 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
 
          if (allocated(nu)) deallocate(nu)
       if (allocated(temp)) deallocate(temp)
-      write(iout,*) "deallocation: check 3"
+      if (verbose_allocate) write(iout,*) "deallocation: check 3"
          ! implantation
 
          if (allocated(implantation_model)) deallocate(implantation_model)
@@ -735,10 +735,10 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
          if (allocated( diagnostic_depth)) deallocate( diagnostic_depth)
          if (allocated(j_diagnostic_depth)) deallocate( j_diagnostic_depth)
          if (allocated( implantation_width)) deallocate( implantation_width)
-         write(iout,*) "deallocation: check 13"
+        if (verbose_allocate) write(iout,*) "deallocation: check 13"
          if (allocated(enrg)) deallocate(enrg)
          if (allocated(inflx)) deallocate(inflx)
-         write(iout,*) "deallocation: check 14"
+         if (verbose_allocate) write(iout,*) "deallocation: check 14"
          if (allocated(Gamma_in_max)) deallocate(Gamma_in_max)
          if (allocated(Gamma_in_base)) deallocate(Gamma_in_base)
          if (allocated(Gamma_in_pulse_period)) deallocate(Gamma_in_pulse_period)
@@ -753,14 +753,14 @@ if (allocated(ero_qflx)) deallocate(ero_qflx)
          if (allocated(mass)) deallocate( mass)
             if (allocated(x))     deallocate(x)
        if (allocated(dx)) deallocate(dx)
-write(iout,*) "deallocation: check 15"
+if (verbose_allocate) write(iout,*) "deallocation: check 15"
        if (allocated(srs)) deallocate(srs)
        if (allocated(srb)) deallocate(srb)
        if (allocated(jout)) deallocate(jout)
        if (allocated(src)) deallocate(src)
        if (allocated(src_profile)) deallocate(src_profile)
        if (allocated(j0)) deallocate(j0)
-       write(iout,*) "deallocation: check 16"
+       if (verbose_allocate) write(iout,*) "deallocation: check 16"
        ! reaction
        if (allocated(nuth0)) deallocate(nuth0)
        if (allocated(nuth)) deallocate(nuth)
@@ -769,7 +769,7 @@ write(iout,*) "deallocation: check 15"
        if (allocated(ebin)) deallocate(ebin)
        if (allocated(eth)) deallocate(eth)
 ! surface
-write(iout,*) "deallocation: check 17"
+if (verbose_allocate) write(iout,*) "deallocation: check 17"
         if (allocated(dsrfm)) deallocate(dsrfm)
         if (allocated(dsrfl0)) deallocate(dsrfl0)
         if (allocated(dsrfr0)) deallocate(dsrfr0)
@@ -784,7 +784,7 @@ write(iout,*) "deallocation: check 17"
        if (allocated(order_desorption_right)) deallocate(order_desorption_right)
        if (allocated(order_desorption_left_sat)) deallocate(order_desorption_left_sat)
        if (allocated(order_desorption_right_sat)) deallocate(order_desorption_right_sat)
-write(iout,*) "deallocation: check 18"
+if (verbose_allocate) write(iout,*) "deallocation: check 18"
 
       if (allocated(Kabs_l)) deallocate(Kabs_l)
       if (allocated(Kdes_l)) deallocate(Kdes_l)
@@ -802,7 +802,7 @@ write(iout,*) "deallocation: check 18"
       if (allocated(K0des_r)) deallocate(K0des_r)
       if (allocated(K0b_r)) deallocate(K0b_r)
       if (allocated(K0ads_r)) deallocate(K0ads_r)
-write(iout,*) "deallocation: check 19"
+if (verbose_allocate) write(iout,*) "deallocation: check 19"
       if (allocated(Gads_l)) deallocate(Gads_l)
       if (allocated(Gads_r)) deallocate(Gads_r)
       if (allocated(Gdes_l)) deallocate(Gdes_l)
@@ -814,12 +814,12 @@ write(iout,*) "deallocation: check 19"
        if (allocated(Gsrf_l)) deallocate(Gsrf_l)
       if (allocated(Gsrf_r)) deallocate(Gsrf_r)
 
-write(iout,*) "deallocation: check 20"
+      if (verbose_allocate) write(iout,*) "deallocation: check 20"
       if (allocated(trace_flux)) deallocate(trace_flux)
        if (allocated(onthefly_inventory)) deallocate(onthefly_inventory)
        if (allocated(init_inventory)) deallocate(init_inventory)
        if (allocated(final_inventory)) deallocate(final_inventory)
-       write(iout,*) "deallocation: check 2"
+       if (verbose_allocate) write(iout,*) "deallocation: check 2"
     end subroutine deallocate_variables
 
 
