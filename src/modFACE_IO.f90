@@ -314,8 +314,10 @@ end subroutine save_timedata
 !        else
 !            tmp=1d99
 !        endif
-        if (dump_space.and.(time_savevol.ge.dump_space_dt.or.time.le.start_time.or.time.ge.end_time)) then
+        if ((dump_space.and.(time_savevol.ge.dump_space_dt.or.time.le.start_time.or.time.ge.end_time))) then
+            if (compute_spc) then
             call save_voldata
+            endif
             !call save_srfdata
             if (solve_heat_eq) then
             call save_heatdata

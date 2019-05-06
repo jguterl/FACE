@@ -137,6 +137,7 @@ contains
         call set_help('dump_space_dt','Spatial parameters saving time interval','[s]','non-mandatory',"0.00e-00")
         call set_help('dump_time_dt','Temporal parameters saving time interval','[s]','non-mandatory',"0.00e-00")
         call set_help('dump_space','Spatial parameters saving','none','non-mandatory',"no")
+        call set_help('dump_space','Spatial parameters saving','none','non-mandatory',"no")
         call set_help('dump_time','Temporal parameters saving','none','non-mandatory',"no")
         call set_help('dump_restart_dt','Restart file saving time interval','[s]','non-mandatory',"1")
         call set_help('dump_restart','Restart file saving','none','non-mandatory',"no")
