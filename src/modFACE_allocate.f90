@@ -680,15 +680,18 @@ allocate(Gamma_in_max(nspc))
         if (verbose_input) write(iout,*) 'Allocation of input parameters for species: OK'
     end subroutine alloc_input_species
 
-subroutine deallocate_variables()
+subroutine deallocate_variables
+ write(iout,*) "deallocation: check 0"
         if (allocated(namespc)) deallocate(namespc)
         if (allocated(dens0)) deallocate(dens0)
         if (allocated(dens)) deallocate(dens)
         if (allocated(flx)) deallocate(flx)
+         write(iout,*) "deallocation: check 1"
         if (allocated(qflx)) deallocate(qflx)
         if (allocated(rate_d)) deallocate(rate_d)
         if (allocated(rate_t)) deallocate(rate_t)
         if (allocated(cdif)) deallocate(cdif)
+
         if (allocated(thcond)) deallocate(thcond)
         write(iout,*) "deallocation: check 2"
 if (allocated(rct)) deallocate(rct)
