@@ -77,11 +77,14 @@ contains
 
     end subroutine initialization_main
 
- subroutine finalization_main()
+ subroutine finalization_main
+        write(iout,*) 'Closing timedata files...'
         call close_timedata_files
-        call deallocate_variables()
+        write(iout,*) 'Deallocating variables...'
+        call deallocate_variables
+        write(iout,*) 'Closing log...'
         call close_log
-        write(iout,*) 'Quitting FACE after complete normal execution...'
+        write(iout,*) 'Quitting FACE following complete normal execution!'
     end subroutine finalization_main
         subroutine finilization_main
 
