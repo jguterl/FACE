@@ -685,13 +685,10 @@ contains
 
      subroutine init_volume_properties
 
-        integer:: i,j,k
+        integer:: j
 
             if (verbose_init) write(iout,*) 'initilization profile of thermal conductivity : ',thcond_profile_string
             do j=0,ngrd
-
-
-                    cdif(i,j,k)=cdif0(k)*exp(-ee*edif(k)/(kb*temp(i,j)))
 
                     if (thcond_profile_string .eq. 'S') then
                         if (x(j)>thcond_xmax) then
